@@ -10,3 +10,4 @@ export * from "./knowledge";
 export * from "./proposals";
 export * from "./money";
 export * from "./planning";
+export * from "./auth";

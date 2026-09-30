@@ -29,6 +29,13 @@
       "when": 1790763464640,
       "tag": "0003_app_settings",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790765163502,
+      "tag": "0004_auth_tables",
+      "breakpoints": true
     }
   ]
 }
