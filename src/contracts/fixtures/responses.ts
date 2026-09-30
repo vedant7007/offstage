@@ -152,7 +152,15 @@ export function publicEvent(w: EventWorld): PublicEventResponse {
     ],
     announcements: w.announcements
       .filter((a) => a.public && a.status === "sent")
-      .map(({ id, title, body, category, sentAt }) => ({ id, title, body, category, sentAt })),
+      .map(({ id, title, body, category, sentAt, approvedByRole, draftedBy }) => ({
+        id,
+        title,
+        body,
+        category,
+        sentAt,
+        approvedByRole,
+        draftedBy,
+      })),
     sponsors: w.sponsorProspects
       .filter((s) => s.stage === "confirmed")
       .map((s) => ({ name: s.name, tier: s.tier })),
@@ -184,7 +192,15 @@ export function publicStatus(w: EventWorld): PublicStatusResponse {
     }),
     announcements: w.announcements
       .filter((a) => a.public && a.status === "sent")
-      .map(({ id, title, body, category, sentAt }) => ({ id, title, body, category, sentAt })),
+      .map(({ id, title, body, category, sentAt, approvedByRole, draftedBy }) => ({
+        id,
+        title,
+        body,
+        category,
+        sentAt,
+        approvedByRole,
+        draftedBy,
+      })),
   };
 }
 

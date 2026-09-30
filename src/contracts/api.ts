@@ -357,7 +357,15 @@ export const PublicEventResponse = z.object({
   speakers: z.array(PublicSpeaker),
   faq: z.array(z.object({ question: z.string(), answer: z.string(), source: z.string().optional() })),
   announcements: z.array(
-    Announcement.pick({ id: true, title: true, body: true, category: true, sentAt: true }),
+    Announcement.pick({
+      id: true,
+      title: true,
+      body: true,
+      category: true,
+      sentAt: true,
+      approvedByRole: true,
+      draftedBy: true,
+    }),
   ),
   sponsors: z.array(z.object({ name: z.string(), tier: z.string().optional() })),
   capacity: z.object({ total: z.int(), registered: z.int(), waitlistOpen: z.boolean() }),
@@ -391,7 +399,15 @@ export const PublicStatusResponse = z.object({
     }),
   ),
   announcements: z.array(
-    Announcement.pick({ id: true, title: true, body: true, category: true, sentAt: true }),
+    Announcement.pick({
+      id: true,
+      title: true,
+      body: true,
+      category: true,
+      sentAt: true,
+      approvedByRole: true,
+      draftedBy: true,
+    }),
   ),
 });
 export type PublicStatusResponse = z.infer<typeof PublicStatusResponse>;
