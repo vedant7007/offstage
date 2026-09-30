@@ -69,7 +69,7 @@ test("registers on the fixture event, verifies the code and reaches the ticket",
   // Step 3: preferences and consent
   await expect(page.getByRole("heading", { level: 2, name: "Preferences and consent" })).toBeVisible();
   await expect(page.getByText("90 days after the event", { exact: false })).toBeVisible();
-  await page.getByRole("radio", { name: "Vegetarian" }).check();
+  await page.getByRole("radio", { name: "Vegetarian", exact: true }).check();
   await page.getByRole("radio", { name: "I am 18 or older" }).check();
   await page.getByRole("checkbox", { name: /I have read how my details are used/ }).check();
   await expectAccessible(page);
