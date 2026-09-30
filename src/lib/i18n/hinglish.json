@@ -478,5 +478,27 @@
       "addSoon": "Yahan se session add karna jaldi aayega. Session add karwane ke liye helpdesk se bolo.",
       "room": "Room"
     }
+  },
+  "citationExtra": {
+    "noSnippet": "Passage ka preview abhi available nahi hai. Poora text chahiye toh helpdesk team se poochho.",
+    "openDoc": "Source: {document}. Snippet kholo"
+  },
+  "chat": {
+    "title": "Helpdesk",
+    "honest": "Yeh assistant sirf event ke apne documents se jawaab deta hai aur dikhata hai ki har jawaab kahan se aaya. Jab pakka na ho, toh tumhara sawaal kisi insaan tak pahunchata hai.",
+    "label": "Tumhara sawaal",
+    "placeholder": "Schedule, venue, khana, rules ke baare mein poochho...",
+    "send": "Bhejo",
+    "suggestions": "Common sawaal",
+    "you": "Tum",
+    "assistant": "Helpdesk",
+    "thinking": "Event documents mein dekh rahe hain",
+    "sources": "Sources",
+    "escalated": "Mujhe pakka nahi pata, isliye maine yeh team ko bhej diya. Woh yahan aur email par reply karenge.",
+    "escalationRef": "Reference {ref}",
+    "blockedHint": "Main event ki har cheez mein madad kar sakta hoon: schedule, venue, khana, rules ya tumhara ticket.",
+    "error": "Helpdesk tak nahi pahunch paye. Connection check karo aur phir try karo.",
+    "demo": "Jab tak live helpdesk connect nahi hota, demo jawaab dikh rahe hain.",
+    "answeredBy": "Event assistant ne event documents se jawaab diya"
   }
 }

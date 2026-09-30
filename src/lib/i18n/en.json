@@ -479,6 +479,28 @@
       "room": "Room"
     }
   },
+  "citationExtra": {
+    "noSnippet": "The passage preview is not available yet. Ask the helpdesk team if you need the full text.",
+    "openDoc": "Source: {document}. Open snippet"
+  },
+  "chat": {
+    "title": "Helpdesk",
+    "honest": "This assistant answers from the event's own documents and shows where each answer came from. When it is not sure, it passes your question to a person.",
+    "label": "Your question",
+    "placeholder": "Ask about the schedule, venue, food, rules...",
+    "send": "Send",
+    "suggestions": "Common questions",
+    "you": "You",
+    "assistant": "Helpdesk",
+    "thinking": "Looking through the event documents",
+    "sources": "Sources",
+    "escalated": "I'm not sure, so I passed this to the team. They will reply here and by email.",
+    "escalationRef": "Reference {ref}",
+    "blockedHint": "I can help with anything about the event: the schedule, venue, food, rules or your ticket.",
+    "error": "Could not reach the helpdesk. Check your connection and try again.",
+    "demo": "Showing demo answers until the live helpdesk is connected.",
+    "answeredBy": "Answered by the event assistant from event documents"
+  },
   "design": {
     "title": "Design system",
     "intro": "Every primitive and shared component in every state. Use the controls to check both themes and a 360 px phone width.",

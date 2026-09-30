@@ -8,10 +8,10 @@ import { Sheet, SheetContent, SheetTrigger } from "./sheet";
 type CitationChipProps = {
   /** Document title, such as "Rulebook". */
   document: string;
-  /** Section reference, such as "4.2 Team size". */
-  section: string;
-  /** The exact passage the answer relied on. Rendered as plain text, never as HTML. */
-  snippet: string;
+  /** Section reference, such as "4.2 Team size". Optional for citations that only have a label. */
+  section?: string;
+  /** The exact passage the answer relied on. Rendered as plain text, never as HTML. Optional: without it the sheet says the preview is not available. */
+  snippet?: string;
   className?: string;
 };
 
@@ -21,7 +21,9 @@ function CitationChip({ document, section, snippet, className }: CitationChipPro
   return (
     <Sheet>
       <SheetTrigger
-        aria-label={t("citation.open", { document, section })}
+        aria-label={
+          section ? t("citation.open", { document, section }) : t("citationExtra.openDoc", { document })
+        }
         className={cn(
           "inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-agent bg-agent-soft px-3 text-sm font-medium text-agent-soft-fg md:min-h-9",
           "transition-colors duration-(--duration-fast) ease-out hover:bg-surface-sunken",
@@ -29,17 +31,19 @@ function CitationChip({ document, section, snippet, className }: CitationChipPro
         )}
       >
         <FileText aria-hidden className="size-4 shrink-0" />
-        <span className="truncate">
-          {document}, {section}
-        </span>
+        <span className="truncate">{section ? `${document}, ${section}` : document}</span>
       </SheetTrigger>
-      <SheetContent title={document} description={t("citation.section", { section })}>
+      <SheetContent title={document} description={section ? t("citation.section", { section }) : undefined}>
         <p className="mb-2 text-xs font-semibold tracking-wide text-fg-muted uppercase">
           {t("citation.title")}
         </p>
-        <blockquote className="border-l-4 border-agent pl-4 text-base leading-relaxed whitespace-pre-line">
-          {snippet}
-        </blockquote>
+        {snippet ? (
+          <blockquote className="border-l-4 border-agent pl-4 text-base leading-relaxed whitespace-pre-line">
+            {snippet}
+          </blockquote>
+        ) : (
+          <p className="text-fg-muted">{t("citationExtra.noSnippet")}</p>
+        )}
       </SheetContent>
     </Sheet>
   );

@@ -9,7 +9,7 @@ export default async function MeLayout({ children }: LayoutProps<"/me">) {
   if (!me) redirect("/login?next=/me");
   const active = me.memberships.find((m) => m.eventId === me.activeEventId) ?? me.memberships[0];
   return (
-    <PortalShell title={active?.eventName ?? t("me.tabs.ticket")} tabs={["ticket", "schedule"]}>
+    <PortalShell title={active?.eventName ?? t("me.tabs.ticket")} tabs={["ticket", "schedule", "chat"]}>
       {children}
     </PortalShell>
   );
