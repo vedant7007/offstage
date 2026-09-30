@@ -404,5 +404,79 @@
     "sentBody": "Kuch bhi badalne ke liye yeh link phir se khol sakte ho.",
     "error": "Tumhari details nahi bhej paye. Kuch nahi khoya; phir se try karo.",
     "badLink": "Yeh link expire ho gaya hai ya valid nahi hai. Program team se naya link maango."
+  },
+  "login": {
+    "title": "Sign in",
+    "intro": "Hum tumhe 6-digit code email karenge. Password ki zaroorat nahi.",
+    "email": "Email",
+    "sendCode": "Code bhejo",
+    "codeSent": "Humne {email} par 6-digit code bheja hai. Yeh 10 minute tak chalega.",
+    "code": "6-digit code",
+    "signIn": "Sign in karo",
+    "resend": "Naya code bhejo",
+    "changeEmail": "Dusra email use karo",
+    "botCheck": "Chhota check ki tum insaan ho",
+    "invalidEmail": "name@college.edu jaisa email daalo",
+    "codeError": "Email mein aaye 6 digits daalo.",
+    "wrongCode": "Yeh code nahi chala. Email check karo ya naya code maango.",
+    "error": "Kuch gadbad ho gayi. Phir se try karo.",
+    "rateLimited": "Bahut zyaada tries. Kuch minute ruk kar phir try karo.",
+    "demoTitle": "Demo personas",
+    "demoIntro": "Yeh demo hai. Kisi bhi seeded person ke roop mein seedha andar jao.",
+    "personas": {
+      "attendee": "Sneha, attendee",
+      "volunteer": "Ravi, volunteer",
+      "owner": "Event head",
+      "program_lead": "Program lead",
+      "comms_lead": "Comms lead",
+      "faculty": "Faculty approver",
+      "sponsor": "Sponsor",
+      "viewer": "Judge, sirf dekhne ke liye"
+    }
+  },
+  "me": {
+    "tabs": {
+      "ticket": "Ticket",
+      "schedule": "Schedule",
+      "chat": "Chat",
+      "more": "Aur"
+    },
+    "demoData": "Jab tak live service connect nahi hoti, is page ka kuch hissa demo data dikhata hai.",
+    "signOut": "Sign out",
+    "noEvent": "Tum abhi kisi event mein registered nahi ho.",
+    "findEvent": "Demo event dekho",
+    "ticket": {
+      "title": "Tumhara ticket",
+      "for": "{name} ka ticket",
+      "checkedIn": "{time} par check-in hua",
+      "notCheckedIn": "Abhi check-in nahi hua",
+      "showToVolunteer": "Volunteer ko dikhao",
+      "showHint": "Code ko white background par full screen kholta hai taaki aasani se scan ho.",
+      "close": "Band karo",
+      "brightness": "Scan na ho toh screen brightness badhao.",
+      "offlineNote": "Yahan ek baar kholne ke baad tumhara ticket bina internet ke bhi chalta hai.",
+      "revoked": "Yeh ticket cancel ho gaya hai. Registration desk se madad lo.",
+      "none": "Abhi koi ticket nahi hai. Registration confirm hone par yahan dikhega.",
+      "waitlisted": "Tum waitlist mein ho. Seat khaali hone par tumhara ticket yahan dikhega."
+    },
+    "schedule": {
+      "title": "Schedule",
+      "mine": "Mere sessions",
+      "all": "Saare sessions",
+      "empty": "Tumne abhi koi session nahi chuna.",
+      "changed": "Badla",
+      "change": {
+        "moved": "Time badla",
+        "room_changed": "Room badla",
+        "cancelled": "Cancel",
+        "delayed": "Late"
+      },
+      "reminders": "Mere har session se 15 minute pehle yaad dilao",
+      "remindersSoon": "Is screen se reminders abhi connect nahi hain. Tumhari choice isi phone par save hai.",
+      "add": "Add karo",
+      "added": "Mere schedule mein",
+      "addSoon": "Yahan se session add karna jaldi aayega. Session add karwane ke liye helpdesk se bolo.",
+      "room": "Room"
+    }
   }
 }

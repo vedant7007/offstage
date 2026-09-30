@@ -13,6 +13,8 @@ export type NavItem = {
   icon: React.ReactNode;
   /** Small count shown on the tab, such as pending syncs. */
   badge?: number;
+  /** Active only on this exact path, not its children. Use for a section's home tab, such as /me. */
+  exact?: boolean;
 };
 
 type AppShellProps = {
@@ -27,8 +29,8 @@ type AppShellProps = {
   preview?: boolean;
 };
 
-function isActive(pathname: string, href: string) {
-  return pathname === href || pathname.startsWith(`${href}/`);
+function isActive(pathname: string, item: NavItem) {
+  return pathname === item.href || (!item.exact && pathname.startsWith(`${item.href}/`));
 }
 
 function AppShell({ title, homeHref = "/", nav, actions, children, preview = false }: AppShellProps) {
@@ -37,7 +39,7 @@ function AppShell({ title, homeHref = "/", nav, actions, children, preview = fal
   const Main = preview ? "div" : "main";
 
   const link = (item: NavItem, variant: "tab" | "side") => {
-    const active = isActive(pathname, item.href);
+    const active = isActive(pathname, item);
     return (
       <Link
         key={item.href}
