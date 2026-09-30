@@ -1,7 +1,8 @@
 /**
  * Telegram bot: sending, and linking chats to people. A person links by sending /start and sharing
  * their phone (Telegram's contact button, so the number is the account's own), or by opening
- * t.me/<bot>?start=<code> with their link code. Updates arrive by long polling from the worker, so no
+ * t.me/<bot>?start=<code> with their link code. Any other text from a linked chat is a helpdesk question
+ * (see inbound.ts), answered in the same chat. Updates arrive by long polling from the worker, so no
  * public webhook is needed.
  */
 import { eq } from "drizzle-orm";
@@ -11,6 +12,7 @@ import * as t from "@/db/schema";
 import type { Logger } from "pino";
 import { parseAllowlist } from "@/server/channels/allowlist";
 import { decrypt, encrypt, lookupHash, normalisePhone, phoneHash } from "@/server/pii";
+import { allowlistedSender, answerInbound, senderByTelegramLink } from "@/server/channels/inbound";
 
 const api = (method: string) => `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/${method}`;
 
@@ -145,7 +147,25 @@ export async function handleUpdate(db: Db, u: Update, log: Logger): Promise<void
   }
 
   const start = /^\/start(?:\s+([A-Za-z0-9_-]{1,64}))?/.exec(m.text ?? "");
-  if (!start) return;
+  if (!start) {
+    const text = m.text?.trim();
+    if (!text || text.startsWith("/")) return;
+    // A question for the helpdesk. Only linked or allowlisted chats get an answer.
+    const hash = chatHash(chatId);
+    const sender =
+      (await senderByTelegramLink(hash)) ??
+      (parseAllowlist().chatIds.has(chatId) ? await allowlistedSender() : null);
+    if (!sender) return void (await reply(ASK_PHONE));
+    await call("sendChatAction", { chat_id: chatId, action: "typing" }).catch(() => undefined);
+    const { reply: answer, result } = await answerInbound({
+      channel: "telegram",
+      sender,
+      refHash: hash,
+      text,
+    });
+    log.info({ blocked: result?.blocked, escalated: Boolean(result?.escalationId) }, "telegram helpdesk");
+    return void (await reply({ text: answer }));
+  }
   const person = start[1] ? await personByCode(db, start[1]) : null;
   if (person) {
     await link(db, chatId, person);
