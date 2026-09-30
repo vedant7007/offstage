@@ -22,7 +22,7 @@ const RIPPLE_AT: [number, number, number][] = [
   [2.2, 0.4, -1.8],
 ];
 const BEAM_X = [-2.3, -1.15, 0, 1.15, 2.3];
-const BEAM_TOP = 5.6;
+const BEAM_TOP = 3.55;
 
 export const OVERLAY_LABELS: OverlayLabel[] = [
   {
@@ -37,7 +37,7 @@ export const OVERLAY_LABELS: OverlayLabel[] = [
     sub: "illustrative",
     at: RIPPLE_AT[k]!,
     opacity: (p: number) =>
-      bump(p, 5.5, 5.95, 6.75, 7.1) * window01(local(p, 6), 0.62 + k * 0.06, 0.7 + k * 0.06),
+      bump(p, 5.5, 5.95, 6.62, 6.85) * window01(local(p, 6), 0.62 + k * 0.06, 0.7 + k * 0.06),
   })),
   ...CHANNELS.map((text, k) => ({
     id: `channel-${k}`,

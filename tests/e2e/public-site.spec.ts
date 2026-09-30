@@ -48,7 +48,7 @@ test("landing with reduced motion shows every cue as still text", async ({ brows
   await page.goto("/");
   await expect(page.locator("[data-mode='poster']")).toBeAttached();
   await expect(page.getByRole("heading", { level: 2, name: /14 AI agents/ })).toBeVisible();
-  expect(page.locator("canvas")).toHaveCount(0);
+  await expect(page.locator("canvas")).toHaveCount(0);
   expect(errors).toEqual([]);
   await context.close();
 });

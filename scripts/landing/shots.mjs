@@ -1,4 +1,5 @@
-// Quality-loop screenshots of the landing film. Usage: node shots.mjs [chapters] [outDir] [viewports]
+// Quality-loop screenshots of the landing film: start, middle and end of each chapter.
+// Usage: node scripts/landing/shots.mjs [chapters] [outDir] [viewports]   (env: BASE, POINTS, FORMAT=jpg)
 // chapters: "0,1,2" (default all); viewports: "desktop,phone".
 import { chromium } from "@playwright/test";
 import fs from "node:fs";
@@ -8,13 +9,14 @@ const chapters = (process.argv[2] ?? "0,1,2,3,4,5,6,7,8,9,10").split(",").map(Nu
 const outDir = process.argv[3] ?? "C:/CODING/sutradhar-landing/docs/landing-shots";
 const viewports = (process.argv[4] ?? "desktop,phone").split(",");
 const POINTS = (process.env.POINTS ?? "0.05,0.5,0.95").split(",").map(Number);
+const FORMAT = process.env.FORMAT === "jpg" ? "jpeg" : "png";
 fs.mkdirSync(outDir, { recursive: true });
 
 const SIZES = { desktop: { width: 1440, height: 900 }, phone: { width: 390, height: 844 } };
 
 const browser = await chromium.launch({
   headless: false,
-  args: ["--ignore-gpu-blocklist", "--enable-gpu-rasterization", "--window-position=2000,0"],
+  args: ["--ignore-gpu-blocklist", "--enable-gpu-rasterization", "--window-position=40,40"],
 });
 for (const vp of viewports) {
   const context = await browser.newContext({
@@ -44,8 +46,13 @@ for (const vp of viewports) {
         [c, f],
       );
       await page.waitForTimeout(f === POINTS[0] ? 2600 : 2000);
-      const name = `${vp}-c${String(c).padStart(2, "0")}-${String(Math.round(f * 100)).padStart(2, "0")}.png`;
-      await page.screenshot({ path: `${outDir}/${name}`, timeout: 30000 });
+      const name = `${vp}-c${String(c).padStart(2, "0")}-${String(Math.round(f * 100)).padStart(2, "0")}.${FORMAT === "jpeg" ? "jpg" : "png"}`;
+      await page.screenshot({
+        path: `${outDir}/${name}`,
+        timeout: 30000,
+        type: FORMAT,
+        ...(FORMAT === "jpeg" ? { quality: 82 } : {}),
+      });
       console.log("saved", name);
     }
   }

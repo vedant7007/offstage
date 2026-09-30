@@ -10,6 +10,10 @@ export const stage = {
   mobile: false,
   /** Half the instances and no heavy passes on small screens. */
   lite: false,
+  /** Post-processing runs only on GPUs that can afford full-screen passes. */
+  post: false,
+  /** Quality-loop switches from ?off=a,b (shadow, aniso, hemi, env, figures, fog). */
+  off: new Set<string>(),
 };
 
 /** 0 below `a`, 1 above `b`, a smoothstep between. */

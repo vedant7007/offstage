@@ -71,8 +71,28 @@ export function Venue() {
         <group key={r.name} position={r.at}>
           <mesh castShadow receiveShadow>
             <boxGeometry args={r.size} />
-            <meshStandardMaterial color="#e9e0d2" roughness={0.85} />
+            <meshStandardMaterial color="#d9cfbf" roughness={0.85} />
           </mesh>
+          <mesh position-y={r.size[1] / 2 + 0.03} castShadow>
+            <boxGeometry args={[r.size[0] + 0.16, 0.06, r.size[2] + 0.16]} />
+            <meshStandardMaterial color="#5a4638" roughness={0.9} />
+          </mesh>
+          {/* Window strip along the front, dim tungsten */}
+          <mesh position={[0, r.size[1] * 0.22, r.size[2] / 2 + 0.002]}>
+            <planeGeometry args={[r.size[0] * 0.72, 0.09]} />
+            <meshStandardMaterial color="#3a2c18" emissive="#ffb23f" emissiveIntensity={0.55} />
+          </mesh>
+          {/* Side window strips */}
+          {[-1, 1].map((sx) => (
+            <mesh
+              key={sx}
+              position={[(sx * r.size[0]) / 2 + sx * 0.002, r.size[1] * 0.22, 0]}
+              rotation-y={(sx * Math.PI) / 2}
+            >
+              <planeGeometry args={[r.size[2] * 0.7, 0.09]} />
+              <meshStandardMaterial color="#3a2c18" emissive="#ffb23f" emissiveIntensity={0.4} />
+            </mesh>
+          ))}
           <mesh position={[0, -r.size[1] / 2 + 0.24, r.size[2] / 2 + 0.002]}>
             <planeGeometry args={[0.2, 0.46]} />
             <meshStandardMaterial
@@ -91,7 +111,7 @@ export function Venue() {
         <boxGeometry args={[1.2, 0.34, 0.4]} />
         <meshStandardMaterial color="#c9b79c" roughness={0.7} />
       </mesh>
-      <Figures />
+      {stage.off.has("figures") ? null : <Figures />}
       <TinyPhones />
     </group>
   );
@@ -120,7 +140,7 @@ const PATHS = [
 
 /** Attendees: instanced capsules that flow along three paths as the visitor scrolls. */
 function Figures() {
-  const count = stage.lite ? 64 : 128;
+  const count = stage.lite || !stage.post ? 72 : 128;
   const ref = React.useRef<InstancedMesh>(null);
   const seeds = React.useMemo(
     () =>
@@ -302,7 +322,7 @@ export function ApprovalButton() {
   );
 }
 
-const BEAM_H = 5.2;
+const BEAM_H = 3.5;
 
 /** Fan-out: five beams of light shoot up out of the box, one per channel. */
 export function Beams() {

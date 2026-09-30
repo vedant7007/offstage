@@ -184,3 +184,35 @@ function wrapText(
   if (line) ctx.fillText(line, x, y);
   return y + lineHeight;
 }
+
+/** A soft radial glow for the halo sprites that stand in for bloom on weaker GPUs. */
+export function makeHalo(size = 96): CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "rgb(255 255 255 / 0.9)");
+  g.addColorStop(0.25, "rgb(255 255 255 / 0.35)");
+  g.addColorStop(0.6, "rgb(255 255 255 / 0.07)");
+  g.addColorStop(1, "rgb(255 255 255 / 0)");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  const tex = new CanvasTexture(canvas);
+  tex.colorSpace = SRGBColorSpace;
+  return tex;
+}
+
+/** White centre to black rim: an alpha map that dissolves the void floor into the background. */
+export function makeRadialMask(size = 256): CanvasTexture {
+  const canvas = document.createElement("canvas");
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext("2d")!;
+  const g = ctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
+  g.addColorStop(0, "#ffffff");
+  g.addColorStop(0.45, "#ffffff");
+  g.addColorStop(0.8, "#3a3a3a");
+  g.addColorStop(1, "#000000");
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, size, size);
+  return new CanvasTexture(canvas);
+}

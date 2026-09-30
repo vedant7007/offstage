@@ -27,11 +27,12 @@ const tungsten = new Color(TUNGSTEN);
 const SIDE = { left: -1, right: 1, center: 0 } as const;
 
 /**
- * Chapter i holds its state for the first half of its scroll, then eases into chapter i + 1,
- * finishing just before the next text reveals so the two never move together.
+ * Chapter i holds its state while its text is up, then eases into chapter i + 1 once the text
+ * has left (the scroll layer fades it over 0.5 to 0.62), and finishes before the next text
+ * reveals. Text and camera never move together.
  */
 export function blendT(f: number) {
-  return window01(f, 0.45, 0.82);
+  return window01(f, 0.62, 0.9);
 }
 
 export function blend(p: number, out: Blended): Blended {

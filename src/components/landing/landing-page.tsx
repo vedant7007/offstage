@@ -17,14 +17,21 @@ const StageCanvas = dynamic(() => import("./stage-canvas"), { ssr: false });
 
 type Mode = "pending" | "film" | "poster";
 
-/** Whether this browser can play the film: motion allowed and WebGL 2 available. */
+/**
+ * Whether this browser can play the film: motion allowed and hardware WebGL 2 available.
+ * Software renderers (SwiftShader, llvmpipe: blocklisted GPUs, remote desktops, headless
+ * browsers) would play it at a few frames a second, so they get the stills instead.
+ */
 function detectMode(): Mode {
   if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return "poster";
   try {
     const canvas = document.createElement("canvas");
     const gl = canvas.getContext("webgl2");
     if (!gl) return "poster";
+    const info = gl.getExtension("WEBGL_debug_renderer_info");
+    const renderer = info ? String(gl.getParameter(info.UNMASKED_RENDERER_WEBGL)) : "";
     gl.getExtension("WEBGL_lose_context")?.loseContext();
+    if (/swiftshader|llvmpipe|softpipe|software/i.test(renderer)) return "poster";
   } catch {
     return "poster";
   }
@@ -110,7 +117,11 @@ export function LandingPage() {
                 priority={i === 0}
               />
             ) : null}
-            <div className={`${styles.sticky} ${i === 0 ? styles.titleSticky : ""}`}>
+            <div
+              {...{ [DOM.sticky]: "" }}
+              data-side={chapter.side}
+              className={`${styles.sticky} ${i === 0 ? styles.titleSticky : ""}`}
+            >
               <ChapterText chapter={chapter} index={i} still={still} />
             </div>
           </section>
@@ -156,9 +167,11 @@ function ChapterText({ chapter, index, still }: { chapter: Chapter; index: numbe
   if (index === CHAPTERS.length - 1) {
     return (
       <div {...block} className={`${styles.block} ${styles.finale} ${still ? styles.in : ""}`}>
-        <span className={styles.cue}>Cue 10</span>
+        <span className={styles.cue}>
+          <Lines lines={["Cue 10"]} still={still} />
+        </span>
         <h2 id={titleId} className={styles.headline}>
-          <Lines lines={chapter.headline} still={still} />
+          <Lines lines={chapter.headline} offset={1} still={still} />
         </h2>
         <Link href={CONSOLE_PATH} className={styles.cta}>
           Enter the live demo
@@ -173,13 +186,15 @@ function ChapterText({ chapter, index, still }: { chapter: Chapter; index: numbe
 
   return (
     <div {...block} className={blockClass}>
-      <span className={styles.cue}>Cue {String(index).padStart(2, "0")}</span>
+      <span className={styles.cue}>
+        <Lines lines={[`Cue ${String(index).padStart(2, "0")}`]} still={still} />
+      </span>
       <h2 id={titleId} className={styles.headline}>
-        <Lines lines={chapter.headline} still={still} />
+        <Lines lines={chapter.headline} offset={1} still={still} />
       </h2>
       {chapter.body ? (
         <p className={styles.body}>
-          <Lines lines={chapter.body} offset={chapter.headline.length} still={still} />
+          <Lines lines={chapter.body} offset={chapter.headline.length + 1} still={still} />
         </p>
       ) : null}
       {chapter.id === "crew" ? (

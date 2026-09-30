@@ -14,6 +14,7 @@ const MOBILE = "(max-width: 767px)";
 export const DOM = {
   section: "data-cue",
   block: "data-cue-block",
+  sticky: "data-cue-sticky",
   rail: "data-cue-rail",
   counter: "landing-counter",
   log: "landing-log",
@@ -41,6 +42,8 @@ export function useFilmScroll(enabled: boolean) {
 
     const sections = Array.from(document.querySelectorAll<HTMLElement>(`[${DOM.section}]`));
     const blocks = sections.map((s) => s.querySelector<HTMLElement>(`[${DOM.block}]`));
+    const stickies = sections.map((s) => s.querySelector<HTMLElement>(`[${DOM.sticky}]`));
+    const fades: string[] = [];
     const rail = Array.from(document.querySelectorAll<HTMLButtonElement>(`[${DOM.rail}]`));
     const counter = document.getElementById(DOM.counter);
     const logItems = Array.from(document.getElementById(DOM.log)?.children ?? []);
@@ -78,7 +81,7 @@ export function useFilmScroll(enabled: boolean) {
       if (!block) return null;
       return ScrollTrigger.create({
         trigger: sections[i],
-        start: i === 0 ? "top bottom" : "top 22%",
+        start: i === 0 ? "top bottom" : "top 10%",
         once: true,
         onEnter: () => block.classList.add(styles.in!),
       });
@@ -99,6 +102,16 @@ export function useFilmScroll(enabled: boolean) {
         });
         railCurrent = chapter;
       }
+
+      // Outgoing text fades before the camera starts its move to the next chapter.
+      stickies.forEach((el, i) => {
+        if (!el || i === last) return;
+        const o = (1 - window01(local(p, i), 0.5, 0.62)).toFixed(2);
+        if (fades[i] !== o) {
+          el.style.opacity = o;
+          fades[i] = o;
+        }
+      });
 
       if (counter) counter.textContent = String(Math.round(320 * window01(local(p, 4), 0.08, 0.62)));
 

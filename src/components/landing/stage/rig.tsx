@@ -21,11 +21,11 @@ import { blend, chaosAmount, live, newBlended } from "./scene-state";
 
 const DEG = Math.PI / 180;
 const SMOOTH = 0.45;
-const SHIFT_X = 3.2;
-const SHIFT_Y = 4.6;
-/** Phones: a wider lens and a longer shot so the whole box fits above the text. */
-const MOBILE_R = 1.7;
-const MOBILE_FOV = 8;
+const SHIFT_X = 1.7;
+const SHIFT_Y = 1.1;
+/** Phones: a wider lens and a slightly longer shot; the text sits over the lower third. */
+const MOBILE_R = 1.35;
+const MOBILE_FOV = 10;
 
 /**
  * The camera and the lights. Every frame: blend the chapter states for the current scroll
@@ -140,7 +140,7 @@ export function Rig() {
         distance={20}
         color="#ffe2bd"
         castShadow
-        shadow-mapSize={stage.lite ? 512 : 1024}
+        shadow-mapSize={512}
         shadow-bias={-0.0004}
         shadow-normalBias={0.02}
       />
@@ -148,7 +148,7 @@ export function Rig() {
       <spotLight ref={key} position={[-5.5, 4.6, 6.8]} angle={0.62} penumbra={0.9} decay={2} distance={24} />
       <primitive object={keyTarget} position={[0, 1.2, 0]} />
       <pointLight ref={rim} position={[0.6, 3.6, -2.9]} color={CUE_BLUE} decay={2} distance={14} />
-      <hemisphereLight ref={hemi} color="#3d4350" groundColor="#0f0e0d" />
+      {stage.off.has("hemi") ? null : <hemisphereLight ref={hemi} color="#3d4350" groundColor="#0f0e0d" />}
     </>
   );
 }

@@ -5,21 +5,21 @@
 
 import * as React from "react";
 import { useFrame } from "@react-three/fiber";
-import { ContactShadows, MeshReflectorMaterial } from "@react-three/drei";
+import { ContactShadows } from "@react-three/drei";
 import {
   ExtrudeGeometry,
-  type Mesh,
   MeshPhysicalMaterial,
   type MeshStandardMaterial,
   Path,
   PlaneGeometry,
   RepeatWrapping,
+  AdditiveBlending,
   Shape,
   type WebGLProgramParametersWithUniforms,
 } from "three";
 import { RULE_PANELS, TUNGSTEN } from "../chapters";
 import { bump, local, stage, window01 } from "../scroll-store";
-import { makeLabel, makeWood } from "./labels";
+import { makeHalo, makeLabel, makeRadialMask, makeWood } from "./labels";
 import { live } from "./scene-state";
 
 const WOOD = "#3a2418";
@@ -57,6 +57,7 @@ export function Theatre() {
     const t = makeWood();
     t.wrapS = t.wrapT = RepeatWrapping;
     t.repeat.set(1.4, 1);
+    t.anisotropy = stage.off.has("aniso") ? 1 : 4;
     return t;
   }, []);
   const arch = React.useMemo(() => prosceniumGeometry(), []);
@@ -94,7 +95,7 @@ export function Theatre() {
   );
 }
 
-/** Small bulbs along the arch: the only things that bloom, apart from a few emissive props. */
+/** Small bulbs along the arch. Without a bloom pass each one gets an additive halo sprite. */
 function Practicals() {
   const spots = React.useMemo(() => {
     const out: [number, number, number][] = [];
@@ -105,19 +106,35 @@ function Practicals() {
     }
     return out;
   }, []);
+  const halo = React.useMemo(() => (stage.post ? null : makeHalo()), []);
   return (
     <group>
       {spots.map((p, i) => (
-        <mesh key={i} position={p}>
-          <sphereGeometry args={[0.045, 12, 8]} />
-          <meshStandardMaterial
-            color="#ffd9a0"
-            emissive={TUNGSTEN}
-            emissiveIntensity={3.2}
-            roughness={0.4}
-            toneMapped={false}
-          />
-        </mesh>
+        <group key={i} position={p}>
+          <mesh>
+            <sphereGeometry args={[0.045, 12, 8]} />
+            <meshStandardMaterial
+              color="#ffd9a0"
+              emissive={TUNGSTEN}
+              emissiveIntensity={3.2}
+              roughness={0.4}
+              toneMapped={false}
+            />
+          </mesh>
+          {halo ? (
+            <sprite scale={[0.55, 0.55, 1]} position-z={0.02}>
+              <spriteMaterial
+                map={halo}
+                color={TUNGSTEN}
+                transparent
+                opacity={0.5}
+                blending={AdditiveBlending}
+                depthWrite={false}
+                toneMapped={false}
+              />
+            </sprite>
+          ) : null}
+        </group>
       ))}
     </group>
   );
@@ -257,30 +274,18 @@ function Curtain({ side }: { side: -1 | 1 }) {
   );
 }
 
-/** The dark void the box sits in, with a soft reflection of the box and its lights. */
+/**
+ * The dark void the box sits in: a glossy disc that fades into the background at its rim, so
+ * there is no horizon line on the tiers that skip fog. A mirror pass would render the scene
+ * twice, which the laptop iGPU cannot afford; the sheen comes from the lights alone.
+ */
 function VoidFloor() {
-  const ref = React.useRef<Mesh>(null);
+  const fade = React.useMemo(() => makeRadialMask(), []);
   return (
     <group position-y={-0.6}>
-      <mesh ref={ref} rotation-x={-Math.PI / 2} receiveShadow>
-        <planeGeometry args={[80, 80]} />
-        {stage.lite ? (
-          <meshStandardMaterial color="#0f0e0d" roughness={0.9} />
-        ) : (
-          <MeshReflectorMaterial
-            blur={[400, 100]}
-            resolution={512}
-            mixBlur={1}
-            mixStrength={0.55}
-            roughness={1}
-            depthScale={1.1}
-            minDepthThreshold={0.4}
-            maxDepthThreshold={1.4}
-            color="#0f0e0d"
-            metalness={0.3}
-            mirror={0.35}
-          />
-        )}
+      <mesh rotation-x={-Math.PI / 2} receiveShadow>
+        <circleGeometry args={[34, 48]} />
+        <meshStandardMaterial color="#141211" roughness={0.55} metalness={0.2} alphaMap={fade} transparent />
       </mesh>
       <ContactShadows
         position={[0, 0.005, 0.1]}
