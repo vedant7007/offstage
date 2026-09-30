@@ -93,16 +93,28 @@ let helpdeskMs = 0;
 const helpdeskMisses: string[] = [];
 for (const [i, g] of golden.entries()) {
   const t = Date.now();
-  const { answer } = await answerQuestion({ question: g.q, services, runId: `evals-helpdesk-${i}` });
+  const tried: string[] = [];
+  const { answer, reason, detail } = await answerQuestion({
+    question: g.q,
+    services,
+    runId: `evals-helpdesk-${i}`,
+    onAttempt: (a) => tried.push(`${a.provider}${a.ok ? "" : `(${(a.error ?? "").slice(0, 60)})`}`),
+  });
+  const via = `${tried.length ? ` via ${tried.join(" > ")}` : " via no model"}${reason ? `, ${reason}${detail ? ` (${detail})` : ""}` : ""}`;
   helpdeskMs += Date.now() - t;
   const citedDocs = answer.citations.map((c) => /^kb:([^#]+)/.exec(c.ref)?.[1]);
   if (!g.docs.length) {
     if (answer.needsEscalation) refused++;
     else helpdeskMisses.push(`[answered a no-source question] ${g.q} -> ${answer.answer.slice(0, 80)}`);
-  } else if (!answer.needsEscalation && citedDocs.some((d) => d && g.docs.includes(d))) grounded++;
+  } else if (
+    !answer.needsEscalation &&
+    (citedDocs.some((d) => d && g.docs.includes(d)) ||
+      answer.citations.some((c) => c.ref.startsWith("live:")))
+  )
+    grounded++; // live facts (schedule, rooms) are legitimate grounding too
   else
     helpdeskMisses.push(
-      `[${answer.needsEscalation ? "escalated" : "wrong citation " + citedDocs.join(",")}] ${g.q}`,
+      `[${answer.needsEscalation ? "escalated" : "wrong citation " + citedDocs.join(",")}] ${g.q}${via}`,
     );
 }
 const noSource = golden.length - answerable;

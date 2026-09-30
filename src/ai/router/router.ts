@@ -158,7 +158,8 @@ export async function generate<T = never>(req: GenerateRequest<T>): Promise<Gene
 
   const tried = new Set<string>();
   let messages = req.messages;
-  let parseRetried = false;
+  const parseRetried = new Set<string>();
+  let badOutput = false;
 
   for (let picked = pick(req, list, tried); picked; picked = pick(req, list, tried)) {
     const { link, settle } = picked;
@@ -201,9 +202,12 @@ export async function generate<T = never>(req: GenerateRequest<T>): Promise<Gene
       const error = errorText(e);
       attempts.push(attempt(req, link, { latencyMs: Date.now() - stepStart, error }));
       if (NoObjectGeneratedError.isInstance(e)) {
-        // Output failed the schema. Retry once on the same provider with the error, then give up to rules.
-        if (parseRetried) return { ok: false, failure: { reason: "bad_output", message: error, attempts } };
-        parseRetried = true;
+        // Output failed the schema: retry once on the same provider with the error. If it fails again,
+        // try the next provider from a clean prompt; only when every provider fails is it bad_output.
+        badOutput = true;
+        messages = req.messages;
+        if (parseRetried.has(key(link))) continue;
+        parseRetried.add(key(link));
         tried.delete(key(link));
         messages = [
           ...req.messages,
@@ -219,9 +223,11 @@ export async function generate<T = never>(req: GenerateRequest<T>): Promise<Gene
       circuit.set(key(link), Date.now() + CIRCUIT_MS);
     }
   }
-  const failure: ModelFailure = attempts.length
-    ? { reason: "all_failed", message: "Every provider in the chain failed", attempts }
-    : { reason: "no_provider", message: "Every provider is rate limited or tripped", attempts };
+  const failure: ModelFailure = badOutput
+    ? { reason: "bad_output", message: "No provider returned output that matches the schema", attempts }
+    : attempts.length
+      ? { reason: "all_failed", message: "Every provider in the chain failed", attempts }
+      : { reason: "no_provider", message: "Every provider is rate limited or tripped", attempts };
   return { ok: false, failure };
 }
 
