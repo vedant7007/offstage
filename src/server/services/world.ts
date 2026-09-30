@@ -600,7 +600,33 @@ export function createReadServices(
     marketing: async () => (await get()).marketing(),
     checklists: async () => (await get()).checklists(),
     inventory: async () => (await get()).inventory(),
-    checkins: async (since) => (await get()).checkins(since),
+    // Straight from the table: Radar reads this on every check-in, so it must not load the whole event.
+    checkins: async (since) => {
+      const rows = await client
+        .select({ c: t.checkins, scannerName: t.users.name })
+        .from(t.checkins)
+        .leftJoin(t.users, eq(t.users.id, t.checkins.scannerUserId))
+        .where(
+          and(
+            eq(t.checkins.eventId, eventId),
+            since ? gte(t.checkins.serverTime, new Date(since)) : undefined,
+          ),
+        );
+      return rows.map(({ c, scannerName }) => ({
+        id: c.id,
+        eventId: c.eventId,
+        ticketId: c.ticketId,
+        registrationId: c.registrationId,
+        sessionId: c.sessionId ?? undefined,
+        scannerUserId: c.scannerUserId,
+        scannerName: scannerName ?? undefined,
+        clientId: c.clientId,
+        deviceTime: c.deviceTime.toISOString(),
+        serverTime: c.serverTime.toISOString(),
+        duplicate: c.duplicate,
+        originalCheckinId: c.originalCheckinId ?? undefined,
+      }));
+    },
     speakerRoster: async () => (await get()).speakerRoster(),
     // Not part of the loaded world (messages can be many), so read straight from the table.
     helpdeskQuestions: async (since) => {

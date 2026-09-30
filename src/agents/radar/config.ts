@@ -66,19 +66,43 @@ async function confusionPlan(ctx: Ctx, io: IO): Promise<AgentProposal[]> {
   const { topic, questions } = found;
   if (recentIncident(await ctx.services.incidents(), now, "confusion", topic.label)) return [];
   const key = `confusion:${topic.key}:${bucket(now, 30)}`;
-  const [doc] = await ctx.services.searchKb(topic.query, 1);
+  // Several excerpts with their section titles: menus are per day, and "where" often sits in its own section.
+  const docs = await ctx.services.searchKb(topic.query, 5);
+  const doc = docs[0];
+  const today = new Date(now).toLocaleDateString("en-IN", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Kolkata",
+  });
+  const dayMonth = new Date(now).toLocaleDateString("en-IN", {
+    day: "numeric",
+    month: "long",
+    timeZone: "Asia/Kolkata",
+  });
   const n = questions.length;
   const words = io
     ? await draft(io, {
         schema: Notice,
-        instructions: `${n} people asked about ${topic.label} in ${CONFUSION_WINDOW_MIN} minutes. Write a short incident title that includes the words "${topic.label}", and a friendly two-sentence announcement answering the question from the document excerpt only.`,
-        facts: doc ? `Document "${doc.docTitle}": ${doc.snippet}` : "No document covers this.",
+        instructions: `${n} people asked about ${topic.label} in ${CONFUSION_WINDOW_MIN} minutes. Write a short incident title that includes the words "${topic.label}", and a friendly two-sentence announcement that says where and when, for today only, from the excerpts only.`,
+        facts: docs.length
+          ? `Today is ${today}.\n${docs.map((d) => `[${d.docTitle}: ${d.section}] ${d.snippet}`).join("\n")}`
+          : "No document covers this.",
         untrusted: questions
           .slice(0, 6)
           .map((q) => q.text)
           .join("\n"),
       })
     : null;
+  // Template: today's excerpt plus the one that says where.
+  const todays = docs.find((d) => d.section.includes(dayMonth));
+  const where = docs.find(
+    (d) => d !== todays && /\b(served at|is in|located|next to|in block)\b/i.test(d.snippet),
+  );
+  const template = [where, todays ?? doc]
+    .filter(Boolean)
+    .map((d) => d!.snippet.slice(0, 300))
+    .join(" ");
   const title = words?.incidentTitle.includes(topic.label)
     ? words.incidentTitle
     : `${n} people asked about ${topic.label} in ${CONFUSION_WINDOW_MIN} minutes`;
@@ -121,7 +145,7 @@ async function confusionPlan(ctx: Ctx, io: IO): Promise<AgentProposal[]> {
   ];
   // The notice only answers from a document; without one, people get signs and the helpdesk escalates.
   if (doc) {
-    const body = words?.announcement || `About ${topic.label}: ${doc.snippet.slice(0, 400)}`;
+    const body = words?.announcement || `About ${topic.label}: ${template}`;
     out.push({
       kind: "comms.send_announcement",
       payload: {
@@ -134,7 +158,16 @@ async function confusionPlan(ctx: Ctx, io: IO): Promise<AgentProposal[]> {
       },
       summary: `Tell everyone about ${topic.label}`.slice(0, 120),
       rationale: `${n} people asked in ${CONFUSION_WINDOW_MIN} minutes; the answer is in "${doc.docTitle}".`,
-      evidence: [...evidence, { type: "kb", ref: `kb:${doc.docId}#${doc.section}`, label: doc.docTitle }],
+      evidence: [
+        ...evidence,
+        ...[todays ?? doc, where]
+          .filter((d): d is NonNullable<typeof d> => !!d)
+          .map((d) => ({
+            type: "kb" as const,
+            ref: `kb:${d.docId}#${d.section}`,
+            label: `${d.docTitle}: ${d.section}`.slice(0, 160),
+          })),
+      ],
       dedupeKey: key,
     });
   }

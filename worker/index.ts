@@ -1,6 +1,8 @@
 import "@/server/load-env";
 import { PgBoss } from "pg-boss";
 import { registerAllAgents } from "@/agents";
+import { useSpendStore as installSpendStore } from "@/ai/router";
+import { dbSpendStore } from "@/server/services/spend";
 import type { RuntimeDeps } from "@/agents/runtime/types";
 import { createLogger } from "@/lib/logger";
 import { startDemoClockSync } from "@/server/clock";
@@ -27,6 +29,7 @@ async function main() {
   boss.on("error", (err: unknown) => log.error({ err }, "pg-boss error"));
   await boss.start();
   startDemoClockSync();
+  installSpendStore(dbSpendStore());
   registerAllAgents();
 
   const stopListening = await registerDomainEventFanOut(boss, log);

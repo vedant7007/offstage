@@ -8,7 +8,7 @@ export const TOPICS = [
   {
     key: "food",
     label: "lunch and food",
-    query: "lunch time and place",
+    query: "where and when is lunch served today",
     re: /\b(lunch|breakfast|dinner|snacks?|food|khana|coupon|food court|meal)\b/i,
   },
   {
