@@ -158,13 +158,13 @@
     "ist": "IST"
   },
   "site": {
-    "home": "Sutradhar home",
+    "home": "OFFSTAGE home",
     "aboutAi": "Hamare AI ke baare mein",
     "law": "Agents propose karte hain. Policy decide karti hai. Insaan approve karte hain. Code execute karta hai."
   },
   "landing": {
     "eyebrow": "Ek dibbe mein poori event team",
-    "title": "Sutradhar ko apne event ke baare mein batao.",
+    "title": "OFFSTAGE ko apne event ke baare mein batao.",
     "subtitle": "Yeh team banata hai, show chalata hai, aur tumse sirf tab poochta hai jab zaroori ho.",
     "line1": "Kuch lines mein apna event batao. Commander zaroori sawaal poochta hai, phir plan, budget aur agents ki team banata hai.",
     "line2": "Har agent event ka ek hissa sambhalta hai aur ek human lead ke saath kaam karta hai, jo logon, paise ya reputation se judi har cheez approve karta hai.",
@@ -188,7 +188,7 @@
   },
   "aboutAi": {
     "title": "Hamare AI ke baare mein",
-    "intro": "Sutradhar events chalane mein AI ki madad leta hai. Yahan simple shabdon mein bataya hai ki yeh kya karta hai, kya kabhi nahi karta, aur tumhare data ka kya hota hai.",
+    "intro": "OFFSTAGE events chalane mein AI ki madad leta hai. Yahan simple shabdon mein bataya hai ki yeh kya karta hai, kya kabhi nahi karta, aur tumhare data ka kya hota hai.",
     "decideTitle": "AI suggest karta hai, decide insaan karte hain",
     "decideBody": "Agents plans, messages aur changes draft karte hain. Logon, paise ya event ki reputation par asar daalne wali har cheez ek tay insaan ke approval ka intezaar karti hai. Chhote internal records apne aap chalte hain, aur unhe 10 minute tak undo kar sakte ho.",
     "tiersTitle": "Kis change ko kitna approval chahiye",
@@ -203,6 +203,6 @@
     "rightsTitle": "Tumhara data, tumhari marzi",
     "rightsBody": "Apne attendee portal se tum dekh sakte ho ki humare paas kya hai, uski copy le sakte ho, ya delete karne ke liye bol sakte ho.",
     "limitsTitle": "Hum kya claim nahi karte",
-    "limitsBody": "Sutradhar ko LLM applications ke liye OWASP Top 10 ko dhyaan mein rakhkar banaya gaya hai aur yeh India ke Digital Personal Data Protection Act ke principles ke saath aligned hai. Ise kisi ne certify nahi kiya hai. Yeh English, Hindi aur Hinglish mein kaam karta hai; baaki bhashayein abhi supported nahi hain."
+    "limitsBody": "OFFSTAGE ko LLM applications ke liye OWASP Top 10 ko dhyaan mein rakhkar banaya gaya hai aur yeh India ke Digital Personal Data Protection Act ke principles ke saath aligned hai. Ise kisi ne certify nahi kiya hai. Yeh English, Hindi aur Hinglish mein kaam karta hai; baaki bhashayein abhi supported nahi hain."
   }
 }

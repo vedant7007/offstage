@@ -28,7 +28,7 @@ for (const scheme of ["light", "dark"] as const) {
 
 test("landing explains the product and links to the demo and the console", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tell Sutradhar about your event.");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tell OFFSTAGE about your event.");
   await expect(page.getByRole("heading", { name: "The law of the system" })).toBeVisible();
   for (const step of ["Agents propose", "Policy decides", "Humans approve", "Code executes"]) {
     await expect(page.getByRole("listitem").filter({ hasText: step })).toBeVisible();

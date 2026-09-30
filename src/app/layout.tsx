@@ -20,9 +20,9 @@ const notoDevanagari = Noto_Sans_Devanagari({
 const eczar = Eczar({ subsets: ["latin"], variable: "--font-eczar", display: "swap", preload: false });
 
 export const metadata: Metadata = {
-  title: { default: "Sutradhar", template: "%s | Sutradhar" },
+  title: { default: "OFFSTAGE", template: "%s | OFFSTAGE" },
   description:
-    "Tell Sutradhar about your event. It builds the team, runs the show, and asks you only when it matters.",
+    "Tell OFFSTAGE about your event. It builds the team, runs the show, and asks you only when it matters.",
 };
 
 export const viewport: Viewport = {

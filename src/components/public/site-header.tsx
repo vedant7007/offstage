@@ -18,7 +18,7 @@ export async function SiteHeader() {
             <line x1="12" y1="6" x2="12" y2="13" strokeWidth="1.5" className="stroke-fg-muted" />
             <circle cx="12" cy="16" r="4" className="fill-curtain" />
           </svg>
-          Sutradhar
+          OFFSTAGE
         </Link>
         <nav className="flex items-center gap-1">
           <Link

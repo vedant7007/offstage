@@ -30,7 +30,13 @@ export function TierBadge({
     <span
       data-slot="tier-badge"
       tabIndex={showMeaning ? undefined : 0}
-      className={cn(badgeVariants({ tone: TIERS[tier] }), "font-mono", className)}
+      className={cn(
+        badgeVariants({ tone: TIERS[tier] }),
+        "font-mono",
+        // With the meaning spelled out the text can be long, so let it wrap on narrow screens.
+        showMeaning && "w-auto max-w-full items-start rounded-control py-1 whitespace-normal",
+        className,
+      )}
     >
       <span aria-hidden>{tier}</span>
       <span className="sr-only">{t("tier.label", { tier })}: </span>

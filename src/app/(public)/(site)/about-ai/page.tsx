@@ -51,7 +51,7 @@ export default async function AboutAiPage() {
       <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-agent-soft text-agent-soft-fg [&_svg]:size-5">
         {b.icon}
       </span>
-      <div className="flex flex-col gap-2">
+      <div className="flex min-w-0 flex-col gap-2">
         <h2 id={`${b.id}-title`} className="text-xl font-semibold">
           {t(b.title)}
         </h2>
