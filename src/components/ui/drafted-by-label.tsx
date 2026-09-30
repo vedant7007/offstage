@@ -2,19 +2,11 @@
 
 import { cn } from "@/lib/utils";
 import { PenLine } from "lucide-react";
+import type { Role } from "@/contracts";
 import { useT } from "@/lib/i18n/provider";
 
-/** Keys match Role in src/contracts. */
-export type RoleKey =
-  | "owner"
-  | "organizer"
-  | "lead"
-  | "faculty_approver"
-  | "volunteer"
-  | "attendee"
-  | "speaker"
-  | "sponsor"
-  | "viewer";
+/** Same as Role from @/contracts. Kept as a published alias. */
+export type RoleKey = Role;
 
 type DraftedByLabelProps = {
   /** The role that approved it. Leave empty while the message still waits for approval. */

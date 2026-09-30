@@ -3,16 +3,11 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Minus, Plus } from "lucide-react";
+import type { DiffEntry } from "@/contracts";
 import { useT } from "@/lib/i18n/provider";
 import { formatDayShort, formatTime } from "@/lib/time";
 
-/** Same shape as one entry of ActionProposal.diff in src/contracts. */
-export type DiffEntry = {
-  entity: string;
-  id: string;
-  before: Record<string, unknown> | null;
-  after: Record<string, unknown> | null;
-};
+export type { DiffEntry };
 
 type FieldChange = { field: string; before: unknown; after: unknown; kind: "added" | "removed" | "changed" };
 

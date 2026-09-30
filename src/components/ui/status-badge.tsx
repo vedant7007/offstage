@@ -16,6 +16,7 @@ import {
   X,
   type LucideIcon,
 } from "lucide-react";
+import type { ProposalStatus } from "@/contracts";
 import { useT } from "@/lib/i18n/provider";
 import { badgeVariants, type Tone } from "./badge";
 
@@ -37,9 +38,10 @@ const STATUS = {
   executing: { tone: "info", icon: LoaderCircle },
   failed: { tone: "danger", icon: TriangleAlert },
   expired: { tone: "neutral", icon: TimerOff },
-} satisfies Record<string, { tone: Tone; icon: LucideIcon }>;
+} satisfies Record<ProposalStatus | "emergency", { tone: Tone; icon: LucideIcon }>;
 
-export type StatusKind = keyof typeof STATUS;
+/** Every ProposalStatus from @/contracts, plus "emergency". */
+export type StatusKind = ProposalStatus | "emergency";
 export const STATUS_KINDS = Object.keys(STATUS) as StatusKind[];
 
 export function StatusBadge({ status, className }: { status: StatusKind; className?: string }) {

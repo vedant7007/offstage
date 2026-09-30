@@ -3,6 +3,7 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Activity, ChartNoAxesColumn, ChevronDown, Database, FileText } from "lucide-react";
+import type { Evidence } from "@/contracts";
 import { useT } from "@/lib/i18n/provider";
 import { AgentAvatar } from "./agent-avatar";
 import { InfoChip } from "./chip";
@@ -11,8 +12,7 @@ import { ImpactChips, type Impact } from "./impact-chips";
 import { StatusBadge, type StatusKind } from "./status-badge";
 import { TierBadge, type TierKind } from "./tier-badge";
 
-/** Same shape as ActionProposal.evidence in src/contracts. */
-export type Evidence = { type: "kb" | "row" | "event" | "metric"; ref: string; label: string };
+export type { Evidence };
 
 const EVIDENCE_ICON = {
   kb: FileText,
