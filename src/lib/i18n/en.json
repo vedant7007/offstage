@@ -373,6 +373,38 @@
       "speaker": "Speaker"
     }
   },
+  "speakerForm": {
+    "title": "Speaker details for {event}",
+    "intro": "Tell us what you need for your session. It takes about three minutes and you can send it again to update it.",
+    "avTitle": "Audio and video",
+    "avHint": "Pick everything you need in the room.",
+    "av": {
+      "projector_hdmi": "Projector with HDMI",
+      "usb_c_adapter": "USB-C to HDMI adapter",
+      "clicker": "Slide clicker",
+      "lapel_mic": "Lapel microphone",
+      "handheld_mic": "Handheld microphone",
+      "video_sound": "Sound for videos",
+      "internet": "Wired or reliable internet",
+      "whiteboard": "Whiteboard and markers",
+      "power_strip": "Power strip for attendees"
+    },
+    "travel": "Travel",
+    "travelHint": "Optional. Arrival and departure times, and whether you need a pickup.",
+    "stay": "Stay",
+    "stayHint": "Optional. Dates if you need accommodation.",
+    "materials": "Session materials",
+    "materialsHint": "Optional. A link to your slides or anything attendees should install first.",
+    "bio": "Your bio",
+    "bioHint": "Shown on the public event page. Three or four lines is plenty.",
+    "bioConfirm": "My bio is correct and can be shown publicly",
+    "bioError": "Please confirm your bio to continue.",
+    "submit": "Send details",
+    "sent": "Thank you, your details are with the program team",
+    "sentBody": "You can open this link again to update anything.",
+    "error": "We could not send your details. Nothing is lost; please try again.",
+    "badLink": "This link has expired or is not valid. Please ask the program team for a new one."
+  },
   "design": {
     "title": "Design system",
     "intro": "Every primitive and shared component in every state. Use the controls to check both themes and a 360 px phone width.",
