@@ -1,0 +1,160 @@
+{
+  "common": {
+    "close": "बंद करें",
+    "loading": "लोड हो रहा है",
+    "cancel": "रद्द करें",
+    "confirm": "पक्का करें",
+    "retry": "फिर से कोशिश करें",
+    "more": "और",
+    "showMore": "और दिखाएँ",
+    "showLess": "कम दिखाएँ",
+    "required": "ज़रूरी",
+    "optional": "वैकल्पिक",
+    "skipToContent": "मुख्य सामग्री पर जाएँ",
+    "selectPlaceholder": "एक विकल्प चुनें",
+    "noResults": "अभी दिखाने के लिए कुछ नहीं है",
+    "sampleData": "समीक्षा के लिए नमूना डेटा, असली इवेंट डेटा नहीं"
+  },
+  "theme": {
+    "label": "थीम",
+    "light": "हल्की",
+    "dark": "गहरी",
+    "system": "डिवाइस के अनुसार",
+    "toLight": "हल्की थीम पर जाएँ",
+    "toDark": "गहरी थीम पर जाएँ"
+  },
+  "language": {
+    "label": "भाषा",
+    "en": "English",
+    "hi": "हिन्दी",
+    "hinglish": "Hinglish"
+  },
+  "nav": {
+    "main": "मुख्य नेविगेशन",
+    "sections": "हिस्से"
+  },
+  "status": {
+    "pending": "बाकी",
+    "approved": "मंज़ूर",
+    "executed": "पूरा हुआ",
+    "rejected": "नामंज़ूर",
+    "stale": "पुराना",
+    "undone": "वापस लिया गया",
+    "simulated": "सिमुलेशन",
+    "emergency": "आपातकाल",
+    "draft": "ड्राफ़्ट",
+    "executing": "लागू हो रहा है",
+    "failed": "नहीं हो पाया",
+    "expired": "समय खत्म"
+  },
+  "tier": {
+    "label": "जोखिम स्तर {tier}",
+    "T0": "अंदरूनी रिकॉर्ड, अपने आप चलता है",
+    "T1": "अपने आप चलता है, 10 मिनट तक वापस ले सकते हैं",
+    "T2": "लीड की मंज़ूरी चाहिए",
+    "T3": "दो मंज़ूरियाँ चाहिए"
+  },
+  "impact": {
+    "label": "असर",
+    "people": "{count} लोग",
+    "people_one": "{count} व्यक्ति",
+    "attendees": "{count} प्रतिभागी",
+    "attendees_one": "{count} प्रतिभागी",
+    "volunteers": "{count} वॉलंटियर",
+    "volunteers_one": "{count} वॉलंटियर",
+    "sessions": "{count} सत्र",
+    "sessions_one": "{count} सत्र",
+    "money": "{amount}",
+    "channels": "चैनल: {list}",
+    "reversible": "वापस लिया जा सकता है",
+    "irreversible": "वापस नहीं लिया जा सकता"
+  },
+  "channel": {
+    "in_app": "ऐप में",
+    "email": "ईमेल",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "sms": "SMS"
+  },
+  "role": {
+    "owner": "मालिक",
+    "organizer": "आयोजक",
+    "lead": "लीड",
+    "faculty_approver": "फ़ैकल्टी अनुमोदक",
+    "volunteer": "वॉलंटियर",
+    "attendee": "प्रतिभागी",
+    "speaker": "वक्ता",
+    "sponsor": "प्रायोजक",
+    "viewer": "दर्शक"
+  },
+  "agent": {
+    "commander": "Commander",
+    "planner": "Planner",
+    "finance": "Finance",
+    "sponsorship": "Sponsorship",
+    "marketing": "Marketing",
+    "registrar": "Registrar",
+    "scheduler": "Scheduler",
+    "speaker_liaison": "Speaker Liaison",
+    "crew_chief": "Crew Chief",
+    "logistics": "Logistics",
+    "herald": "Herald",
+    "helpdesk": "Helpdesk",
+    "radar": "Radar",
+    "chronicler": "Chronicler",
+    "unknown": "एजेंट"
+  },
+  "proposal": {
+    "proposedBy": "{agent} का प्रस्ताव",
+    "why": "क्यों",
+    "evidence": "सबूत",
+    "changes": "क्या बदलेगा",
+    "showChanges": "बदलाव दिखाएँ",
+    "hideChanges": "बदलाव छिपाएँ",
+    "evidenceKind": {
+      "kb": "दस्तावेज़",
+      "row": "रिकॉर्ड",
+      "event": "इवेंट लॉग",
+      "metric": "आँकड़ा"
+    }
+  },
+  "diff": {
+    "field": "फ़ील्ड",
+    "before": "पहले",
+    "after": "बाद में",
+    "added": "जोड़ा गया",
+    "removed": "हटाया गया",
+    "changed": "बदला गया",
+    "empty": "खाली",
+    "none": "कोई बदलाव नहीं"
+  },
+  "citation": {
+    "open": "स्रोत: {document}, {section}. अंश खोलें",
+    "title": "इवेंट दस्तावेज़ों से",
+    "section": "भाग {section}"
+  },
+  "drafted": {
+    "approvedBy": "Sutradhar ने लिखा, {role} ने मंज़ूर किया",
+    "awaiting": "Sutradhar ने लिखा, मंज़ूरी का इंतज़ार है"
+  },
+  "alert": {
+    "info": "जानकारी",
+    "warning": "चेतावनी",
+    "danger": "समस्या",
+    "emergency": "आपातकाल",
+    "dismiss": "हटाएँ"
+  },
+  "stepper": {
+    "label": "प्रगति",
+    "step": "चरण {current} / {total}",
+    "complete": "पूरा",
+    "current": "मौजूदा चरण",
+    "upcoming": "शुरू नहीं हुआ"
+  },
+  "progress": {
+    "value": "{value} प्रतिशत"
+  },
+  "time": {
+    "ist": "IST"
+  }
+}

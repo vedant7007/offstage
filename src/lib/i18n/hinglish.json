@@ -1,0 +1,160 @@
+{
+  "common": {
+    "close": "Band karo",
+    "loading": "Load ho raha hai",
+    "cancel": "Cancel karo",
+    "confirm": "Confirm karo",
+    "retry": "Phir se try karo",
+    "more": "Aur",
+    "showMore": "Aur dikhao",
+    "showLess": "Kam dikhao",
+    "required": "Zaroori",
+    "optional": "Optional",
+    "skipToContent": "Main content par jao",
+    "selectPlaceholder": "Ek option chuno",
+    "noResults": "Abhi dikhane ke liye kuch nahi hai",
+    "sampleData": "Review ke liye sample data, asli event data nahi"
+  },
+  "theme": {
+    "label": "Theme",
+    "light": "Light",
+    "dark": "Dark",
+    "system": "Device jaisa",
+    "toLight": "Light theme par jao",
+    "toDark": "Dark theme par jao"
+  },
+  "language": {
+    "label": "Bhasha",
+    "en": "English",
+    "hi": "हिन्दी",
+    "hinglish": "Hinglish"
+  },
+  "nav": {
+    "main": "Main navigation",
+    "sections": "Sections"
+  },
+  "status": {
+    "pending": "Pending",
+    "approved": "Approved",
+    "executed": "Ho gaya",
+    "rejected": "Reject hua",
+    "stale": "Purana ho gaya",
+    "undone": "Undo kiya",
+    "simulated": "Simulation",
+    "emergency": "Emergency",
+    "draft": "Draft",
+    "executing": "Lag raha hai",
+    "failed": "Nahi hua",
+    "expired": "Time khatam"
+  },
+  "tier": {
+    "label": "Risk tier {tier}",
+    "T0": "Internal record, apne aap chalta hai",
+    "T1": "Apne aap chalta hai, 10 minute tak undo kar sakte ho",
+    "T2": "Lead ka approval chahiye",
+    "T3": "Do approvals chahiye"
+  },
+  "impact": {
+    "label": "Asar",
+    "people": "{count} log",
+    "people_one": "{count} person",
+    "attendees": "{count} attendees",
+    "attendees_one": "{count} attendee",
+    "volunteers": "{count} volunteers",
+    "volunteers_one": "{count} volunteer",
+    "sessions": "{count} sessions",
+    "sessions_one": "{count} session",
+    "money": "{amount}",
+    "channels": "Channels: {list}",
+    "reversible": "Undo ho sakta hai",
+    "irreversible": "Undo nahi ho sakta"
+  },
+  "channel": {
+    "in_app": "App mein",
+    "email": "Email",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "sms": "SMS"
+  },
+  "role": {
+    "owner": "Owner",
+    "organizer": "Organizer",
+    "lead": "Lead",
+    "faculty_approver": "Faculty approver",
+    "volunteer": "Volunteer",
+    "attendee": "Attendee",
+    "speaker": "Speaker",
+    "sponsor": "Sponsor",
+    "viewer": "Viewer"
+  },
+  "agent": {
+    "commander": "Commander",
+    "planner": "Planner",
+    "finance": "Finance",
+    "sponsorship": "Sponsorship",
+    "marketing": "Marketing",
+    "registrar": "Registrar",
+    "scheduler": "Scheduler",
+    "speaker_liaison": "Speaker Liaison",
+    "crew_chief": "Crew Chief",
+    "logistics": "Logistics",
+    "herald": "Herald",
+    "helpdesk": "Helpdesk",
+    "radar": "Radar",
+    "chronicler": "Chronicler",
+    "unknown": "Agent"
+  },
+  "proposal": {
+    "proposedBy": "{agent} ka proposal",
+    "why": "Kyun",
+    "evidence": "Saboot",
+    "changes": "Kya badlega",
+    "showChanges": "Badlav dikhao",
+    "hideChanges": "Badlav chhupao",
+    "evidenceKind": {
+      "kb": "Document",
+      "row": "Record",
+      "event": "Event log",
+      "metric": "Metric"
+    }
+  },
+  "diff": {
+    "field": "Field",
+    "before": "Pehle",
+    "after": "Baad mein",
+    "added": "Joda gaya",
+    "removed": "Hataya gaya",
+    "changed": "Badla gaya",
+    "empty": "Khaali",
+    "none": "Koi badlav nahi"
+  },
+  "citation": {
+    "open": "Source: {document}, {section}. Snippet kholo",
+    "title": "Event documents se",
+    "section": "Section {section}"
+  },
+  "drafted": {
+    "approvedBy": "Sutradhar ne likha, {role} ne approve kiya",
+    "awaiting": "Sutradhar ne likha, approval ka intezaar hai"
+  },
+  "alert": {
+    "info": "Jaankari",
+    "warning": "Warning",
+    "danger": "Problem",
+    "emergency": "Emergency",
+    "dismiss": "Hatao"
+  },
+  "stepper": {
+    "label": "Progress",
+    "step": "Step {current} / {total}",
+    "complete": "Ho gaya",
+    "current": "Abhi ka step",
+    "upcoming": "Shuru nahi hua"
+  },
+  "progress": {
+    "value": "{value} percent"
+  },
+  "time": {
+    "ist": "IST"
+  }
+}

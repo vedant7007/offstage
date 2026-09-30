@@ -1,0 +1,196 @@
+/*
+ * Sutradhar design tokens. The single source for colour, type, spacing, radius, motion and z-index.
+ * Light theme is "paper", dark theme is "ink". Contrast ratios for every pairing are checked by
+ * `pnpm contrast` and recorded in docs/design-tokens.md. Change a colour here, then rerun it.
+ *
+ * Colour roles follow one pattern:
+ *   --<role>          solid fill, icon or border colour
+ *   --on-<role>       text on the solid fill
+ *   --<role>-text     text in that role on bg or surface
+ *   --<role>-soft     tinted background
+ *   --<role>-soft-fg  text on the tinted background
+ */
+
+:root,
+.light {
+  color-scheme: light;
+
+  /* Surfaces: warm paper */
+  --bg: #faf6ef;
+  --surface: #fffdf9;
+  --surface-raised: #ffffff;
+  --surface-sunken: #f2ece1;
+  --border: #e4dacb;
+  --border-strong: #857866;
+  --fg: #1f1a16;
+  --fg-muted: #5a5146;
+  --overlay: rgb(24 18 12 / 0.5);
+  --ring: #1f5aa6;
+
+  /* Curtain: muted crimson, the one brand accent */
+  --curtain: #9b2839;
+  --curtain-hover: #821f2f;
+  --on-curtain: #ffffff;
+  --curtain-text: #9b2839;
+  --curtain-soft: #f7e7e7;
+  --curtain-soft-fg: #7a1d2b;
+
+  /* Agent activity: cool teal */
+  --agent: #0d6b69;
+  --on-agent: #ffffff;
+  --agent-text: #0b5f5d;
+  --agent-soft: #dcefec;
+  --agent-soft-fg: #0a5250;
+
+  /* Approved: green */
+  --approved: #1e6b3a;
+  --approved-text: #1b6134;
+  --approved-soft: #e1f0e4;
+  --approved-soft-fg: #17532c;
+
+  /* Pending: amber */
+  --pending: #a86b12;
+  --pending-text: #7c4f00;
+  --pending-soft: #fbefd3;
+  --pending-soft-fg: #6e4600;
+
+  /* Info and executed: blue */
+  --info: #1f5aa6;
+  --info-text: #1d549b;
+  --info-soft: #e3ecf8;
+  --info-soft-fg: #184a8a;
+
+  /* Neutral states: rejected, stale, undone, draft */
+  --neutral: #7a7064;
+  --neutral-soft: #ece6dc;
+  --neutral-soft-fg: #4a433a;
+
+  /* Danger: destructive actions and error text. Never a large solid fill. */
+  --danger: #b42318;
+  --danger-text: #a8200f;
+  --danger-soft: #fce8e6;
+  --danger-soft-fg: #8f1d12;
+
+  /* Emergency: the only solid red in the product. Always paired with a stripe pattern and icon. */
+  --emergency: #c8102e;
+  --on-emergency: #ffffff;
+  --emergency-soft: #fde3e3;
+  --emergency-soft-fg: #9a0b21;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* Surfaces: deep ink */
+  --bg: #111318;
+  --surface: #181b22;
+  --surface-raised: #1f232c;
+  --surface-sunken: #0c0e12;
+  --border: #2e3340;
+  --border-strong: #737b8d;
+  --fg: #f2ede4;
+  --fg-muted: #aaa397;
+  --overlay: rgb(0 0 0 / 0.6);
+  --ring: #8ab4f8;
+
+  --curtain: #b83a4d;
+  --curtain-hover: #a13043;
+  --on-curtain: #ffffff;
+  --curtain-text: #f28f9c;
+  --curtain-soft: #3a1c23;
+  --curtain-soft-fg: #f6b6bf;
+
+  --agent: #2a9d96;
+  --on-agent: #07201f;
+  --agent-text: #6fd3cb;
+  --agent-soft: #12302f;
+  --agent-soft-fg: #8fe0d8;
+
+  --approved: #4cbf73;
+  --approved-text: #7bd69a;
+  --approved-soft: #15301f;
+  --approved-soft-fg: #9be3b3;
+
+  --pending: #f2b94b;
+  --pending-text: #f5c96e;
+  --pending-soft: #3a2c10;
+  --pending-soft-fg: #f6cd7a;
+
+  --info: #8ab4f8;
+  --info-text: #9dc0fa;
+  --info-soft: #172a45;
+  --info-soft-fg: #a9c8fa;
+
+  --neutral: #8d8679;
+  --neutral-soft: #262a33;
+  --neutral-soft-fg: #d0c9bd;
+
+  --danger: #ff7b72;
+  --danger-text: #ff8a80;
+  --danger-soft: #3a1716;
+  --danger-soft-fg: #ffa39b;
+
+  --emergency: #d42a3a;
+  --on-emergency: #ffffff;
+  --emergency-soft: #3d1417;
+  --emergency-soft-fg: #ffa0a5;
+}
+
+/* Non-colour scales. Tailwind reads these as theme values and also emits them as CSS variables. */
+@theme static {
+  /* Type scale (px): 12 14 16 18 22 28 36 48, with line heights that leave room for Devanagari */
+  --text-*: initial;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.125rem;
+  --text-sm: 0.875rem;
+  --text-sm--line-height: 1.375rem;
+  --text-base: 1rem;
+  --text-base--line-height: 1.5rem;
+  --text-lg: 1.125rem;
+  --text-lg--line-height: 1.75rem;
+  --text-xl: 1.375rem;
+  --text-xl--line-height: 1.875rem;
+  --text-2xl: 1.75rem;
+  --text-2xl--line-height: 2.25rem;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 2.75rem;
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 3.5rem;
+
+  /* Spacing: 4px base. p-1 is 4px, p-4 is 16px. */
+  --spacing: 0.25rem;
+
+  /* Radius: 8 for controls, 16 for cards */
+  --radius-*: initial;
+  --radius-sm: 0.25rem;
+  --radius-control: 0.5rem;
+  --radius-card: 1rem;
+  --radius-full: 9999px;
+
+  /* Motion: state changes only, 150 to 250 ms, ease-out */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-fast: 150ms;
+  --duration-base: 200ms;
+  --duration-slow: 250ms;
+  --animate-spin: spin 1s linear infinite;
+
+  /* Touch target minimum on mobile */
+  --target-min: 2.75rem;
+
+  /* Z-index layers, used as z-(--z-modal) */
+  --z-sticky: 10;
+  --z-appbar: 20;
+  --z-overlay: 40;
+  --z-modal: 50;
+  --z-toast: 60;
+  --z-tooltip: 70;
+}
+
+:root {
+  /* Emergency pattern: diagonal stripes so the state never relies on colour alone */
+  --pattern-emergency: repeating-linear-gradient(
+    -45deg,
+    transparent 0 8px,
+    color-mix(in srgb, var(--emergency) 18%, transparent) 8px 16px
+  );
+}

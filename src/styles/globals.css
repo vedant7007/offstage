@@ -1,0 +1,151 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "./tokens.css";
+
+/* Components never use dark: for colour; tokens switch instead. This keeps a light panel
+   nested inside a dark page (and the reverse) correct on the /design review page. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@custom-variant data-open (&:where([data-state="open"]));
+@custom-variant data-closed (&:where([data-state="closed"]));
+@custom-variant data-checked (&:where([data-state="checked"]));
+
+/* Only product tokens are available as Tailwind colours, so no stray palette colours creep in. */
+@theme inline {
+  --color-*: initial;
+  --color-transparent: transparent;
+  --color-current: currentColor;
+  --color-white: #ffffff;
+  --color-black: #000000;
+
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+  --color-fg: var(--fg);
+  --color-fg-muted: var(--fg-muted);
+  --color-overlay: var(--overlay);
+  --color-ring: var(--ring);
+
+  --color-curtain: var(--curtain);
+  --color-curtain-hover: var(--curtain-hover);
+  --color-on-curtain: var(--on-curtain);
+  --color-curtain-text: var(--curtain-text);
+  --color-curtain-soft: var(--curtain-soft);
+  --color-curtain-soft-fg: var(--curtain-soft-fg);
+
+  --color-agent: var(--agent);
+  --color-on-agent: var(--on-agent);
+  --color-agent-text: var(--agent-text);
+  --color-agent-soft: var(--agent-soft);
+  --color-agent-soft-fg: var(--agent-soft-fg);
+
+  --color-approved: var(--approved);
+  --color-approved-text: var(--approved-text);
+  --color-approved-soft: var(--approved-soft);
+  --color-approved-soft-fg: var(--approved-soft-fg);
+
+  --color-pending: var(--pending);
+  --color-pending-text: var(--pending-text);
+  --color-pending-soft: var(--pending-soft);
+  --color-pending-soft-fg: var(--pending-soft-fg);
+
+  --color-info: var(--info);
+  --color-info-text: var(--info-text);
+  --color-info-soft: var(--info-soft);
+  --color-info-soft-fg: var(--info-soft-fg);
+
+  --color-neutral: var(--neutral);
+  --color-neutral-soft: var(--neutral-soft);
+  --color-neutral-soft-fg: var(--neutral-soft-fg);
+
+  --color-danger: var(--danger);
+  --color-danger-text: var(--danger-text);
+  --color-danger-soft: var(--danger-soft);
+  --color-danger-soft-fg: var(--danger-soft-fg);
+
+  --color-emergency: var(--emergency);
+  --color-on-emergency: var(--on-emergency);
+  --color-emergency-soft: var(--emergency-soft);
+  --color-emergency-soft-fg: var(--emergency-soft-fg);
+
+  /* shadcn aliases, so components added later with the shadcn CLI pick up our palette */
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-card: var(--surface);
+  --color-card-foreground: var(--fg);
+  --color-popover: var(--surface-raised);
+  --color-popover-foreground: var(--fg);
+  --color-primary: var(--curtain);
+  --color-primary-foreground: var(--on-curtain);
+  --color-secondary: var(--surface-sunken);
+  --color-secondary-foreground: var(--fg);
+  --color-muted: var(--surface-sunken);
+  --color-muted-foreground: var(--fg-muted);
+  --color-accent: var(--surface-sunken);
+  --color-accent-foreground: var(--fg);
+  --color-destructive: var(--danger);
+  --color-input: var(--border-strong);
+
+  /* Fonts are loaded with next/font in the root layout */
+  --font-sans: var(--font-noto-sans), var(--font-noto-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-eczar), var(--font-noto-devanagari), Georgia, serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+}
+
+@layer base {
+  * {
+    border-color: var(--border);
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--fg);
+    font-size: var(--text-base);
+    line-height: 1.5;
+    min-height: 100dvh;
+  }
+
+  /* One visible focus style for everything keyboard reachable */
+  :focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--curtain-soft);
+    color: var(--curtain-soft-fg);
+  }
+
+  a {
+    color: inherit;
+  }
+}
+
+/* Reduced motion: state changes still happen, they just do not animate */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+@utility pattern-emergency {
+  background-image: var(--pattern-emergency);
+}
+
+@utility target {
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+}
