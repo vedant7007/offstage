@@ -4,7 +4,14 @@
 // API and then from the console SSE stream. Nothing here is simulated.
 
 import * as React from "react";
-import type { ActionProposal, AgentName, AgentRun, DeliveryStatsResponse, StreamMessage } from "@/contracts";
+import type {
+  ActionProposal,
+  AgentName,
+  AgentRun,
+  DeliveryStatsResponse,
+  MetricsSnapshot,
+  StreamMessage,
+} from "@/contracts";
 import { AGENT_KEYS } from "@/components/ui";
 import { api } from "@/lib/api-client";
 import { formatTime } from "@/lib/time";
@@ -53,6 +60,7 @@ export function useStage(eventId: string) {
   const [pulses, setPulses] = React.useState<Pulse[]>([]);
   const [log, setLog] = React.useState<LogLine[]>([]);
   const [connected, setConnected] = React.useState(false);
+  const [metrics, setMetrics] = React.useState<MetricsSnapshot | null>(null);
   // Bumped when a message may have reached someone's phone: an outbox row changed or a proposal moved.
   const [feedTick, setFeedTick] = React.useState(0);
   const [now, setNow] = React.useState(() => Date.now());
@@ -99,6 +107,7 @@ export function useStage(eventId: string) {
     api.call("overview", { params: { eventId } }).then(
       (o) => {
         offset.current = Date.parse(o.metrics.at) - Date.now();
+        setMetrics(o.metrics);
         setDisabled(new Set(o.agents.filter((a) => !a.enabled).map((a) => a.name)));
         setKilled(!o.globalAgentsEnabled);
       },
@@ -176,8 +185,9 @@ export function useStage(eventId: string) {
       setFeedTick((n) => n + 1);
       void loadDelivery();
     });
-    on("metrics", ({ metrics }) => {
-      offset.current = Date.parse(metrics.at) - Date.now();
+    on("metrics", ({ metrics: m }) => {
+      offset.current = Date.parse(m.at) - Date.now();
+      setMetrics(m);
     });
     const seen = new Set<string>();
     on("proposal", async ({ proposal: p }) => {
@@ -231,8 +241,22 @@ export function useStage(eventId: string) {
       else if (p.status === "rejected") addLog(`Rejected: ${p.summary}`, "human");
       void loadPending().catch(() => undefined);
     });
+    // Check-ins (a synced offline queue is a burst): one metrics refetch a second after the last one.
+    let checkinTimer: ReturnType<typeof setTimeout> | undefined;
     on("domain_event", ({ event: e }) => {
       if (e.type.startsWith("proposal.")) return;
+      if (e.type === "registration.checked_in") {
+        clearTimeout(checkinTimer);
+        checkinTimer = setTimeout(
+          () =>
+            void api.call("overview", { params: { eventId } }).then(
+              (o) => setMetrics(o.metrics),
+              () => undefined,
+            ),
+          1000,
+        );
+        return;
+      }
       addLog(`Event: ${e.type.replace(/[._]/g, " ")}`, "system");
     });
     return () => es.close();
@@ -265,6 +289,7 @@ export function useStage(eventId: string) {
     pulses: pulses.filter((p) => p.until > now),
     log,
     connected,
+    metrics,
     feedTick,
     label,
     reload: loadPending,
