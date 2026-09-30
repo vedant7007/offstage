@@ -156,5 +156,53 @@
   },
   "time": {
     "ist": "IST"
+  },
+  "site": {
+    "home": "OFFSTAGE home",
+    "aboutAi": "Hamare AI ke baare mein",
+    "law": "Agents propose karte hain. Policy decide karti hai. Insaan approve karte hain. Code execute karta hai."
+  },
+  "landing": {
+    "eyebrow": "Ek dibbe mein poori event team",
+    "title": "OFFSTAGE ko apne event ke baare mein batao.",
+    "subtitle": "Yeh team banata hai, show chalata hai, aur tumse sirf tab poochta hai jab zaroori ho.",
+    "line1": "Kuch lines mein apna event batao. Commander zaroori sawaal poochta hai, phir plan, budget aur agents ki team banata hai.",
+    "line2": "Har agent event ka ek hissa sambhalta hai aur ek human lead ke saath kaam karta hai, jo logon, paise ya reputation se judi har cheez approve karta hai.",
+    "line3": "Event ke din agents changes, check-ins aur sawaal sambhalte hain. Emergency seedha insaanon tak jaati hai.",
+    "demoCta": "Demo event dekho",
+    "demoNote": "HackNova 2026 ek sample tech fest hai, iske log kaalpanik hain.",
+    "startCta": "Apna event shuru karo",
+    "lawTitle": "System ka niyam",
+    "law": {
+      "propose": "Agents propose karte hain",
+      "decide": "Policy decide karti hai",
+      "approve": "Insaan approve karte hain",
+      "execute": "Code execute karta hai"
+    },
+    "lawDetail": {
+      "propose": "Har change ek proposal se shuru hota hai, kaaran aur saboot ke saath.",
+      "decide": "Code mein likhe rules tay karte hain ki kis change ko kitna approval chahiye.",
+      "approve": "Logon par asar daalne wali har cheez sahi insaan ka intezaar karti hai.",
+      "execute": "Sirf approved changes chalte hain, aur zyaadatar undo ho sakte hain."
+    }
+  },
+  "aboutAi": {
+    "title": "Hamare AI ke baare mein",
+    "intro": "OFFSTAGE events chalane mein AI ki madad leta hai. Yahan simple shabdon mein bataya hai ki yeh kya karta hai, kya kabhi nahi karta, aur tumhare data ka kya hota hai.",
+    "decideTitle": "AI suggest karta hai, decide insaan karte hain",
+    "decideBody": "Agents plans, messages aur changes draft karte hain. Logon, paise ya event ki reputation par asar daalne wali har cheez ek tay insaan ke approval ka intezaar karti hai. Chhote internal records apne aap chalte hain, aur unhe 10 minute tak undo kar sakte ho.",
+    "tiersTitle": "Kis change ko kitna approval chahiye",
+    "labelledTitle": "Har automated message yeh batata hai",
+    "labelledBody": "Assistant ke likhe messages mein ek line hoti hai ki kisne draft kiya aur kis role ne approve kiya, jaise:",
+    "honestTitle": "Yeh “mujhe nahi pata” bolta hai",
+    "honestBody": "Helpdesk sirf event ke apne documents se jawaab deta hai aur dikhata hai ki har jawaab kahan se aaya. Jab pakka na ho, toh andaaza lagane ke bajaye tumhara sawaal kisi insaan tak pahunchata hai.",
+    "emergencyTitle": "Emergency insaanon tak jaati hai",
+    "emergencyBody": "Medical, safety, aag aur harassment ki reports agents ko skip karke turant organisers ko alert karti hain. Agents sirf updates draft karne mein madad karte hain.",
+    "dataTitle": "Kam se kam data, event ke baad delete",
+    "dataBody": "Hum sirf wahi lete hain jo event ke liye zaroori hai, aur poochte waqt wajah batate hain. Agar tumne certificate nahi maanga, toh event ke 90 din baad tumhari personal details delete ho jaati hain. Phone number aur email encrypted rehte hain, aur AI tumhari contact details nahi, sirf IDs aur masked details dekhta hai.",
+    "rightsTitle": "Tumhara data, tumhari marzi",
+    "rightsBody": "Apne attendee portal se tum dekh sakte ho ki humare paas kya hai, uski copy le sakte ho, ya delete karne ke liye bol sakte ho.",
+    "limitsTitle": "Hum kya claim nahi karte",
+    "limitsBody": "OFFSTAGE ko LLM applications ke liye OWASP Top 10 ko dhyaan mein rakhkar banaya gaya hai aur yeh India ke Digital Personal Data Protection Act ke principles ke saath aligned hai. Ise kisi ne certify nahi kiya hai. Yeh English, Hindi aur Hinglish mein kaam karta hai; baaki bhashayein abhi supported nahi hain."
   }
 }
