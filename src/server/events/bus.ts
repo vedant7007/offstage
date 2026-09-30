@@ -1,11 +1,12 @@
 /**
  * Domain event bus. `publish` writes the event in the caller's transaction and notifies
  * listeners (SSE streams, the worker) through Postgres NOTIFY once that transaction commits.
- * Subscribing and streaming land with the proposal engine (Checkpoint 4).
+ * `subscribe` is the web side: one LISTEN connection per process, fanned out to SSE streams by event.
  */
 import { sql } from "drizzle-orm";
 import { DomainEvent, type Actor, type DomainEventType } from "@/contracts";
-import type { Db } from "@/db/client";
+import { sql as rawSql, type Db } from "@/db/client";
+import { logger } from "@/lib/logger";
 import { auditLog, domainEvents } from "@/db/schema";
 
 export const EVENTS_CHANNEL = "sutradhar_events";
@@ -76,4 +77,42 @@ export async function audit(
     after: input.after ?? null,
     proposalId: input.proposalId ?? null,
   });
+}
+
+export interface Notice {
+  id: string;
+  eventId: string;
+  type: DomainEventType;
+}
+
+const listeners = new Map<string, Set<(n: Notice) => void>>();
+let listening: Promise<unknown> | undefined;
+
+/**
+ * Call `fn` for every domain event of one event (the NOTIFY payload: id, event, type) until the
+ * returned function is called. The first subscriber opens the process's LISTEN connection;
+ * postgres.js reconnects it on its own if the database restarts.
+ */
+export function subscribe(eventId: string, fn: (n: Notice) => void): () => void {
+  listening ??= rawSql
+    .listen(EVENTS_CHANNEL, (raw) => {
+      let n: Notice;
+      try {
+        n = JSON.parse(raw) as Notice;
+      } catch {
+        return;
+      }
+      for (const l of listeners.get(n.eventId) ?? []) l(n);
+    })
+    .catch((err: unknown) => {
+      logger.child({ module: "bus" }).error({ err }, "LISTEN failed; streams fall back to polling");
+      listening = undefined;
+    });
+  const set = listeners.get(eventId) ?? new Set();
+  set.add(fn);
+  listeners.set(eventId, set);
+  return () => {
+    set.delete(fn);
+    if (!set.size) listeners.delete(eventId);
+  };
 }
