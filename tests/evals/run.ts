@@ -5,7 +5,7 @@ import "../../src/server/load-env";
 
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { format, resolveConfig } from "prettier";
-import { indexDocument, retrieve, searchKb } from "../../src/ai/rag";
+import { indexDocument, searchKb } from "../../src/ai/rag";
 import { answerQuestion } from "../../src/agents/helpdesk/answer";
 import { worldServices } from "../../src/agents/runtime/services";
 import { fixtures } from "../../src/contracts/fixtures";
@@ -40,9 +40,25 @@ const DOCS = [
   ["kb-venue", "Venue notes", "venue-notes.md"],
   ["kb-menu", "Menu", "menu.md"],
 ] as const;
-for (const [id, title, file] of DOCS) {
-  const content = await readFile(new URL(`kb/${file}`, dir), "utf8");
-  await indexDocument(EVENT, { id, title, version: 1, mime: "text/markdown", content });
+// --pg searches the seeded database (run pnpm db:seed and pnpm kb:index first); default is the in-memory index.
+const usePg = process.argv.includes("--pg");
+let kbSearch: (q: string, k?: number) => Promise<{ docId: string; score: number }[]>;
+let closeDb = async () => {};
+if (usePg) {
+  const { db, sql } = await import("../../src/db/client");
+  const { events } = await import("../../src/db/schema");
+  const { eq } = await import("drizzle-orm");
+  const { searchKbPg } = await import("../../src/ai/rag/pg");
+  const [ev] = await db.select({ id: events.id }).from(events).where(eq(events.slug, EVENT));
+  if (!ev) throw new Error(`Event ${EVENT} is not seeded. Run pnpm db:seed and pnpm kb:index.`);
+  kbSearch = (q, k) => searchKbPg(db, ev.id, q, k);
+  closeDb = () => sql.end();
+} else {
+  for (const [id, title, file] of DOCS) {
+    const content = await readFile(new URL(`kb/${file}`, dir), "utf8");
+    await indexDocument(EVENT, { id, title, version: 1, mime: "text/markdown", content });
+  }
+  kbSearch = (q, k) => searchKb(EVENT, q, k);
 }
 
 // Retrieval
@@ -55,9 +71,9 @@ let hits = 0;
 let retrievalMs = 0;
 for (const g of golden) {
   const t = Date.now();
-  const res = await retrieve(EVENT, g.q, { k: K });
+  const res = await kbSearch(g.q, K);
   retrievalMs += Date.now() - t;
-  const top = Math.max(...res.map((r) => r.similarity));
+  const top = Math.max(...res.map((r) => r.score));
   if (!g.docs.length) {
     simNoSource.push(top);
     continue;
@@ -70,7 +86,7 @@ const answerable = golden.filter((g) => g.docs.length).length;
 const mean = (xs: number[]) => xs.reduce((s, x) => s + x, 0) / Math.max(xs.length, 1);
 
 // Helpdesk: grounded = answered with a citation of an expected document; refused = escalated when no source exists.
-const services = worldServices(fixtures.eventFull(), { searchKb: (q, k) => searchKb(EVENT, q, k) });
+const services = worldServices(fixtures.eventFull(), { searchKb: kbSearch as never });
 let grounded = 0;
 let refused = 0;
 let helpdeskMs = 0;
@@ -117,6 +133,7 @@ const nBenign = inj.length - nInj;
 const results = {
   at: new Date().toISOString(),
   profile: profile(),
+  index: usePg ? "postgres" : "memory",
   retrieval: {
     hitRate: pct(hits, answerable),
     k: K,
@@ -192,4 +209,5 @@ console.log(`helpdesk ${results.helpdesk.avgLatencyMs} ms avg`);
 for (const m of helpdeskMisses) console.log(`  helpdesk miss: ${m}`);
 for (const m of misses) console.log(`  retrieval miss: ${m}`);
 for (const f of guardFails) console.log(`  guard miss: ${f}`);
+await closeDb();
 process.exit(Object.values(pass).every(Boolean) ? 0 : 1);
