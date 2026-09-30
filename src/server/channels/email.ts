@@ -1,8 +1,9 @@
 /**
  * Email sending. EMAIL_DRIVER picks the driver:
  *   mailpit  SMTP to the local Mailpit container (web inbox on :8025)
+ *   smtp     any SMTP server from SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS. Amazon SES in the cloud:
+ *            email-smtp.<region>.amazonaws.com:587 with SES SMTP credentials (pnpm ses:smtp-password)
  *   mock     log only (names and subjects, never addresses or bodies)
- *   ses, resend  cloud drivers, added with the channel adapters (Checkpoint 6)
  */
 import nodemailer, { type Transporter } from "nodemailer";
 import { logger } from "@/lib/logger";
@@ -45,7 +46,7 @@ export async function sendEmail(msg: EmailMessage): Promise<EmailResult> {
     log.info({ kind: msg.kind, to: maskEmail(msg.to) }, "email (mock driver, not sent)");
     return { driver };
   }
-  if (driver === "mailpit") {
+  if (driver === "mailpit" || driver === "smtp") {
     const info = await smtp().sendMail({
       from,
       to: msg.to,
@@ -56,5 +57,5 @@ export async function sendEmail(msg: EmailMessage): Promise<EmailResult> {
     log.info({ kind: msg.kind, to: maskEmail(msg.to) }, "email sent");
     return { driver, providerId: info.messageId };
   }
-  throw new Error(`EMAIL_DRIVER=${driver} is not available yet; use mailpit or mock`);
+  throw new Error(`EMAIL_DRIVER=${driver} is not available yet; use smtp, mailpit or mock`);
 }
