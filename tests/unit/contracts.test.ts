@@ -347,3 +347,18 @@ describe("proposal contract", () => {
     expect(C.isEmergencyCategory("av")).toBe(false);
   });
 });
+
+describe("public announcements carry the drafted-by label data", () => {
+  it("includes approvedByRole and draftedBy on public event and status responses", () => {
+    for (const list of [
+      fixtures.api.publicEvent().announcements,
+      fixtures.api.publicStatus().announcements,
+    ]) {
+      expect(list.length).toBeGreaterThan(0);
+      for (const a of list) {
+        expect(a.approvedByRole).toBeTruthy();
+        expect(a.draftedBy).toBeTruthy();
+      }
+    }
+  });
+});
