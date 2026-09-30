@@ -8,6 +8,20 @@
       "when": 1790757801298,
       "tag": "0000_extensions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790763087678,
+      "tag": "0001_domain_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790763089762,
+      "tag": "0002_append_only_and_app_role",
+      "breakpoints": true
     }
   ]
 }
