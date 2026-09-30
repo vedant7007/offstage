@@ -84,8 +84,7 @@ function estimateTokens(req: GenerateRequest<unknown>): number {
 }
 
 function links(req: GenerateRequest<unknown>): Link[] | ModelFailure {
-  let list = chain(req.tier);
-  if (req.only) list = list.filter((l) => l.provider === req.only);
+  let list = chain(req.tier, req.only);
   if (dailyCapHit()) {
     if (!req.budget.critical)
       return { reason: "budget_paused", message: "Daily model spend cap reached", attempts: [] };
