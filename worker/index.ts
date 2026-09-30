@@ -1,12 +1,7 @@
 import "@/server/load-env";
 import { PgBoss } from "pg-boss";
-import { commander } from "@/agents/commander/config";
-import { crewChief } from "@/agents/crew-chief/config";
-import { helpdesk } from "@/agents/helpdesk/config";
-import { herald } from "@/agents/herald/config";
-import { register } from "@/agents/runtime/registry";
+import { registerAllAgents } from "@/agents";
 import type { RuntimeDeps } from "@/agents/runtime/types";
-import { scheduler } from "@/agents/scheduler/config";
 import { createLogger } from "@/lib/logger";
 import { startDemoClockSync } from "@/server/clock";
 import { activeEventIds, dbGate, runtimeDepsFor } from "@/server/services/agent-runtime";
@@ -15,14 +10,10 @@ import { registerDomainEventFanOut } from "./jobs/events";
 import { startOutboxDelivery } from "./jobs/outbox";
 import { db } from "@/db/client";
 import { pollTelegram } from "@/server/channels/telegram";
+import { morningBriefings } from "@/server/services/briefings";
 
 process.env.SUTRADHAR_SERVICE ??= "worker";
 const log = createLogger({ base: { service: "worker" } });
-
-/** Agents that exist today. Replace with a registerAllAgents() from src/agents once it exists. */
-function registerAgents(): void {
-  for (const config of [commander, scheduler, crewChief, herald, helpdesk]) register(config as never);
-}
 
 /**
  * Background worker: domain event fan-out to agents and the KB indexer, agent schedules,
@@ -36,7 +27,7 @@ async function main() {
   boss.on("error", (err: unknown) => log.error({ err }, "pg-boss error"));
   await boss.start();
   startDemoClockSync();
-  registerAgents();
+  registerAllAgents();
 
   const stopListening = await registerDomainEventFanOut(boss, log);
 
@@ -47,6 +38,18 @@ async function main() {
     activeEvents: () => activeEventIds(),
   });
   log.info({ queues }, "agent schedules registered");
+
+  // Commander's morning briefing, 07:00 IST, for every running event.
+  await boss.createQueue("daily-briefing").catch(() => {});
+  await boss.schedule("daily-briefing", "0 7 * * *", null, { tz: "Asia/Kolkata" });
+  await boss.work("daily-briefing", async () => {
+    for (const eventId of await activeEventIds()) {
+      const n = await morningBriefings(eventId).catch(
+        (err: unknown) => (log.error({ err, eventId }, "briefing failed"), 0),
+      );
+      log.info({ eventId, briefings: n }, "morning briefings written");
+    }
+  });
 
   const stopDelivery = await startOutboxDelivery(log);
   const telegram = new AbortController();

@@ -20,6 +20,7 @@ export const crewChief: AgentConfig<ReadServices> = {
   triggers: [{ type: "domain_event", eventType: "shift.missed" }],
   maxSteps: 4,
   criticality: "normal",
+  mustPropose: true,
   // Rules only: the fairest allowed replacement with a template note, or an incident when nobody qualifies.
   fallback: (ctx) => proposalsFor(ctx, undefined, undefined),
 };

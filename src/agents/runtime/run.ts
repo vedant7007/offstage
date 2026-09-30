@@ -51,16 +51,11 @@ function idempotencyKey(
   agent: string,
   trigger: AgentTrigger,
   runId: string,
-  action: { kind: string; payload: unknown },
+  action: { kind: string; payload: unknown; dedupeKey?: string },
 ) {
-  const basis = stable([
-    agent,
-    trigger.type,
-    trigger.eventType,
-    trigger.ref ?? runId,
-    action.kind,
-    action.payload,
-  ]);
+  const basis = action.dedupeKey
+    ? stable([agent, "dedupe", action.dedupeKey, action.kind])
+    : stable([agent, trigger.type, trigger.eventType, trigger.ref ?? runId, action.kind, action.payload]);
   return `${agent}:${action.kind}:${createHash("sha256").update(basis).digest("hex").slice(0, 32)}`;
 }
 
@@ -123,10 +118,13 @@ export async function runAgent<S>(
   let tokens = { inputTokens: 0, outputTokens: 0, costUsd: 0 };
 
   const proposeAndTrace = async (raw: AgentProposal) => {
-    const action = raw as { kind: string; payload: unknown };
+    const { dedupeKey, ...rest } = raw;
     const inputWithKey = {
-      ...raw,
-      idempotencyKey: idempotencyKey(config.name, trigger, runId, action),
+      ...rest,
+      idempotencyKey: idempotencyKey(config.name, trigger, runId, {
+        ...(rest as { kind: string; payload: unknown }),
+        dedupeKey,
+      }),
     } as ProposeInputRaw;
     const res = await deps.propose(actor, inputWithKey);
     const proposal = res.status === "created" || res.status === "duplicate" ? res.proposal : undefined;
@@ -134,7 +132,7 @@ export async function runAgent<S>(
     if (res.status === "simulated") simulated.push(res);
     step({
       kind: "propose",
-      actionKind: action.kind as ProposeInputRaw["kind"],
+      actionKind: rest.kind as ProposeInputRaw["kind"],
       proposalId: proposal?.id,
       result: res.status,
       status: proposal?.status,

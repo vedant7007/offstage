@@ -141,9 +141,14 @@ describe("crew chief agent", () => {
       text("done"),
     );
     const res = await runAgent(crewChief, trigger, { eventId: s.world.event.id, payload: s.payload }, s.deps);
-    expect(s.propose).not.toHaveBeenCalled();
     const tool = s.trace.stepsOf(res.runId).find((x) => x.kind === "tool") as { output: { error: string } };
     expect(tool.output.error).toMatch(/cannot legally take this shift/);
+    // The model gave up after the refusal, so the rules fallback covers the shift with a legal volunteer.
+    expect(res.status).toBe("fallback");
+    const assigned = s.propose.mock.calls
+      .map((c) => c[1] as { kind: string; payload: { volunteerId?: string } })
+      .find((p) => p.kind === "crew.assign_shift");
+    expect(assigned?.payload.volunteerId).not.toBe(s.a.volunteerId);
   });
 
   it("raises an incident when nobody can cover without breaking a rule, even with models down", async () => {

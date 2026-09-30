@@ -18,6 +18,20 @@ import type {
   Track,
   Volunteer,
 } from "./contracts";
+import type {
+  BudgetCategory,
+  Checkin,
+  Checklist,
+  FunnelSnapshot,
+  Incident,
+  InventoryItem,
+  LedgerEntry,
+  MarketingPost,
+  Milestone,
+  Quote,
+  SponsorProspect,
+  Task,
+} from "@/contracts";
 import type { EventWorld } from "@/contracts/fixtures";
 import { maskEmail, maskPhone } from "@/lib/format";
 
@@ -43,7 +57,31 @@ export interface ReadServices {
   /** Hybrid KB search. `score` is the cosine similarity of the chunk to the query, 0 to 1. */
   searchKb(query: string, k?: number): Promise<KbChunkRef[]>;
   lessons(): Promise<PlaybookLesson[]>;
+  incidents(): Promise<Incident[]>;
+  tasks(): Promise<Task[]>;
+  milestones(): Promise<Milestone[]>;
+  budget(): Promise<{ categories: BudgetCategory[]; ledger: LedgerEntry[] }>;
+  quotes(): Promise<Quote[]>;
+  sponsors(): Promise<SponsorProspect[]>;
+  marketing(): Promise<{ posts: MarketingPost[]; funnel: FunnelSnapshot[] }>;
+  checklists(): Promise<Checklist[]>;
+  inventory(): Promise<InventoryItem[]>;
+  /** Check-ins (no contact details), with `sinceIso` only those at or after it. */
+  checkins(sinceIso?: string): Promise<Checkin[]>;
+  /** Speakers with status and requirements, never contact details. */
+  speakerRoster(): Promise<SpeakerRosterEntry[]>;
+  /** Attendee and volunteer helpdesk questions since an instant. Untrusted text: wrap before a prompt. */
+  helpdeskQuestions(sinceIso: string): Promise<HelpdeskQuestion[]>;
 }
+
+export type SpeakerRosterEntry = {
+  id: string;
+  name: string;
+  status: string;
+  sessionIds: string[];
+  requirementsSubmitted: boolean;
+};
+export type HelpdeskQuestion = { messageId: string; text: string; at: string; channel: string };
 
 /** Read services over an in-memory world. Pass a clone (see snapshot) when the caller may mutate it. */
 export function worldServices(
@@ -75,8 +113,10 @@ export function worldServices(
           sessionIds: ids ? r.sessionChoices.filter((s) => ids.includes(s)) : r.sessionChoices,
         }))
         .filter((c) => c.sessionIds.length),
+    // Waitlisted people come in waitlist order (a stable sort keeps everyone else as stored).
     registrations: async (q = {}) =>
-      world.registrations
+      [...world.registrations]
+        .sort((a, b) => (a.waitlistPosition ?? 0) - (b.waitlistPosition ?? 0))
         .filter((r) => !q.sessionId || r.sessionChoices.includes(q.sessionId))
         .slice(0, q.limit ?? 50)
         .map((r) => ({
@@ -101,6 +141,35 @@ export function worldServices(
     // Fixture documents carry no text, so search is injected (tests use the golden KB index).
     searchKb: opts.searchKb ?? (async () => []),
     lessons: async () => world.playbookLessons.filter((l) => l.eventType === world.event.type),
+    incidents: async () => world.incidents,
+    tasks: async () => world.tasks,
+    milestones: async () => world.milestones,
+    budget: async () => ({ categories: world.budgetCategories, ledger: world.ledgerEntries }),
+    quotes: async () => world.quotes,
+    sponsors: async () => world.sponsorProspects,
+    marketing: async () => ({ posts: world.marketingPosts, funnel: world.funnel }),
+    checklists: async () => world.checklists,
+    inventory: async () => world.inventory,
+    checkins: async (since) => world.checkins.filter((c) => !since || c.serverTime >= since),
+    speakerRoster: async () =>
+      world.speakers.map(({ id, name, status, sessionIds, requirementsSubmitted }) => ({
+        id,
+        name,
+        status,
+        sessionIds,
+        requirementsSubmitted,
+      })),
+    helpdeskQuestions: async (since) => {
+      const channel = new Map(world.conversations.map((c) => [c.id, c.channel]));
+      return world.messages
+        .filter((m) => m.role === "user" && m.at >= since)
+        .map((m) => ({
+          messageId: m.id,
+          text: m.body,
+          at: m.at,
+          channel: channel.get(m.conversationId) ?? "in_app",
+        }));
+    },
   };
 }
 
