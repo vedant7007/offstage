@@ -134,6 +134,20 @@ function pick(req: GenerateRequest<unknown>, list: Link[], tried: Set<string>): 
   return undefined;
 }
 
+/**
+ * Rejects when the signal fires even if the provider ignores it. ai-sdk-ollama 4.3 hands the signal to a
+ * client that drops it, so one hung local call used to hold the whole event queue for Node's 5 minute
+ * socket timeout instead of the tier's 20 s.
+ */
+export function bounded<T>(work: Promise<T>, signal: AbortSignal): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const stop = () => reject(signal.reason);
+    if (signal.aborted) return stop();
+    signal.addEventListener("abort", stop, { once: true });
+    work.then(resolve, reject).finally(() => signal.removeEventListener("abort", stop));
+  });
+}
+
 function callOptions(req: GenerateRequest<unknown>, link: Link, messages: ModelMessage[]) {
   return {
     model: languageModel(link),
@@ -166,24 +180,28 @@ export async function generate<T = never>(req: GenerateRequest<T>): Promise<Gene
     const started = Date.now();
     let stepStart = started;
     try {
-      const result = await generateText({
-        ...callOptions(req, link, messages),
-        onStepEnd: ({ usage }) => {
-          const now = Date.now();
-          const inTok = usage.inputTokens ?? 0;
-          const outTok = usage.outputTokens ?? 0;
-          attempts.push(
-            attempt(req, link, {
-              ok: true,
-              inputTokens: inTok,
-              outputTokens: outTok,
-              latencyMs: now - stepStart,
-              costUsd: costUsd(link.model, inTok, outTok),
-            }),
-          );
-          stepStart = now;
-        },
-      });
+      const options = callOptions(req, link, messages);
+      const result = await bounded(
+        generateText({
+          ...options,
+          onStepEnd: ({ usage }) => {
+            const now = Date.now();
+            const inTok = usage.inputTokens ?? 0;
+            const outTok = usage.outputTokens ?? 0;
+            attempts.push(
+              attempt(req, link, {
+                ok: true,
+                inputTokens: inTok,
+                outputTokens: outTok,
+                latencyMs: now - stepStart,
+                costUsd: costUsd(link.model, inTok, outTok),
+              }),
+            );
+            stepStart = now;
+          },
+        }),
+        options.abortSignal,
+      );
       const inputTokens = result.usage.inputTokens ?? 0;
       const outputTokens = result.usage.outputTokens ?? 0;
       settle?.(inputTokens + outputTokens);
