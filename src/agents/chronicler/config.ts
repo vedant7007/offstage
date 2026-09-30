@@ -22,7 +22,7 @@ export function factLines(f: ReportFacts): string[] {
     `${f.attended} of ${f.confirmed} confirmed attendees checked in${rate}.`,
     `${f.sessionsDone} of ${f.sessionsTotal} sessions done, ${f.sessionsCancelled} cancelled.`,
     `${f.incidents} incidents, ${f.incidentsResolved} resolved.`,
-    `${f.helpdeskQuestions} helpdesk questions during the event.`,
+    `${f.helpdeskQuestions} helpdesk questions during the event; ${f.escalations} passed to a person, ${f.escalationsOpen} still open.`,
     `${f.volunteers} volunteers served ${f.volunteerHours} hours.`,
     `Money in ${formatInr(f.moneyInInr)}, money out ${formatInr(f.moneyOutInr)}.`,
   ];
@@ -39,23 +39,24 @@ const Lesson = z.object({
 async function reportPlan(ctx: Ctx, io: IO, key: string): Promise<AgentProposal> {
   const s = ctx.services;
   const event = await s.event();
-  const [registrations, checkins, sessions, incidents, questions, volunteers, { ledger }] = await Promise.all(
-    [
+  const [registrations, checkins, sessions, incidents, questions, escalations, volunteers, { ledger }] =
+    await Promise.all([
       s.registrations({ limit: 100_000 }),
       s.checkins(),
       s.sessions(),
       s.incidents(),
       s.helpdeskQuestions(event.startsAt),
+      s.escalations(),
       s.volunteers(),
       s.budget(),
-    ],
-  );
+    ]);
   const f = reportFacts({
     registrations,
     checkins,
     sessions,
     incidents,
     helpdeskQuestions: questions.length,
+    escalations,
     volunteers,
     ledger,
   });

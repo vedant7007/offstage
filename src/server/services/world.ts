@@ -11,7 +11,13 @@
 import { and, asc, desc, eq, gte } from "drizzle-orm";
 import type { ReadServices } from "@/agents/runtime/services";
 import { worldServices } from "@/agents/runtime/services";
-import { AGENT_DOMAIN, type Actor, type AgentConfigSummary, type Registration } from "@/contracts";
+import {
+  AGENT_DOMAIN,
+  type Actor,
+  type AgentConfigSummary,
+  type Escalation,
+  type Registration,
+} from "@/contracts";
 import type { EventWorld } from "@/contracts/fixtures";
 import { db as defaultDb, type Db } from "@/db/client";
 import * as t from "@/db/schema";
@@ -628,6 +634,22 @@ export function createReadServices(
       }));
     },
     speakerRoster: async () => (await get()).speakerRoster(),
+    foodPreferences: async () => (await get()).foodPreferences(),
+    recordedFoodCounts: async () => (await get()).recordedFoodCounts(),
+    // Not part of the loaded world, so read straight from the table.
+    escalations: async () => {
+      const rows = await client.select().from(t.escalations).where(eq(t.escalations.eventId, eventId));
+      return rows.map((r) => ({
+        id: r.id,
+        eventId: r.eventId,
+        conversationId: r.conversationId ?? "",
+        summary: r.summary,
+        suggestedReply: r.suggestedReply ?? undefined,
+        priority: r.priority as Escalation["priority"],
+        status: r.status as Escalation["status"],
+        createdAt: r.createdAt.toISOString(),
+      }));
+    },
     // Not part of the loaded world (messages can be many), so read straight from the table.
     helpdeskQuestions: async (since) => {
       const rows = await client
