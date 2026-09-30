@@ -36,7 +36,14 @@ export function LiveStage({ eventId }: { eventId: string }) {
       { id: "gate:head", title: "Event head", detail: `${needsPerson} waiting for approval` },
       { id: "gate:faculty", title: "Faculty approver", detail: `${two} need a second approval` },
     ],
-    data: DATA.map(([id, title, detail]) => ({ id, title, detail })),
+    data: DATA.map(([id, title, detail]) => ({
+      id,
+      title,
+      detail:
+        id === "data:registrations" && s.metrics
+          ? `${s.metrics.checkins.count} of ${s.metrics.registrations.confirmed} checked in`
+          : detail,
+    })),
     channels: CHANNELS.map(([key, title]) => {
       const c = s.delivery.find((d) => d.channel === key);
       return {
