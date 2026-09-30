@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Minus, Plus } from "lucide-react";
-import { useLocale, useT } from "@/lib/i18n/provider";
-import { formatDateIST, formatTimeIST } from "@/lib/time";
+import { useT } from "@/lib/i18n/provider";
+import { formatDayShort, formatTime } from "@/lib/time";
 
 /** Same shape as one entry of ActionProposal.diff in src/contracts. */
 export type DiffEntry = {
@@ -57,17 +57,16 @@ type DiffViewProps = {
  */
 function DiffView({ diff, labels = {}, entityLabels = {}, formatValue, className }: DiffViewProps) {
   const t = useT();
-  const locale = useLocale();
-  const intl = locale === "hi" ? "hi-IN" : "en-IN";
 
   const show = (field: string, value: unknown): React.ReactNode => {
     if (isEmpty(value)) return <span className="italic text-fg-muted">{t("diff.empty")}</span>;
     const custom = formatValue?.(field, value);
     if (custom !== undefined) return custom;
     if (typeof value === "string" && ISO_INSTANT.test(value)) {
-      return `${formatDateIST(value, intl)}, ${formatTimeIST(value, intl)} ${t("time.ist")}`;
+      return `${formatDayShort(value)}, ${formatTime(value)} ${t("time.ist")}`;
     }
-    if (typeof value === "object") return <code className="font-mono text-sm break-all">{JSON.stringify(value)}</code>;
+    if (typeof value === "object")
+      return <code className="font-mono text-sm break-all">{JSON.stringify(value)}</code>;
     return String(value);
   };
 
@@ -77,11 +76,17 @@ function DiffView({ diff, labels = {}, entityLabels = {}, formatValue, className
   return (
     <div data-slot="diff-view" className={cn("flex flex-col gap-4", className)}>
       {groups.map(({ entry, changes }) => (
-        <div key={`${entry.entity}:${entry.id}`} className="overflow-hidden rounded-control border border-border">
+        <div
+          key={`${entry.entity}:${entry.id}`}
+          className="overflow-hidden rounded-control border border-border"
+        >
           <p className="border-b border-border bg-surface-sunken px-3 py-2 text-sm font-semibold">
             {entityLabels[entry.entity] ?? humanise(entry.entity)}
           </p>
-          <div aria-hidden className="hidden border-b border-border px-3 py-1.5 text-xs font-semibold text-fg-muted md:grid md:grid-cols-[10rem_1fr_1fr] md:gap-3">
+          <div
+            aria-hidden
+            className="hidden border-b border-border px-3 py-1.5 text-xs font-semibold text-fg-muted md:grid md:grid-cols-[10rem_1fr_1fr] md:gap-3"
+          >
             <span>{t("diff.field")}</span>
             <span>{t("diff.before")}</span>
             <span>{t("diff.after")}</span>
@@ -105,12 +110,16 @@ function DiffView({ diff, labels = {}, entityLabels = {}, formatValue, className
                   {c.kind !== "added" ? <Minus aria-hidden className="mt-0.5 size-3.5 shrink-0" /> : null}
                   <span className="text-xs font-semibold md:hidden">{t("diff.before")}:</span>
                   <span className="sr-only max-md:hidden">{t("diff.before")}: </span>
-                  <span className={cn("min-w-0", c.kind !== "added" && "line-through decoration-2")}>{show(c.field, c.before)}</span>
+                  <span className={cn("min-w-0", c.kind !== "added" && "line-through decoration-2")}>
+                    {show(c.field, c.before)}
+                  </span>
                 </div>
                 <div
                   className={cn(
                     "flex items-start gap-1.5 rounded-sm px-2 py-1 text-sm",
-                    c.kind === "removed" ? "text-fg-muted" : "bg-approved-soft font-medium text-approved-soft-fg",
+                    c.kind === "removed"
+                      ? "text-fg-muted"
+                      : "bg-approved-soft font-medium text-approved-soft-fg",
                   )}
                 >
                   {c.kind !== "removed" ? <Plus aria-hidden className="mt-0.5 size-3.5 shrink-0" /> : null}

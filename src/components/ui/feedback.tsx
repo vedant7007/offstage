@@ -1,14 +1,21 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Progress as ProgressPrimitive } from "radix-ui";
 import { Check } from "lucide-react";
 import { useT } from "@/lib/i18n/provider";
 
 /** Placeholder shape while content loads. Put aria-busy on the region it stands in for. */
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
-  return <div aria-hidden data-slot="skeleton" className={cn("animate-pulse rounded-control bg-border", className)} {...props} />;
+  return (
+    <div
+      aria-hidden
+      data-slot="skeleton"
+      className={cn("animate-pulse rounded-control bg-border", className)}
+      {...props}
+    />
+  );
 }
 
 type ProgressProps = {
@@ -75,12 +82,13 @@ function Stepper({ steps, current, className }: StepperProps) {
         {steps.map((step, i) => {
           const state = i < current ? "complete" : i === current ? "current" : "upcoming";
           return (
-            <li key={i} aria-current={state === "current" ? "step" : undefined} className="flex flex-1 flex-col gap-1.5">
+            <li
+              key={i}
+              aria-current={state === "current" ? "step" : undefined}
+              className="flex flex-1 flex-col gap-1.5"
+            >
               <span
-                className={cn(
-                  "h-1.5 rounded-full",
-                  state === "upcoming" ? "bg-border" : "bg-curtain",
-                )}
+                className={cn("h-1.5 rounded-full", state === "upcoming" ? "bg-border" : "bg-curtain")}
                 aria-hidden
               />
               <span className="flex items-center gap-1.5 text-xs">
@@ -95,7 +103,12 @@ function Stepper({ steps, current, className }: StepperProps) {
                 >
                   {state === "complete" ? <Check className="size-3" strokeWidth={3} /> : i + 1}
                 </span>
-                <span className={cn("hidden sm:inline", state === "current" ? "font-semibold text-fg" : "text-fg-muted")}>
+                <span
+                  className={cn(
+                    "hidden sm:inline",
+                    state === "current" ? "font-semibold text-fg" : "text-fg-muted",
+                  )}
+                >
                   {step}
                 </span>
                 <span className="sr-only sm:hidden">{step}</span>

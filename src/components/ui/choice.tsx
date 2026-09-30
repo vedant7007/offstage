@@ -1,8 +1,12 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
-import { Checkbox as CheckboxPrimitive, RadioGroup as RadioPrimitive, Switch as SwitchPrimitive } from "radix-ui";
+import { cn } from "@/lib/utils";
+import {
+  Checkbox as CheckboxPrimitive,
+  RadioGroup as RadioPrimitive,
+  Switch as SwitchPrimitive,
+} from "radix-ui";
 import { Check } from "lucide-react";
 
 // Checkbox, radio and switch share one row layout: control, label, optional description.
@@ -19,7 +23,13 @@ type RowProps = {
 
 function ChoiceRow({ id, label, description, control, disabled, reverse }: RowProps) {
   return (
-    <div className={cn("flex min-h-11 items-start gap-3 py-2", reverse && "flex-row-reverse justify-between", disabled && "opacity-55")}>
+    <div
+      className={cn(
+        "flex min-h-11 items-start gap-3 py-2",
+        reverse && "flex-row-reverse justify-between",
+        disabled && "opacity-55",
+      )}
+    >
       <div className="flex h-6 items-center">{control}</div>
       <div className="flex flex-col gap-0.5">
         <label htmlFor={id} className="text-base leading-6 text-fg">
@@ -58,7 +68,11 @@ function Checkbox({ label, description, id, className, ...props }: CheckboxProps
         <CheckboxPrimitive.Root
           id={controlId}
           aria-describedby={description ? `${controlId}-desc` : undefined}
-          className={cn(boxBase, "size-5 rounded-sm data-checked:border-curtain data-checked:bg-curtain", className)}
+          className={cn(
+            boxBase,
+            "size-5 rounded-sm data-checked:border-curtain data-checked:bg-curtain",
+            className,
+          )}
           {...props}
         >
           <CheckboxPrimitive.Indicator className="flex items-center justify-center text-on-curtain">

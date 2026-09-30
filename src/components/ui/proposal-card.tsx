@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Activity, ChartNoAxesColumn, ChevronDown, Database, FileText } from "lucide-react";
 import { useT } from "@/lib/i18n/provider";
 import { AgentAvatar } from "./agent-avatar";
@@ -68,7 +68,8 @@ function ProposalCard({
         "flex flex-col gap-4 rounded-card border bg-surface p-4 md:p-5",
         status === "simulated" ? "border-2 border-dashed border-agent" : "border-border",
         status === "emergency" && "border-2 border-emergency",
-        (status === "stale" || status === "rejected" || status === "undone" || status === "expired") && "opacity-80",
+        (status === "stale" || status === "rejected" || status === "undone" || status === "expired") &&
+          "opacity-80",
         className,
       )}
     >
@@ -97,7 +98,9 @@ function ProposalCard({
 
       {evidence.length ? (
         <div className="flex flex-col gap-1.5">
-          <p className="text-xs font-semibold tracking-wide text-fg-muted uppercase">{t("proposal.evidence")}</p>
+          <p className="text-xs font-semibold tracking-wide text-fg-muted uppercase">
+            {t("proposal.evidence")}
+          </p>
           <ul className="flex flex-wrap gap-2">
             {evidence.map((e) => {
               const Icon = EVIDENCE_ICON[e.type];
@@ -120,7 +123,10 @@ function ProposalCard({
         <details className="group rounded-control border border-border">
           <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 font-medium [&::-webkit-details-marker]:hidden">
             {t("proposal.changes")}
-            <ChevronDown aria-hidden className="size-4 transition-transform duration-(--duration-fast) group-open:rotate-180" />
+            <ChevronDown
+              aria-hidden
+              className="size-4 transition-transform duration-(--duration-fast) group-open:rotate-180"
+            />
           </summary>
           <div className="border-t border-border p-3">
             <DiffView diff={diff} labels={diffLabels} />
@@ -128,7 +134,9 @@ function ProposalCard({
         </details>
       ) : null}
 
-      {actions ? <footer className="flex flex-wrap gap-2 border-t border-border pt-4">{actions}</footer> : null}
+      {actions ? (
+        <footer className="flex flex-wrap gap-2 border-t border-border pt-4">{actions}</footer>
+      ) : null}
     </article>
   );
 }

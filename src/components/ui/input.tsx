@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { controlClass, useFieldControl } from "./field";
 
 function Input({ className, type = "text", ...props }: React.ComponentProps<"input">) {

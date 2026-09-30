@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Dialog as SheetPrimitive } from "radix-ui";
 import { CornerClose, DialogOverlay } from "./dialog";
 
@@ -10,8 +10,10 @@ const SheetTrigger = SheetPrimitive.Trigger;
 const SheetClose = SheetPrimitive.Close;
 
 const SIDES = {
-  bottom: "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-card border-t data-open:slide-in-from-bottom data-closed:slide-out-to-bottom",
-  right: "inset-y-0 right-0 h-dvh w-full max-w-md border-l data-open:slide-in-from-right data-closed:slide-out-to-right",
+  bottom:
+    "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-card border-t data-open:slide-in-from-bottom data-closed:slide-out-to-bottom",
+  right:
+    "inset-y-0 right-0 h-dvh w-full max-w-md border-l data-open:slide-in-from-right data-closed:slide-out-to-right",
   // Bottom sheet on phones, side panel from md up.
   responsive: cn(
     "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-card border-t data-open:slide-in-from-bottom data-closed:slide-out-to-bottom",
@@ -27,7 +29,15 @@ type SheetContentProps = React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: keyof typeof SIDES;
 };
 
-function SheetContent({ title, description, footer, side = "responsive", className, children, ...props }: SheetContentProps) {
+function SheetContent({
+  title,
+  description,
+  footer,
+  side = "responsive",
+  className,
+  children,
+  ...props
+}: SheetContentProps) {
   return (
     <SheetPrimitive.Portal>
       <DialogOverlay />
@@ -43,12 +53,20 @@ function SheetContent({ title, description, footer, side = "responsive", classNa
         {...props}
       >
         {side !== "right" ? (
-          <div aria-hidden className={cn("mx-auto mt-2 h-1.5 w-10 rounded-full bg-border-strong", side === "responsive" && "md:hidden")} />
+          <div
+            aria-hidden
+            className={cn(
+              "mx-auto mt-2 h-1.5 w-10 rounded-full bg-border-strong",
+              side === "responsive" && "md:hidden",
+            )}
+          />
         ) : null}
         <div className="flex flex-col gap-1 p-6 pr-14">
           <SheetPrimitive.Title className="text-xl font-semibold">{title}</SheetPrimitive.Title>
           {description ? (
-            <SheetPrimitive.Description className="text-sm text-fg-muted">{description}</SheetPrimitive.Description>
+            <SheetPrimitive.Description className="text-sm text-fg-muted">
+              {description}
+            </SheetPrimitive.Description>
           ) : null}
         </div>
         <div className="flex-1 overflow-y-auto px-6 pb-6">{children}</div>

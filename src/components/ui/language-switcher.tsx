@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { ChevronDown, Languages } from "lucide-react";
 import { useLocale, useT } from "@/lib/i18n/provider";
 import { LOCALE_COOKIE, LOCALES, isLocale } from "@/lib/i18n/translate";

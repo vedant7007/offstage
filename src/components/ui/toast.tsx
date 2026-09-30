@@ -35,7 +35,10 @@ function Toaster() {
           zIndex: "var(--z-toast)",
         } as React.CSSProperties
       }
-      toastOptions={{ closeButtonAriaLabel: t("common.close"), classNames: { toast: "font-sans text-base", description: "text-fg-muted" } }}
+      toastOptions={{
+        closeButtonAriaLabel: t("common.close"),
+        classNames: { toast: "font-sans text-base", description: "text-fg-muted" },
+      }}
     />
   );
 }

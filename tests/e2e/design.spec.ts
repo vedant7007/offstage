@@ -16,7 +16,12 @@ async function seriousViolations(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
   return results.violations
     .filter((v) => v.impact === "serious" || v.impact === "critical")
-    .map((v) => ({ id: v.id, impact: v.impact, help: v.help, targets: v.nodes.slice(0, 5).map((n) => n.target.join(" ")) }));
+    .map((v) => ({
+      id: v.id,
+      impact: v.impact,
+      help: v.help,
+      targets: v.nodes.slice(0, 5).map((n) => n.target.join(" ")),
+    }));
 }
 
 for (const scheme of ["light", "dark"] as const) {
@@ -49,7 +54,8 @@ test("every focus stop is visible and shows a focus indicator", async ({ page })
       const style = getComputedStyle(el);
       const indicator = style.outlineStyle !== "none" && parseFloat(style.outlineWidth) >= 2;
       const labelled = (el as HTMLInputElement).labels?.[0]?.textContent;
-      const name = el.getAttribute("aria-label") ?? labelled ?? el.textContent?.trim().slice(0, 40) ?? el.tagName;
+      const name =
+        el.getAttribute("aria-label") ?? labelled ?? el.textContent?.trim().slice(0, 40) ?? el.tagName;
       return { name, visible: rect.width > 0 && rect.height > 0, indicator };
     });
     if (!stop) continue;
@@ -98,7 +104,9 @@ test("language switch re-renders shared strings in Hindi and Hinglish", async ({
 
   await page.getByLabel("भाषा").selectOption("hinglish");
   await expect(page.locator("html")).toHaveAttribute("lang", "hi-Latn");
-  await expect(page.locator('[data-slot="status-badge"][data-status="executed"]').first()).toHaveText("Ho gaya");
+  await expect(page.locator('[data-slot="status-badge"][data-status="executed"]').first()).toHaveText(
+    "Ho gaya",
+  );
 
   await context.clearCookies();
 });

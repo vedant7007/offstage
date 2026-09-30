@@ -1,6 +1,6 @@
 import * as React from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Slot } from "radix-ui";
 import { LoaderCircle } from "lucide-react";
 
@@ -14,7 +14,8 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        primary: "border-curtain bg-curtain text-on-curtain hover:border-curtain-hover hover:bg-curtain-hover",
+        primary:
+          "border-curtain bg-curtain text-on-curtain hover:border-curtain-hover hover:bg-curtain-hover",
         secondary: "border-border-strong bg-surface text-fg hover:bg-surface-sunken",
         ghost: "border-transparent bg-transparent text-fg hover:bg-surface-sunken",
         destructive: "border-danger bg-surface text-danger-text hover:bg-danger-soft",
@@ -80,7 +81,15 @@ type IconButtonProps = Omit<React.ComponentProps<"button">, "aria-label" | "chil
   };
 
 /** Square 44px button with only an icon. The label is mandatory. */
-function IconButton({ label, icon, variant = "ghost", loading, className, disabled, ...props }: IconButtonProps) {
+function IconButton({
+  label,
+  icon,
+  variant = "ghost",
+  loading,
+  className,
+  disabled,
+  ...props
+}: IconButtonProps) {
   return (
     <button
       data-slot="icon-button"

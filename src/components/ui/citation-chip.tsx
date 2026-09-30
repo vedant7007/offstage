@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { FileText } from "lucide-react";
 import { useT } from "@/lib/i18n/provider";
 import { Sheet, SheetContent, SheetTrigger } from "./sheet";
@@ -34,8 +34,12 @@ function CitationChip({ document, section, snippet, className }: CitationChipPro
         </span>
       </SheetTrigger>
       <SheetContent title={document} description={t("citation.section", { section })}>
-        <p className="mb-2 text-xs font-semibold tracking-wide text-fg-muted uppercase">{t("citation.title")}</p>
-        <blockquote className="border-l-4 border-agent pl-4 text-base leading-relaxed whitespace-pre-line">{snippet}</blockquote>
+        <p className="mb-2 text-xs font-semibold tracking-wide text-fg-muted uppercase">
+          {t("citation.title")}
+        </p>
+        <blockquote className="border-l-4 border-agent pl-4 text-base leading-relaxed whitespace-pre-line">
+          {snippet}
+        </blockquote>
       </SheetContent>
     </Sheet>
   );

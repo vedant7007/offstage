@@ -161,11 +161,8 @@
   --spacing: 0.25rem;
 
   /* Radius: 8 for controls, 16 for cards */
-  --radius-*: initial;
-  --radius-sm: 0.25rem;
   --radius-control: 0.5rem;
   --radius-card: 1rem;
-  --radius-full: 9999px;
 
   /* Motion: state changes only, 150 to 250 ms, ease-out */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);

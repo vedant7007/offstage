@@ -2,7 +2,7 @@
 
 The look of Sutradhar: a calm stage manager behind the curtain. Quiet, organised, warm, confident.
 
-- Source of truth: `src/styles/tokens.css`. Tailwind mapping: `src/styles/globals.css`.
+- Source of truth: `src/styles/tokens.css`. Tailwind mapping: `src/styles/theme.css`. Tailwind entry: `src/app/globals.css` (the file `components.json` points at), which also keeps the shadcn variables (`--background`, `--primary`, `--chart-*`, `--sidebar-*`, `--radius`) pointed at our tokens.
 - Review page: `/design` (only when `DEMO_MODE=true`). Every primitive and composite, both themes, and a real 360 px frame.
 - Contrast check: `pnpm contrast` reads the hex values from `tokens.css` and fails on any pairing below WCAG 2.2 AA. `pnpm contrast --write` refreshes the table below. Change a colour, run it, commit both.
 
@@ -120,7 +120,7 @@ Line heights are generous so Devanagari matras are not clipped. No other sizes: 
 ## Spacing, radius, motion, layers
 
 - Spacing: 4 px base (`p-1` = 4 px, `p-4` = 16 px). Page gutter 16 px on phones, 32 px from md.
-- Radius: `rounded-control` 8 px for buttons, inputs, alerts. `rounded-card` 16 px for cards, sheets, dialogs. `rounded-full` for badges, chips, avatars.
+- Radius: `rounded-control` 8 px for buttons, inputs, alerts. `rounded-card` 16 px for cards, sheets, dialogs. `rounded-full` for badges, chips, avatars. shadcn's scale (`rounded-sm` to `rounded-4xl`, from `--radius` = 8 px) stays available for CLI-added components.
 - Borders over shadows: 1 px `border` lines separate things. Only floating layers (dialogs, sheets, menus, toasts) get a shadow.
 - Motion: `--duration-fast` 150 ms, `--duration-base` 200 ms, `--duration-slow` 250 ms, `ease-out` curve. Only for state changes (open, close, toggle). Nothing animates on load. `prefers-reduced-motion: reduce` turns all transitions and animations off.
 - Layers: `z-(--z-sticky)` 10, `--z-appbar` 20, `--z-overlay` 40, `--z-modal` 50, `--z-toast` 60, `--z-tooltip` 70.
@@ -134,7 +134,7 @@ Line heights are generous so Devanagari matras are not clipped. No other sizes: 
 4. **Crimson is for the one main action on a screen** (`Button` primary), selection, and the active tab. If everything is crimson, nothing is.
 5. **Simulations are dashed.** Anything from a what-if run has a dashed teal border and the `simulated` badge, so nobody mistakes it for real state.
 6. **Every automated message shows `DraftedByLabel`**: "Drafted by Sutradhar, approved by <role>".
-7. **Times go through `TimeRange`** (IST via `src/lib/time.ts`), **money through `MoneyInr`** (Indian grouping). Never format either by hand.
+7. **Times go through `TimeRange`** (IST via `src/lib/time.ts`), **money through `MoneyInr`** (Indian grouping via `src/lib/format.ts`). Never format either by hand. Both helpers avoid Intl, so server and browser output match.
 8. **No hardcoded strings.** All text comes from `src/lib/i18n/*.json` via `t()`. Counts use `_one` keys for the singular.
 9. **Focus is always visible**: 2 px `--ring` outline, 2 px offset, on everything reachable by keyboard.
 10. **Tooltips are extras.** Touch screens do not show them, so nothing essential lives only in a tooltip.

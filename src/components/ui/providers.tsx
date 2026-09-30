@@ -8,7 +8,15 @@ import { Toaster } from "./toast";
 import { TooltipProvider } from "./tooltip";
 
 /** Everything client-side the whole app needs. Mounted once in the root layout. */
-function Providers({ locale, messages, children }: { locale: Locale; messages: Messages; children: React.ReactNode }) {
+function Providers({
+  locale,
+  messages,
+  children,
+}: {
+  locale: Locale;
+  messages: Messages;
+  children: React.ReactNode;
+}) {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <I18nProvider locale={locale} messages={messages}>

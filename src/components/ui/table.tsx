@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 export type Column<Row> = {
   key: string;
@@ -27,22 +27,37 @@ type DataTableProps<Row> = {
  * A real table from md up, and a list of cards on phones, from the same column definitions.
  * Server-safe: no hooks, so cell renderers can be passed from server components.
  */
-function DataTable<Row>({ caption, hideCaption, columns, rows, rowKey, empty, className }: DataTableProps<Row>) {
+function DataTable<Row>({
+  caption,
+  hideCaption,
+  columns,
+  rows,
+  rowKey,
+  empty,
+  className,
+}: DataTableProps<Row>) {
   if (rows.length === 0 && empty) return <>{empty}</>;
   const primary = columns.find((c) => c.primary) ?? columns[0];
+  if (!primary) return null;
   const rest = columns.filter((c) => c !== primary);
 
   return (
     <div className={cn("w-full", className)}>
       <table className="hidden w-full border-collapse text-left md:table">
-        <caption className={cn("pb-3 text-left text-base font-semibold", hideCaption && "sr-only")}>{caption}</caption>
+        <caption className={cn("pb-3 text-left text-base font-semibold", hideCaption && "sr-only")}>
+          {caption}
+        </caption>
         <thead>
           <tr className="border-b border-border-strong">
             {columns.map((c) => (
               <th
                 key={c.key}
                 scope="col"
-                className={cn("px-3 py-2 text-sm font-semibold text-fg-muted", c.align === "end" && "text-right", c.className)}
+                className={cn(
+                  "px-3 py-2 text-sm font-semibold text-fg-muted",
+                  c.align === "end" && "text-right",
+                  c.className,
+                )}
               >
                 {c.header}
               </th>
@@ -58,7 +73,10 @@ function DataTable<Row>({ caption, hideCaption, columns, rows, rowKey, empty, cl
                     {c.cell(row)}
                   </th>
                 ) : (
-                  <td key={c.key} className={cn("px-3 py-3", c.align === "end" && "text-right tabular-nums", c.className)}>
+                  <td
+                    key={c.key}
+                    className={cn("px-3 py-3", c.align === "end" && "text-right tabular-nums", c.className)}
+                  >
                     {c.cell(row)}
                   </td>
                 ),

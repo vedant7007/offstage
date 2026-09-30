@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/provider";
 
 export type NavItem = {
@@ -56,7 +56,9 @@ function AppShell({ title, homeHref = "/", nav, actions, children, preview = fal
           variant === "side" && !active && "hover:bg-surface-sunken",
         )}
       >
-        {variant === "tab" && active ? <span aria-hidden className="absolute top-0 h-0.5 w-8 rounded-full bg-curtain" /> : null}
+        {variant === "tab" && active ? (
+          <span aria-hidden className="absolute top-0 h-0.5 w-8 rounded-full bg-curtain" />
+        ) : null}
         {item.icon}
         <span className="truncate">{item.label}</span>
         {item.badge ? (
@@ -76,12 +78,12 @@ function AppShell({ title, homeHref = "/", nav, actions, children, preview = fal
   return (
     <div className="flex min-h-dvh flex-col">
       {preview ? null : (
-      <a
-        href="#main"
-        className="sr-only z-(--z-toast) rounded-control bg-surface-raised px-4 py-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
-      >
-        {t("common.skipToContent")}
-      </a>
+        <a
+          href="#main"
+          className="sr-only z-(--z-toast) rounded-control bg-surface-raised px-4 py-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+        >
+          {t("common.skipToContent")}
+        </a>
       )}
 
       <header className="sticky top-0 z-(--z-appbar) border-b border-border bg-bg/95 pt-[env(safe-area-inset-top)] backdrop-blur">
@@ -94,11 +96,18 @@ function AppShell({ title, homeHref = "/", nav, actions, children, preview = fal
       </header>
 
       <div className="flex flex-1">
-        <nav aria-label={preview ? t("nav.sections") : t("nav.main")} className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-border p-3 md:block">
+        <nav
+          aria-label={preview ? t("nav.sections") : t("nav.main")}
+          className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-border p-3 md:block"
+        >
           <div className="flex flex-col gap-1">{nav.map((item) => link(item, "side"))}</div>
         </nav>
 
-        <Main id={preview ? undefined : "main"} tabIndex={preview ? undefined : -1} className="min-w-0 flex-1 px-4 pt-6 pb-24 outline-none md:px-8 md:pb-10">
+        <Main
+          id={preview ? undefined : "main"}
+          tabIndex={preview ? undefined : -1}
+          className="min-w-0 flex-1 px-4 pt-6 pb-24 outline-none md:px-8 md:pb-10"
+        >
           {children}
         </Main>
       </div>

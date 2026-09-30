@@ -1,10 +1,10 @@
-import { cn } from "cn";
-import { formatInr, formatInrCompact } from "@/lib/format";
+import { cn } from "@/lib/utils";
+import { formatInr, formatInrShort } from "@/lib/format";
 
 type MoneyInrProps = {
   /** Whole rupees, as stored. */
   amount: number;
-  /** Short form like ₹3L for tight spaces. The exact figure stays available to screen readers. */
+  /** Short form like "₹3 L" for tight spaces. The exact figure stays available to screen readers. */
   compact?: boolean;
   className?: string;
 };
@@ -16,7 +16,7 @@ function MoneyInr({ amount, compact = false, className }: MoneyInrProps) {
     <data value={amount} className={cn("tabular-nums", className)} title={compact ? exact : undefined}>
       {compact ? (
         <>
-          <span aria-hidden>{formatInrCompact(amount)}</span>
+          <span aria-hidden>{formatInrShort(amount)}</span>
           <span className="sr-only">{exact}</span>
         </>
       ) : (

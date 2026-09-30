@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { CalendarDays, HandHelping, IndianRupee, Lock, Send, Ticket, Undo2, Users } from "lucide-react";
 import { useT } from "@/lib/i18n/provider";
 import { formatInr } from "@/lib/format";

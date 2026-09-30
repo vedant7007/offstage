@@ -1,6 +1,6 @@
 "use client";
 
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/provider";
 import { badgeVariants, type Tone } from "./badge";
 import { Tooltip } from "./tooltip";
@@ -15,7 +15,15 @@ const TIERS = {
 export type TierKind = keyof typeof TIERS;
 
 /** Risk tier with its meaning available to screen readers and on hover or focus. */
-export function TierBadge({ tier, showMeaning = false, className }: { tier: TierKind; showMeaning?: boolean; className?: string }) {
+export function TierBadge({
+  tier,
+  showMeaning = false,
+  className,
+}: {
+  tier: TierKind;
+  showMeaning?: boolean;
+  className?: string;
+}) {
   const t = useT();
   const meaning = t(`tier.${tier}`);
   const badge = (
@@ -26,7 +34,11 @@ export function TierBadge({ tier, showMeaning = false, className }: { tier: Tier
     >
       <span aria-hidden>{tier}</span>
       <span className="sr-only">{t("tier.label", { tier })}: </span>
-      {showMeaning ? <span className="font-sans font-medium">{meaning}</span> : <span className="sr-only">{meaning}</span>}
+      {showMeaning ? (
+        <span className="font-sans font-medium">{meaning}</span>
+      ) : (
+        <span className="sr-only">{meaning}</span>
+      )}
     </span>
   );
   return showMeaning ? badge : <Tooltip content={meaning}>{badge}</Tooltip>;

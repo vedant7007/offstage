@@ -1,5 +1,5 @@
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 
 // Server-safe display primitives: no hooks, no strings of their own.
 
@@ -22,7 +22,10 @@ function EmptyState({ icon, title, description, action, className }: EmptyStateP
       )}
     >
       {icon ? (
-        <div aria-hidden className="flex size-12 items-center justify-center rounded-full bg-surface-sunken text-fg-muted [&_svg]:size-6">
+        <div
+          aria-hidden
+          className="flex size-12 items-center justify-center rounded-full bg-surface-sunken text-fg-muted [&_svg]:size-6"
+        >
           {icon}
         </div>
       ) : null}
@@ -50,10 +53,15 @@ function Timeline({ items, className }: { items: TimelineItem[]; className?: str
       {items.map((item, i) => (
         <li key={item.id} className="relative flex gap-3 pb-5 last:pb-0">
           {i < items.length - 1 ? (
-            <span aria-hidden className="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-border-strong" />
+            <span
+              aria-hidden
+              className="absolute top-8 bottom-0 left-4 w-px -translate-x-1/2 bg-border-strong"
+            />
           ) : null}
           <div className="flex size-8 shrink-0 items-center justify-center">
-            {item.marker ?? <span aria-hidden className="size-2.5 rounded-full border-2 border-fg-muted bg-surface" />}
+            {item.marker ?? (
+              <span aria-hidden className="size-2.5 rounded-full border-2 border-fg-muted bg-surface" />
+            )}
           </div>
           <div className="flex min-w-0 flex-1 flex-col gap-0.5 pt-1">
             <div className="flex flex-wrap items-baseline justify-between gap-x-3">
@@ -77,7 +85,10 @@ function KeyValueList({
   className?: string;
 }) {
   return (
-    <dl data-slot="key-value" className={cn("grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-[minmax(8rem,auto)_1fr]", className)}>
+    <dl
+      data-slot="key-value"
+      className={cn("grid grid-cols-1 gap-x-6 gap-y-3 sm:grid-cols-[minmax(8rem,auto)_1fr]", className)}
+    >
       {items.map((item, i) => (
         <div key={item.key ?? i} className="contents">
           <dt className="text-sm text-fg-muted sm:pt-0.5">{item.label}</dt>
@@ -109,7 +120,14 @@ function PageHeader({ title, description, eyebrow, back, actions, display, class
       <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
         <div className="flex min-w-0 flex-col gap-1">
           {eyebrow ? <p className="text-sm font-medium text-curtain-text">{eyebrow}</p> : null}
-          <h1 className={cn("text-2xl font-semibold md:text-3xl", display && "font-display font-bold tracking-tight")}>{title}</h1>
+          <h1
+            className={cn(
+              "text-2xl font-semibold md:text-3xl",
+              display && "font-display font-bold tracking-tight",
+            )}
+          >
+            {title}
+          </h1>
           {description ? <p className="text-base text-fg-muted">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
@@ -128,7 +146,16 @@ type SectionProps = Omit<React.ComponentProps<"section">, "title"> & {
 };
 
 /** A titled region of a page, labelled by its heading. */
-function Section({ title, description, actions, id, headingLevel: Heading = "h2", className, children, ...props }: SectionProps) {
+function Section({
+  title,
+  description,
+  actions,
+  id,
+  headingLevel: Heading = "h2",
+  className,
+  children,
+  ...props
+}: SectionProps) {
   const headingId = `${id}-title`;
   return (
     <section aria-labelledby={headingId} className={cn("flex flex-col gap-4", className)} {...props}>

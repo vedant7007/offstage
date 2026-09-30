@@ -15,9 +15,7 @@ export const HTML_LANG: Record<Locale, string> = {
 export type Messages = typeof en;
 
 type Leaves<T, P extends string = ""> = {
-  [K in keyof T & string]: T[K] extends string
-    ? `${P}${K}`
-    : Leaves<T[K], `${P}${K}.`>;
+  [K in keyof T & string]: T[K] extends string ? `${P}${K}` : Leaves<T[K], `${P}${K}.`>;
 }[keyof T & string];
 
 /** Every translation key in en.json, as a dot path. Typos fail typecheck. */
@@ -61,8 +59,6 @@ export function createTranslator(messages: Messages): Translate {
     const singular = vars?.count === 1 ? lookup(messages, `${key}_one`) : undefined;
     const text = singular ?? lookup(messages, key) ?? key;
     if (!vars) return text;
-    return text.replace(/\{(\w+)\}/g, (match, name: string) =>
-      name in vars ? String(vars[name]) : match,
-    );
+    return text.replace(/\{(\w+)\}/g, (match, name: string) => (name in vars ? String(vars[name]) : match));
   };
 }

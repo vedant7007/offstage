@@ -91,11 +91,9 @@ for (const [fg, bg, min, use] of pairs) {
   rows.push(`| \`--${fg}\` on \`--${bg}\` | ${use} | ${min}:1 | ${cells[0]} | ${cells[1]} |`);
 }
 
-const table = [
-  "| Pair | Used for | Needs | Light | Dark |",
-  "| --- | --- | --- | --- | --- |",
-  ...rows,
-].join("\n");
+const table = ["| Pair | Used for | Needs | Light | Dark |", "| --- | --- | --- | --- | --- |", ...rows].join(
+  "\n",
+);
 
 console.log(table);
 console.log(`\n${pairs.length * 2} checks, ${failures} failing`);
@@ -104,10 +102,7 @@ if (process.argv.includes("--write")) {
   const doc = readFileSync(docPath, "utf8");
   const begin = "<!-- contrast:begin -->";
   const end = "<!-- contrast:end -->";
-  const next = doc.replace(
-    new RegExp(`${begin}[\\s\\S]*${end}`),
-    `${begin}\n${table}\n${end}`,
-  );
+  const next = doc.replace(new RegExp(`${begin}[\\s\\S]*${end}`), `${begin}\n${table}\n${end}`);
   writeFileSync(docPath, next);
   console.log(`Updated ${path.relative(process.cwd(), docPath)}`);
 }

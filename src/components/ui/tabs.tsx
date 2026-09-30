@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Tabs as TabsPrimitive } from "radix-ui";
 
 const Tabs = TabsPrimitive.Root;
@@ -10,7 +10,10 @@ const Tabs = TabsPrimitive.Root;
 function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
   return (
     <TabsPrimitive.List
-      className={cn("flex w-full gap-1 overflow-x-auto border-b border-border [scrollbar-width:none]", className)}
+      className={cn(
+        "flex w-full gap-1 overflow-x-auto border-b border-border [scrollbar-width:none]",
+        className,
+      )}
       {...props}
     />
   );

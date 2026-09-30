@@ -1,14 +1,14 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Avatar as AvatarPrimitive } from "radix-ui";
 
 const SIZES = { sm: "size-8 text-xs", md: "size-10 text-sm", lg: "size-14 text-lg" } as const;
 
 function initials(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
-  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? parts[parts.length - 1][0] : "")).toUpperCase();
+  return ((parts[0]?.[0] ?? "") + (parts.length > 1 ? (parts.at(-1)?.[0] ?? "") : "")).toUpperCase();
 }
 
 type AvatarProps = {
@@ -29,7 +29,11 @@ function Avatar({ name, src, size = "md", decorative = false, className }: Avata
       role={decorative ? undefined : "img"}
       aria-label={decorative ? undefined : name}
       aria-hidden={decorative || undefined}
-      className={cn("relative inline-flex shrink-0 overflow-hidden rounded-full border border-border bg-surface-sunken", SIZES[size], className)}
+      className={cn(
+        "relative inline-flex shrink-0 overflow-hidden rounded-full border border-border bg-surface-sunken",
+        SIZES[size],
+        className,
+      )}
     >
       {src ? <AvatarPrimitive.Image src={src} alt="" className="size-full object-cover" /> : null}
       <AvatarPrimitive.Fallback className="flex size-full items-center justify-center font-semibold text-fg-muted">

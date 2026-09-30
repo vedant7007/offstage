@@ -1,7 +1,16 @@
 "use client";
 
 import * as React from "react";
-import { CalendarDays, Ellipsis, House, Inbox, MessageCircle, RefreshCw, Settings, Trash2 } from "lucide-react";
+import {
+  CalendarDays,
+  Ellipsis,
+  House,
+  Inbox,
+  MessageCircle,
+  RefreshCw,
+  Settings,
+  Trash2,
+} from "lucide-react";
 import {
   AgentAvatar,
   AGENT_KEYS,
@@ -256,11 +265,13 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
           <TierBadge tier="T3" showMeaning />
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {(["neutral", "curtain", "agent", "approved", "pending", "info", "danger", "outline"] as const).map((tone) => (
-            <Badge key={tone} tone={tone}>
-              {s("badge")}
-            </Badge>
-          ))}
+          {(["neutral", "curtain", "agent", "approved", "pending", "info", "danger", "outline"] as const).map(
+            (tone) => (
+              <Badge key={tone} tone={tone}>
+                {s("badge")}
+              </Badge>
+            ),
+          )}
         </div>
         <div className="flex flex-wrap items-center gap-3">
           {AGENT_KEYS.map((agent) => (
@@ -283,7 +294,15 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
           <Alert variant="warning" title={s("alertWarningTitle")}>
             {s("alertWarningBody")}
           </Alert>
-          <Alert variant="danger" title={s("alertDangerTitle")} action={<Button size="sm" variant="secondary">{t("common.retry")}</Button>}>
+          <Alert
+            variant="danger"
+            title={s("alertDangerTitle")}
+            action={
+              <Button size="sm" variant="secondary">
+                {t("common.retry")}
+              </Button>
+            }
+          >
             {s("alertDangerBody")}
           </Alert>
           <Alert variant="emergency" title={s("alertEmergencyTitle")}>
@@ -299,10 +318,17 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
           </Button>
         </div>
         <div className="grid gap-4 md:grid-cols-2">
-          <Progress label={t("design.samples.kvCapacity")} value={sampleEvent.seatsTaken} max={sampleEvent.capacity} />
+          <Progress
+            label={t("design.samples.kvCapacity")}
+            value={sampleEvent.seatsTaken}
+            max={sampleEvent.capacity}
+          />
           <Progress label={t("design.samples.alertWarningTitle")} value={92} tone="pending" />
         </div>
-        <Stepper steps={[s("stepDetails"), s("stepChoices"), s("stepConsent"), s("stepVerify")]} current={1} />
+        <Stepper
+          steps={[s("stepDetails"), s("stepChoices"), s("stepConsent"), s("stepVerify")]}
+          current={1}
+        />
         <div aria-busy="true" className="flex flex-col gap-2">
           <span className="sr-only">{t("common.loading")}</span>
           <Skeleton className="h-6 w-1/3" />
@@ -356,7 +382,10 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
             <TabsTrigger value="faq">{s("tabFaq")}</TabsTrigger>
           </TabsList>
           {(["tabSchedule", "tabSpeakers", "tabFaq"] as const).map((tab) => (
-            <TabsContent key={tab} value={tab === "tabSchedule" ? "schedule" : tab === "tabSpeakers" ? "speakers" : "faq"}>
+            <TabsContent
+              key={tab}
+              value={tab === "tabSchedule" ? "schedule" : tab === "tabSpeakers" ? "speakers" : "faq"}
+            >
               <p className="text-fg-muted">{s("tabBody", { tab: s(tab) })}</p>
             </TabsContent>
           ))}
@@ -387,7 +416,10 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
             items={[
               { label: s("kvEvent"), value: sampleEvent.name },
               { label: s("kvVenue"), value: sampleEvent.venue },
-              { label: s("colTime"), value: <TimeRange start={sampleEvent.start} end={sampleEvent.end} withDate /> },
+              {
+                label: s("colTime"),
+                value: <TimeRange start={sampleEvent.start} end={sampleEvent.end} withDate />,
+              },
               { label: s("kvCapacity"), value: `${sampleEvent.seatsTaken} / ${sampleEvent.capacity}` },
               { label: s("kvBudget"), value: <MoneyInr amount={sampleEvent.budget} /> },
             ]}
@@ -482,7 +514,10 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
         <Section id="compare" title={t("design.compare")}>
           <div className="grid gap-4 lg:grid-cols-2">
             {(["light", "dark"] as const).map((theme) => (
-              <div key={theme} className={`${theme} flex flex-col gap-3 rounded-card border border-border bg-bg p-4 text-fg`}>
+              <div
+                key={theme}
+                className={`${theme} flex flex-col gap-3 rounded-card border border-border bg-bg p-4 text-fg`}
+              >
                 <p className="font-semibold">{t(`theme.${theme}`)}</p>
                 <div className="flex flex-wrap gap-2">
                   <Button size="sm">{s("approve")}</Button>
@@ -509,7 +544,13 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
   );
 }
 
-function WidthPicker({ width, onChange }: { width: "full" | "phone"; onChange: (w: "full" | "phone") => void }) {
+function WidthPicker({
+  width,
+  onChange,
+}: {
+  width: "full" | "phone";
+  onChange: (w: "full" | "phone") => void;
+}) {
   const t = useT();
   return (
     <div role="group" aria-label={t("design.width")} className="flex flex-wrap items-center gap-2">
@@ -531,7 +572,12 @@ function FilterChips({ labels }: { labels: string[] }) {
   return (
     <>
       {labels.map((label, i) => (
-        <Chip key={label} selected={selected === i} onClick={() => setSelected(i)} count={i === 0 ? undefined : 4 + i}>
+        <Chip
+          key={label}
+          selected={selected === i}
+          onClick={() => setSelected(i)}
+          count={i === 0 ? undefined : 4 + i}
+        >
           {label}
         </Chip>
       ))}

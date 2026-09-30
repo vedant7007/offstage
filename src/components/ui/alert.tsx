@@ -1,13 +1,17 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { CircleAlert, Info, Siren, TriangleAlert, X } from "lucide-react";
 import { useT } from "@/lib/i18n/provider";
 
 const VARIANTS = {
   info: { icon: Info, box: "border-info bg-info-soft text-info-soft-fg", role: "status" },
-  warning: { icon: TriangleAlert, box: "border-pending bg-pending-soft text-pending-soft-fg", role: "status" },
+  warning: {
+    icon: TriangleAlert,
+    box: "border-pending bg-pending-soft text-pending-soft-fg",
+    role: "status",
+  },
   danger: { icon: CircleAlert, box: "border-danger bg-danger-soft text-danger-soft-fg", role: "alert" },
   // Emergency is the only solid red, and it carries a stripe pattern and a heavier frame
   // so it reads as different from danger even without colour.

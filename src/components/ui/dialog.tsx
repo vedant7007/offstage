@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { cn } from "cn";
+import { cn } from "@/lib/utils";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { X } from "lucide-react";
 import { useT } from "@/lib/i18n/provider";
@@ -61,12 +61,16 @@ function DialogContent({ title, description, footer, className, children, ...pro
         <div className="flex flex-col gap-1 p-6 pr-14">
           <DialogPrimitive.Title className="text-xl font-semibold">{title}</DialogPrimitive.Title>
           {description ? (
-            <DialogPrimitive.Description className="text-sm text-fg-muted">{description}</DialogPrimitive.Description>
+            <DialogPrimitive.Description className="text-sm text-fg-muted">
+              {description}
+            </DialogPrimitive.Description>
           ) : null}
         </div>
         {children ? <div className="overflow-y-auto px-6 pb-2">{children}</div> : null}
         {footer ? (
-          <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-end">{footer}</div>
+          <div className="flex flex-col-reverse gap-2 border-t border-border p-4 sm:flex-row sm:justify-end">
+            {footer}
+          </div>
         ) : null}
         <CornerClose />
       </DialogPrimitive.Content>

@@ -13,7 +13,11 @@ function ThemeToggle({ className }: { className?: string }) {
   const t = useT();
   const { resolvedTheme, setTheme } = useTheme();
   // The theme is only known in the browser; render a stable placeholder on the server.
-  const mounted = React.useSyncExternalStore(subscribe, () => true, () => false);
+  const mounted = React.useSyncExternalStore(
+    subscribe,
+    () => true,
+    () => false,
+  );
   const dark = mounted && resolvedTheme === "dark";
   return (
     <IconButton

@@ -1,14 +1,6 @@
-@import "tailwindcss";
-@import "tw-animate-css";
-@import "./tokens.css";
-
 /* Components never use dark: for colour; tokens switch instead. This keeps a light panel
    nested inside a dark page (and the reverse) correct on the /design review page. */
 @custom-variant dark (&:where(.dark, .dark *));
-
-@custom-variant data-open (&:where([data-state="open"]));
-@custom-variant data-closed (&:where([data-state="closed"]));
-@custom-variant data-checked (&:where([data-state="checked"]));
 
 /* Only product tokens are available as Tailwind colours, so no stray palette colours creep in. */
 @theme inline {
@@ -71,7 +63,8 @@
   --color-emergency-soft: var(--emergency-soft);
   --color-emergency-soft-fg: var(--emergency-soft-fg);
 
-  /* shadcn aliases, so components added later with the shadcn CLI pick up our palette */
+  /* shadcn names, so components added later with the shadcn CLI pick up our palette.
+     Mapped straight to our tokens so nested .light and .dark panels also flip. */
   --color-background: var(--bg);
   --color-foreground: var(--fg);
   --color-card: var(--surface);
@@ -88,9 +81,32 @@
   --color-accent-foreground: var(--fg);
   --color-destructive: var(--danger);
   --color-input: var(--border-strong);
+  --color-chart-1: var(--curtain);
+  --color-chart-2: var(--agent);
+  --color-chart-3: var(--info);
+  --color-chart-4: var(--pending);
+  --color-chart-5: var(--neutral);
+  --color-sidebar: var(--surface);
+  --color-sidebar-foreground: var(--fg);
+  --color-sidebar-primary: var(--curtain);
+  --color-sidebar-primary-foreground: var(--on-curtain);
+  --color-sidebar-accent: var(--curtain-soft);
+  --color-sidebar-accent-foreground: var(--curtain-soft-fg);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--ring);
+
+  /* shadcn radius scale from --radius (8px). Our components use rounded-control and rounded-card. */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 
   /* Fonts are loaded with next/font in the root layout */
   --font-sans: var(--font-noto-sans), var(--font-noto-devanagari), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-sans);
   --font-display: var(--font-eczar), var(--font-noto-devanagari), Georgia, serif;
   --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
 }
