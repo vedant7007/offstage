@@ -22,7 +22,7 @@ import {
   suggestPush,
   updateDeliverable,
 } from "./outreach";
-import { addLesson, createMilestone, generateReport, updateMilestone } from "./planning";
+import { addLesson, createMilestone, createPlan, generateReport, updateMilestone } from "./planning";
 import { flagDuplicate, mergeRegistrations, promoteWaitlist, setCapacity, setStatus } from "./registration";
 import { cancelSession, changeRoom, createSession, moveSession, shiftDownstream } from "./schedule";
 import { confirmSpeaker, recordRequirements, scheduleSpeakerReminder } from "./speakers";
@@ -31,6 +31,7 @@ type Registry = { [K in ActionKind]?: Executor<K> };
 
 /** One executor per action kind. plan.bundle is handled by the engine itself (children run atomically). */
 const EXECUTORS: Registry = {
+  "plan.create": createPlan,
   "plan.milestone.create": createMilestone,
   "plan.milestone.update": updateMilestone,
   "sponsor.outreach.draft": draftOutreach,

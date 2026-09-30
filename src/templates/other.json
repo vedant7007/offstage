@@ -1,0 +1,20 @@
+{
+  "agentsOff": ["sponsorship", "speaker_liaison"],
+  "budget": [
+    { "key": "venue", "name": "Venue and AV", "pct": 35 },
+    { "key": "catering", "name": "Catering", "pct": 35 },
+    { "key": "marketing", "name": "Marketing", "pct": 15 },
+    { "key": "contingency", "name": "Contingency", "pct": 15 }
+  ],
+  "milestones": [
+    { "title": "Confirm venue", "domain": "logistics", "daysBefore": 30, "critical": true },
+    {
+      "title": "Open registrations or invitations",
+      "domain": "registrations",
+      "daysBefore": 21,
+      "critical": true
+    },
+    { "title": "Volunteer shifts assigned", "domain": "crew", "daysBefore": 5, "critical": false },
+    { "title": "Send final food count to caterer", "domain": "logistics", "daysBefore": 3, "critical": true }
+  ]
+}
