@@ -29,6 +29,8 @@ export type RunContext<S> = {
   untrusted: boolean;
   services: S;
   simulation: boolean;
+  /** Traced propose with the runtime's idempotency key. For tools that build deterministic proposals. */
+  propose: (p: AgentProposal) => Promise<ProposeResult>;
 };
 
 /** A read tool: zod input, one-line description, compact JSON out. Never writes. */

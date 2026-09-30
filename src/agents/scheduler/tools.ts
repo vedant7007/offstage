@@ -1,0 +1,206 @@
+// Scheduler tools. The model sees the solver's options and picks one; code builds the proposal from that
+// option, so the agent can never propose a schedule change the solver did not return.
+
+import { z } from "zod";
+import type { Ripple, Session } from "@/agents/runtime/contracts";
+import type { ReadServices } from "@/agents/runtime/services";
+import type { AgentProposal, RunContext, ToolDef } from "@/agents/runtime/types";
+import { istDateKey, istToUtc } from "@/lib/time";
+import { shortName } from "@/lib/format";
+import {
+  detectClashes,
+  replanOptions,
+  type Change,
+  type Option,
+  type ScheduleState,
+} from "@/solvers/schedule";
+
+type Ctx = RunContext<ReadServices>;
+
+export type Plan = { change: Change | null; state: ScheduleState; options: Option[]; note?: string };
+
+const str = (v: unknown) => (typeof v === "string" ? v : undefined);
+
+/** What the trigger asks the solver to do, or null when nothing needs replanning. */
+function changeFor(
+  ctx: Ctx,
+  sessions: Session[],
+  state: ScheduleState,
+): { change: Change | null; note?: string } {
+  const p = (ctx.payload ?? {}) as Record<string, unknown>;
+  const sessionId = str(p.sessionId);
+  const session = sessions.find((s) => s.id === sessionId);
+  if (!session) return { change: null, note: "The trigger names no known session." };
+  if (ctx.trigger.eventType === "session.cancelled")
+    return {
+      change: { type: "cancel", sessionId: session.id, reason: str(p.reason) ?? "Speaker cancelled" },
+    };
+  if (ctx.trigger.eventType === "session.updated" || ctx.trigger.eventType === "session.room_changed") {
+    const involved = detectClashes(state).some((c) =>
+      "sessionIds" in c ? c.sessionIds.includes(session.id) : c.sessionId === session.id,
+    );
+    return involved
+      ? { change: { type: "move", sessionId: session.id, notBefore: session.startsAt } }
+      : { change: null, note: "The updated session causes no clash. Nothing to replan." };
+  }
+  if (ctx.trigger.eventType === "session.running_late" || p.type === "schedule.shift_downstream") {
+    const minutes = typeof p.minutes === "number" ? p.minutes : 0;
+    if (minutes > 0) return { change: { type: "delay", sessionId: session.id, minutes } };
+  }
+  return { change: null, note: "This trigger needs no schedule change." };
+}
+
+/** Deterministic: same state and trigger, same options. */
+export async function planFor(ctx: Ctx): Promise<Plan> {
+  const [sessions, rooms, choices] = await Promise.all([
+    ctx.services.sessions(),
+    ctx.services.rooms(),
+    ctx.services.sessionChoices(),
+  ]);
+  // A session cancelled before the agent ran still frees its slot; the solver sees it as the thing being replanned.
+  const sessionId = str((ctx.payload as Record<string, unknown> | undefined)?.sessionId);
+  const alreadyCancelled = sessions.find((s) => s.id === sessionId)?.status === "cancelled";
+  const state: ScheduleState = {
+    rooms,
+    choices,
+    sessions: sessions.map((s) =>
+      s.id === sessionId && alreadyCancelled ? { ...s, status: "scheduled" as const } : s,
+    ),
+  };
+  const { change, note } = changeFor(ctx, sessions, state);
+  if (!change) return { change, state, options: [], note };
+
+  const anchor =
+    state.sessions.find((s) => "sessionId" in change && s.id === change.sessionId)?.startsAt ??
+    ctx.services.now();
+  const day = istDateKey(anchor);
+  const constraints = {
+    dayStart: istToUtc(`${day}T08:00`).toISOString(),
+    dayEnd: istToUtc(`${day}T20:00`).toISOString(),
+    protectedWindows: state.sessions
+      .filter((s) => s.kind === "meal" && istDateKey(s.startsAt) === day)
+      .map((s) => ({ start: s.startsAt, end: s.endsAt })),
+  };
+  let options = replanOptions(state, change, constraints);
+  if (alreadyCancelled)
+    options = options
+      .map((o) => ({ ...o, actions: o.actions.filter((a) => a.kind !== "schedule.cancel_session") }))
+      .filter((o) => o.actions.length);
+  return { change, state, options };
+}
+
+const hhmm = (iso: string) => new Date(Date.parse(iso) + 330 * 60_000).toISOString().slice(11, 16);
+
+/** The plan.bundle for one solver option. Summaries and ripple come from data, never from the model. */
+export async function bundleFor(
+  ctx: Ctx,
+  plan: Plan,
+  optionId: string,
+  rationale: string,
+): Promise<AgentProposal> {
+  const option = plan.options.find((o) => o.id === optionId);
+  if (!option) throw new Error(`Unknown option ${optionId}`);
+  const byId = new Map(plan.state.sessions.map((s) => [s.id, s]));
+  const roomName = (id: string) => plan.state.rooms.find((r) => r.id === id)?.name ?? id;
+
+  const children = option.actions.map((a) => {
+    const s = byId.get(a.payload.sessionId)!;
+    const summary =
+      a.kind === "schedule.cancel_session"
+        ? `Cancel "${s.title}"`
+        : `Move "${s.title}" to ${hhmm(a.payload.newStartsAt)}${a.payload.newRoomId ? ` in ${roomName(a.payload.newRoomId)}` : ""}`;
+    return {
+      kind: a.kind,
+      payload: a.payload,
+      summary: summary.slice(0, 120),
+      rationale: option.label,
+      proposedBy: "scheduler" as const,
+    };
+  });
+
+  const touched = option.actions.map((a) => byId.get(a.payload.sessionId)!);
+  const sample = (
+    await Promise.all(touched.map((s) => ctx.services.registrations({ sessionId: s.id, limit: 5 })))
+  )
+    .flat()
+    .slice(0, 5)
+    .map((r) => ({ registrationId: r.id, displayName: shortName(r.name) }));
+  const ripple: Ripple = {
+    sessions: children.map((c, i) => ({ id: touched[i]!.id, title: touched[i]!.title, change: c.summary })),
+    rooms: [
+      ...new Set(
+        option.actions.flatMap((a) => [
+          byId.get(a.payload.sessionId)!.roomId,
+          ...(a.kind === "schedule.move_session" && a.payload.newRoomId ? [a.payload.newRoomId] : []),
+        ]),
+      ),
+    ].map((id) => ({ id, name: roomName(id) })),
+    attendees: { count: option.metrics.attendeesAffected, sample },
+    volunteers: [],
+    announcements: [],
+    kbAnswers: [],
+  };
+
+  return {
+    kind: "plan.bundle",
+    payload: {
+      title: option.label,
+      children,
+      ripple,
+      options: plan.options.map((o) => ({
+        id: o.id,
+        label: o.label,
+        metrics: o.metrics,
+        chosen: o.id === optionId,
+      })),
+    },
+    summary: option.label.slice(0, 120),
+    rationale: rationale.slice(0, 600),
+    evidence: [
+      ...touched.map((s) => ({
+        type: "row" as const,
+        ref: `sessions/${s.id}`,
+        label: s.title.slice(0, 160),
+      })),
+      {
+        type: "metric" as const,
+        ref: `solver/${option.id}`,
+        label: `moved ${option.metrics.movedSessions}, cancelled ${option.metrics.cancelledSessions}, attendees ${option.metrics.attendeesAffected}`,
+      },
+    ],
+  };
+}
+
+export const schedulerTools: ToolDef<ReadServices>[] = [
+  {
+    name: "get_options",
+    description: "Run the schedule solver for this trigger and return its options with metrics.",
+    input: z.object({}),
+    run: (async (_: unknown, ctx: Ctx) => {
+      const plan = await planFor(ctx);
+      return {
+        change: plan.change,
+        note: plan.note,
+        options: plan.options.map(({ id, label, metrics }) => ({ id, label, metrics })),
+      };
+    }) as never,
+  },
+  {
+    name: "choose_option",
+    description:
+      "Propose one solver option for approval. Give its id and a rationale that cites its metrics.",
+    input: z.object({
+      optionId: z.string().describe("An id returned by get_options, such as opt-1"),
+      rationale: z.string().min(1).max(600),
+    }),
+    run: (async (i: { optionId: string; rationale: string }, ctx: Ctx) => {
+      const plan = await planFor(ctx);
+      if (!plan.options.some((o) => o.id === i.optionId))
+        return {
+          error: `No option ${i.optionId}. Choose one of: ${plan.options.map((o) => o.id).join(", ") || "none"}`,
+        };
+      const res = await ctx.propose(await bundleFor(ctx, plan, i.optionId, i.rationale));
+      return res.status === "invalid" ? { status: "invalid", issues: res.issues } : { status: res.status };
+    }) as never,
+  },
+];
