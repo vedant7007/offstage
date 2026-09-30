@@ -36,6 +36,7 @@
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "5.0.102",
     "@ai-sdk/groq": "4.0.53",
+    "@faker-js/faker": "10.6.0",
     "@huggingface/transformers": "4.3.0",
     "ai": "7.0.123",
     "ai-sdk-ollama": "4.3.0",
