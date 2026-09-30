@@ -190,7 +190,19 @@ describe("commander on speaker_cancel", () => {
       s.keynote.registeredCount,
       s.evals.registeredCount,
     ]);
-    expect(b.payload.ripple.attendees.count).toBe(s.keynote.registeredCount + s.evals.registeredCount);
+    // Distinct people across both sessions, and no one twice in the sample.
+    const both = new Set(
+      s.w.registrations
+        .filter(
+          (r) =>
+            r.status === "confirmed" &&
+            (r.sessionChoices.includes(s.keynote.id) || r.sessionChoices.includes(s.evals.id)),
+        )
+        .map((r) => r.id),
+    );
+    expect(b.payload.ripple.attendees.count).toBe(both.size);
+    const sample = (b.payload.ripple.attendees as unknown as { sample: { registrationId: string }[] }).sample;
+    expect(new Set(sample.map((x) => x.registrationId)).size).toBe(sample.length);
     expect(b.payload.options.filter((o) => o.chosen)).toHaveLength(1);
   });
 

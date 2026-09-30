@@ -249,10 +249,16 @@ export async function composeBundle(
     ...option.actions.map((a) => a.payload.sessionId),
   ];
   const touched = [...new Set(touchedIds)].map((id) => byId.get(id)!);
+  // Distinct people: someone registered for two touched sessions counts once.
+  const people = new Set(
+    (await services.sessionChoices(touched.map((s) => s.id))).map((c) => c.registrationId),
+  );
+  const seen = new Set<string>();
   const sample = (
-    await Promise.all(touched.map((s) => services.registrations({ sessionId: s.id, limit: 5 })))
+    await Promise.all(touched.map((s) => services.registrations({ sessionId: s.id, limit: 8 })))
   )
     .flat()
+    .filter((r) => !seen.has(r.id) && Boolean(seen.add(r.id)))
     .slice(0, 8)
     .map((r) => ({ registrationId: r.id, displayName: shortName(r.name) }));
   const ripple: Ripple = {
@@ -274,7 +280,7 @@ export async function composeBundle(
           ),
       ),
     ].map((id) => ({ id, name: roomName(id) })),
-    attendees: { count: touched.reduce((n, s) => n + s.registeredCount, 0), sample },
+    attendees: { count: people.size || touched.reduce((n, s) => n + s.registeredCount, 0), sample },
     volunteers: crew.volunteers,
     announcements: comms.announcements,
     kbAnswers: note

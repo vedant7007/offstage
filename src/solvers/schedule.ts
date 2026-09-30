@@ -2,6 +2,7 @@
 // it never invents its own. Every option returned here is checked to add no new clash.
 
 import type { Room, Session } from "@/agents/runtime/contracts";
+import { formatTime } from "@/lib/time";
 
 export type SolverSession = Pick<
   Session,
@@ -167,8 +168,10 @@ function metrics(state: ScheduleState, actions: ScheduleAction[]): Option["metri
       }
     }
   }
-  for (const c of detectClashes(after))
-    if (c.type === "over_capacity") m.capacityShortfall += c.registered - c.capacity;
+  // Only seats this option leaves short; a shortfall that exists either way is not its cost.
+  const short = (st: ScheduleState) =>
+    detectClashes(st).reduce((n, c) => (c.type === "over_capacity" ? n + c.registered - c.capacity : n), 0);
+  m.capacityShortfall = Math.max(0, short(after) - short(state));
   return m;
 }
 
@@ -224,18 +227,13 @@ function findSlots(
     .map((f) => f.action);
 }
 
-const hhmm = (t: string) => {
-  const d = new Date(ms(t) + 330 * 60_000); // label in IST
-  return `${String(d.getUTCHours()).padStart(2, "0")}:${String(d.getUTCMinutes()).padStart(2, "0")}`;
-};
-
 /** Up to 3 valid options for a change, fewest moved sessions first. */
 export function replanOptions(state: ScheduleState, change: Change, k: Constraints): Option[] {
   const byId = new Map(state.sessions.map((s) => [s.id, s]));
   const roomName = (id?: string) => state.rooms.find((r) => r.id === id)?.name ?? id ?? "";
   const moveLabel = (a: ScheduleAction) =>
     a.kind === "schedule.move_session"
-      ? `move "${byId.get(a.payload.sessionId)!.title}" to ${hhmm(a.payload.newStartsAt)}${a.payload.newRoomId ? ` in ${roomName(a.payload.newRoomId)}` : ""}`
+      ? `move "${byId.get(a.payload.sessionId)!.title}" to ${formatTime(a.payload.newStartsAt)}${a.payload.newRoomId ? ` in ${roomName(a.payload.newRoomId)}` : ""}`
       : `cancel "${byId.get(a.payload.sessionId)!.title}"`;
   const candidates: { label: string; actions: ScheduleAction[] }[] = [];
 
