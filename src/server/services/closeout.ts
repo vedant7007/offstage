@@ -75,7 +75,7 @@ export async function closeoutFacts(eventId: string, client: Db = defaultDb): Pr
       client,
       sql`select
         (select count(*) from ${t.messages} where event_id = ${eventId} and role = 'user') as questions,
-        (select count(*) from ${t.messages} where event_id = ${eventId} and role = 'user' and guard = 'block') as blocked,
+        (select count(*) from ${t.auditLog} where event_id = ${eventId} and action = 'helpdesk.input_blocked') as blocked,
         (select count(*) from ${t.escalations} where event_id = ${eventId}) as escalations,
         (select count(*) from ${t.escalations} where event_id = ${eventId} and status = 'open') as open`,
     ),
