@@ -6,10 +6,11 @@ import * as t from "@/db/schema";
 import { logger } from "@/lib/logger";
 import { getActor, requirePermission } from "@/server/authz";
 import { errorResponse } from "@/server/http";
-import { subscribe, subscribeRuns } from "@/server/events/bus";
+import { subscribe, subscribeOutbox, subscribeRuns } from "@/server/events/bus";
 import { toRun } from "@/server/services/proposals";
 import { getMetrics } from "@/server/services/overview";
 import { sseResponse } from "@/server/sse";
+import { nowUtc } from "@/lib/time";
 
 export const dynamic = "force-dynamic";
 
@@ -86,12 +87,15 @@ export async function GET(req: Request, ctx: Ctx): Promise<Response> {
         .then(([r]) => r && send({ type: "agent_run", run: toRun(r) }))
         .catch((err: unknown) => log.warn({ err }, "run message failed"));
     });
+    // Delivery status for the phone dock: a light nudge, the dock refetches what it shows.
+    const offOutbox = subscribeOutbox(eventId, () => send({ type: "outbox", at: nowUtc().toISOString() }));
     await metrics();
     const timer = setInterval(() => void metrics(), METRICS_MS);
     return () => {
       clearInterval(timer);
       off();
       offRuns();
+      offOutbox();
     };
   });
 }

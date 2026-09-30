@@ -4,6 +4,7 @@ import * as React from "react";
 import { Badge, PageHeader } from "@/components/ui";
 import { formatTime } from "@/lib/time";
 import { GlassBox } from "./glass-box";
+import { PersonaDock } from "./persona-dock";
 import { StageCanvas } from "./stage-canvas";
 import { useStage } from "./use-stage";
 
@@ -112,6 +113,7 @@ export function LiveStage({ eventId }: { eventId: string }) {
           )}
         </ol>
       </section>
+      <PersonaDock eventId={eventId} tick={s.feedTick} live={s.connected} />
       <GlassBox
         eventId={eventId}
         open={open}

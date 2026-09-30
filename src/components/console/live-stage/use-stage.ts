@@ -47,6 +47,8 @@ export function useStage(eventId: string) {
   const [pulses, setPulses] = React.useState<Pulse[]>([]);
   const [log, setLog] = React.useState<LogLine[]>([]);
   const [connected, setConnected] = React.useState(false);
+  // Bumped when a message may have reached someone's phone: an outbox row changed or a proposal moved.
+  const [feedTick, setFeedTick] = React.useState(0);
   const [now, setNow] = React.useState(() => Date.now());
   const agentOf = React.useRef(new Map<string, AgentName>());
   // The server may run a demo clock; metrics carry its time, so the log reads the same clock as the console.
@@ -164,6 +166,7 @@ export function useStage(eventId: string) {
       if (m.kind === "guard") addLog(`${label(m.agent)} screened untrusted input`, "system");
       if (m.kind === "fallback") addLog(`${label(m.agent)} used its rules fallback`, "warn");
     });
+    on("outbox", () => setFeedTick((n) => n + 1));
     on("metrics", ({ metrics }) => {
       offset.current = Date.parse(metrics.at) - Date.now();
     });
@@ -172,6 +175,7 @@ export function useStage(eventId: string) {
       // An auto-executed proposal arrives on both its created and executed events; say each status once.
       if (seen.has(`${p.id}:${p.status}`)) return;
       seen.add(`${p.id}:${p.status}`);
+      setFeedTick((n) => n + 1);
       let agent = agentOf.current.get(p.id);
       if ((!agent || p.kind === "plan.bundle") && p.status === "pending") {
         // The stream card does not say who proposed it; one lookup per new proposal does.
@@ -240,6 +244,7 @@ export function useStage(eventId: string) {
     pulses: pulses.filter((p) => p.until > now),
     log,
     connected,
+    feedTick,
     label,
     reload: loadPending,
     fmt: formatTime,

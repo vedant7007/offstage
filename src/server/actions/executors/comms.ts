@@ -282,6 +282,7 @@ async function deliver(ctx: ExecCtx, d: Delivery): Promise<DeliveryCounts> {
             body,
             category: d.category,
             announcementId: d.announcementId ?? null,
+            createdAt: ctx.now, // the demo clock, like the outbox's sentAt, so a phone reads one clock
           });
           counts.inApp++;
         } else skip("in_app_no_account");

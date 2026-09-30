@@ -62,6 +62,8 @@ export async function mockCall(name: EndpointName, args: Args): Promise<unknown>
       return { items: w.agentRuns, nextCursor: null };
     case "getAgentRun":
       return responses.agentRun(w, p.runId);
+    case "personaFeed":
+      return { personas: [] };
     case "deliveryStats":
       return {
         channels: [
