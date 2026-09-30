@@ -37,7 +37,7 @@ async function expireIfDue(
   row: ProposalRow,
   actor: UserActor,
 ): Promise<boolean> {
-  if (row.status !== "pending" || row.expiresAt.getTime() > Date.now()) return false;
+  if (row.status !== "pending" || row.expiresAt.getTime() > nowUtc().getTime()) return false;
   await tx.update(t.proposals).set({ status: "expired" }).where(eq(t.proposals.id, row.id));
   await tx.update(t.proposals).set({ status: "expired" }).where(eq(t.proposals.parentId, row.id));
   await publish(tx, {
@@ -195,7 +195,7 @@ export async function edit(
         tierReasons: [...tier.reasons, `Edited by ${actor.role}`],
         requiredApprovals: tier.requiredApprovals,
         facultyApprovalRequired: tier.facultyApprovalRequired,
-        expiresAt: new Date(Date.now() + (ev!.settings.proposalTtlMinutes ?? 30) * 60_000),
+        expiresAt: new Date(nowUtc().getTime() + (ev!.settings.proposalTtlMinutes ?? 30) * 60_000),
       })
       .where(eq(t.proposals.id, row.id));
     await publish(tx, {
