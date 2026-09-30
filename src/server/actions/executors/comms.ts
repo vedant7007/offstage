@@ -17,7 +17,8 @@ import type {
 import * as t from "@/db/schema";
 import { istDateKey, istToUtc, isWithinIstHours } from "@/lib/time";
 import { driverFor } from "@/server/channels/registry";
-import { encrypt } from "@/server/pii";
+import { telegramLinkIndex } from "@/server/channels/telegram";
+import { decrypt, encrypt, phoneHash } from "@/server/pii";
 import { ExecutionError, impact, type ExecCtx, type Executor, type Tx } from "../types";
 import { mustLoad } from "./_util";
 
@@ -259,6 +260,12 @@ async function deliver(ctx: ExecCtx, d: Delivery): Promise<DeliveryCounts> {
     : [];
   const seen = new Set(dupRows.map((r) => r.k));
 
+  const tg = d.channels.includes("telegram") ? await telegramLinkIndex(ctx.db) : null;
+  const telegramAddress = (r: Recipient) =>
+    tg?.byRecipient.get(r.id) ??
+    (tg?.byPhone.size && r.phoneEnc ? tg.byPhone.get(phoneHash(decrypt(r.phoneEnc)) ?? "") : undefined) ??
+    null;
+
   const outboxRows: (typeof t.outbox.$inferInsert)[] = [];
   const notes: (typeof t.notifications.$inferInsert)[] = [];
   for (const r of d.recipients) {
@@ -282,9 +289,13 @@ async function deliver(ctx: ExecCtx, d: Delivery): Promise<DeliveryCounts> {
       }
       const key = dedupeKey(r, channel, body);
       const address =
-        channel === "email" ? r.emailEnc : channel === "sms" || channel === "whatsapp" ? r.phoneEnc : null;
+        channel === "email"
+          ? r.emailEnc
+          : channel === "sms" || channel === "whatsapp"
+            ? r.phoneEnc
+            : telegramAddress(r);
       let reason: string | null = null;
-      if (channel === "telegram") reason = "telegram_not_linked";
+      if (channel === "telegram" && !address) reason = "telegram_not_linked";
       else if (!address) reason = `no_${channel === "email" ? "email" : "phone"}`;
       else if (seen.has(key)) reason = "duplicate_24h";
       else if (overCap) reason = "hourly_cap";

@@ -8,7 +8,7 @@ import { setDemoClock } from "@/server/clock";
 const log = logger.child({ module: "demo.reset" });
 
 /**
- * Wipes every table in the public schema (and queued jobs) and reseeds both demo events.
+ * Wipes every table in the public schema except telegram_links (real people's linked chats), and queued jobs, and reseeds both demo events.
  * Target: under 30 seconds. Connects as the owner because TRUNCATE is not granted to the app role.
  *
  *   pnpm demo:reset              clock set to 10:30 IST on HackNova day 1, running forward
@@ -21,7 +21,7 @@ async function main() {
   try {
     const tables = await client<{ table_name: string }[]>`
       select table_name from information_schema.tables
-      where table_schema = 'public' and table_type = 'BASE TABLE'`;
+      where table_schema = 'public' and table_type = 'BASE TABLE' and table_name <> 'telegram_links'`;
     if (tables.length === 0) throw new Error("No tables found. Run pnpm db:migrate first.");
     await client.unsafe(
       `truncate table ${tables.map((t) => `"${t.table_name}"`).join(", ")} restart identity cascade`,

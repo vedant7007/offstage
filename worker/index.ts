@@ -12,6 +12,9 @@ import { startDemoClockSync } from "@/server/clock";
 import { activeEventIds, dbGate, runtimeDepsFor } from "@/server/services/agent-runtime";
 import { registerAgentSchedules } from "./jobs/agents/dispatcher";
 import { registerDomainEventFanOut } from "./jobs/events";
+import { startOutboxDelivery } from "./jobs/outbox";
+import { db } from "@/db/client";
+import { pollTelegram } from "@/server/channels/telegram";
 
 process.env.SUTRADHAR_SERVICE ??= "worker";
 const log = createLogger({ base: { service: "worker" } });
@@ -44,6 +47,10 @@ async function main() {
     activeEvents: () => activeEventIds(),
   });
   log.info({ queues }, "agent schedules registered");
+
+  const stopDelivery = await startOutboxDelivery(log);
+  const telegram = new AbortController();
+  if (process.env.TELEGRAM_BOT_TOKEN) void pollTelegram(db, log, telegram.signal);
   log.info("worker started");
 
   let stopping = false;
@@ -51,6 +58,8 @@ async function main() {
     if (stopping) return;
     stopping = true;
     log.info({ signal }, "worker stopping");
+    stopDelivery();
+    telegram.abort();
     await stopListening().catch(() => {});
     await boss.stop({ graceful: true, timeout: 10_000 });
     process.exit(0);

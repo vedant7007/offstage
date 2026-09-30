@@ -62,6 +62,14 @@ export async function mockCall(name: EndpointName, args: Args): Promise<unknown>
       return { items: w.agentRuns, nextCursor: null };
     case "getAgentRun":
       return responses.agentRun(w, p.runId);
+    case "deliveryStats":
+      return {
+        channels: [
+          { channel: "email", real: 0, mock: 666, pending: 0, failed: 0, skipped: 0 },
+          { channel: "telegram", real: 2, mock: 0, pending: 0, failed: 0, skipped: 664 },
+          { channel: "whatsapp", real: 3, mock: 663, pending: 0, failed: 0, skipped: 0 },
+        ],
+      };
     case "killSwitch":
       return { globalAgentsEnabled: true, agents: w.agents };
     case "listRegistrations":
