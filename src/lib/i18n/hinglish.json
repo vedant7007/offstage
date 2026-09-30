@@ -500,5 +500,9 @@
     "error": "Helpdesk tak nahi pahunch paye. Connection check karo aur phir try karo.",
     "demo": "Jab tak live helpdesk connect nahi hota, demo jawaab dikh rahe hain.",
     "answeredBy": "Event assistant ne event documents se jawaab diya"
+  },
+  "demoInbox": {
+    "link": "Demo inbox: bheja gaya code kholiye",
+    "hint": "Sirf demo mode mein, demo accounts ke liye."
   }
 }

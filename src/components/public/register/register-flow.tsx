@@ -22,6 +22,7 @@ import { CONSENT_VERSION } from "@/lib/i18n/consent";
 import { useLocale, useT } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import { buildIcs, downloadIcs } from "./ics";
+import { DemoInboxLink } from "./demo-inbox-link";
 import { Turnstile } from "./turnstile";
 
 export type ChoosableSession = {
@@ -499,6 +500,7 @@ export function RegisterFlow({ event, sessions, turnstileSiteKey }: Props) {
                 ? t("register.sending")
                 : t("register.verifyIntro", { email: form.email.trim() })}
             </p>
+            <DemoInboxLink slug={event.slug} email={form.email.trim()} sent={busy !== "sending"} />
             <Field label={t("register.code")} error={errors.code} required>
               <Input
                 name="code"
