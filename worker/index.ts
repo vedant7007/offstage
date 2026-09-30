@@ -37,17 +37,13 @@ async function main() {
 
   const stopListening = await registerDomainEventFanOut(boss, log);
 
-  // Schedules share one set of deps; until the runtime takes a per-event services factory,
-  // they are bound to the first active event (the live demo event).
-  const [scheduleEvent] = await activeEventIds();
-  if (scheduleEvent) {
-    const queues = await registerAgentSchedules(boss, {
-      deps: runtimeDepsFor(scheduleEvent) as unknown as RuntimeDeps<unknown>,
-      gate: dbGate(),
-      activeEvents: async () => [scheduleEvent],
-    });
-    log.info({ queues }, "agent schedules registered");
-  }
+  // Scheduled agents run once per active event, each with its own event-bound deps.
+  const queues = await registerAgentSchedules(boss, {
+    deps: (eventId) => runtimeDepsFor(eventId) as unknown as RuntimeDeps<unknown>,
+    gate: dbGate(),
+    activeEvents: () => activeEventIds(),
+  });
+  log.info({ queues }, "agent schedules registered");
   log.info("worker started");
 
   let stopping = false;

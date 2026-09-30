@@ -14,7 +14,6 @@ const { withoutConflicts } = await import("@/agents/commander/compose");
 const { _resetCircuits } = await import("@/ai/router/router");
 const { _resetBudget } = await import("@/ai/router/budget");
 import { fixtures, type EventWorld } from "@/contracts/fixtures";
-import { istToUtc } from "@/lib/time";
 import type { ProposeResult } from "@/agents/runtime/contracts";
 
 const usage = {
@@ -37,51 +36,22 @@ const scripted = (...steps: object[]) => {
   let i = 0;
   return new MockLanguageModelV4({ doGenerate: async () => steps[Math.min(i++, steps.length - 1)] as never });
 };
-const t = (hhmm: string) => istToUtc(`2026-10-24T${hhmm}`).toISOString();
 
-/** The seed after `demo:trigger speaker_cancel`, plus the two session-tied shifts asked for in #53. */
+/** The seed after `demo:trigger speaker_cancel`. */
 function scenario() {
   const w: EventWorld = fixtures.eventFull();
   const keynote = w.sessions.find((s) => s.title === "Keynote: Open source careers")!;
   const evals = w.sessions.find((s) => s.title === "Evaluating LLM apps")!;
   keynote.status = "cancelled";
   const aud = w.rooms.find((r) => r.id === keynote.roomId)!;
-  const sem = w.rooms.find((r) => r.id === evals.roomId)!;
-  const base = { eventId: w.event.id, skills: [] as string[], version: 1 };
-  w.shifts.push(
-    {
-      ...base,
-      id: "shift-keynote",
-      role: "Hall support, Main Auditorium",
-      roomId: aud.id,
-      sessionId: keynote.id,
-      startsAt: t("15:45"),
-      endsAt: t("17:15"),
-      requiredCount: 2,
-    },
-    {
-      ...base,
-      id: "shift-evals",
-      role: "Hall support, Seminar Hall 3",
-      roomId: sem.id,
-      sessionId: evals.id,
-      startsAt: t("16:45"),
-      endsAt: t("18:15"),
-      requiredCount: 2,
-    },
-  );
-  // Two volunteers with light loads cover the Evaluating LLM apps hall.
-  const busy = new Set(w.shiftAssignments.map((a) => a.volunteerId));
-  const free = w.volunteers.filter((v) => v.active && !busy.has(v.id)).slice(0, 2);
+  // Seeded for this scenario (#53): the keynote's hall shift starts empty, Evaluating LLM apps has two.
+  const keynoteShift = w.shifts.find((x) => x.sessionId === keynote.id)!;
+  const evalsShift = w.shifts.find((x) => x.sessionId === evals.id)!;
+  expect(w.shiftAssignments.filter((x) => x.shiftId === keynoteShift.id)).toHaveLength(0);
+  const free = w.shiftAssignments
+    .filter((x) => x.shiftId === evalsShift.id)
+    .map((x) => w.volunteers.find((v) => v.id === x.volunteerId)!);
   expect(free).toHaveLength(2);
-  for (const [i, v] of free.entries())
-    w.shiftAssignments.push({
-      id: `asg-evals-${i}`,
-      shiftId: "shift-evals",
-      volunteerId: v.id,
-      status: "assigned",
-      version: 1,
-    });
   const propose = vi.fn(
     async (_a: unknown, input: { kind: string }) =>
       ({
@@ -102,7 +72,7 @@ function scenario() {
     speakerIds: keynote.speakerIds,
     registeredCount: 240,
   };
-  return { w, keynote, evals, aud, free, propose, trace, deps, payload };
+  return { w, keynote, evals, aud, free, keynoteShift, evalsShift, propose, trace, deps, payload };
 }
 const trigger = {
   type: "domain_event" as const,
@@ -158,13 +128,13 @@ describe("commander on speaker_cancel", () => {
       expect(b.payload.children).toContainEqual(
         expect.objectContaining({
           kind: "crew.unassign_shift",
-          payload: expect.objectContaining({ shiftId: "shift-evals", volunteerId: v.id }),
+          payload: expect.objectContaining({ shiftId: s.evalsShift.id, volunteerId: v.id }),
         }),
       );
       expect(b.payload.children).toContainEqual(
         expect.objectContaining({
           kind: "crew.assign_shift",
-          payload: { shiftId: "shift-keynote", volunteerId: v.id },
+          payload: { shiftId: s.keynoteShift.id, volunteerId: v.id },
         }),
       );
     }

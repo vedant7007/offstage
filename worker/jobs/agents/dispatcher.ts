@@ -1,5 +1,5 @@
 // Wakes agents from domain events and pg-boss schedules, by each config's triggers.
-// Abhinav's event bus calls dispatch() for every domain event; worker/index.ts calls registerAgentSchedules().
+// worker/index.ts calls dispatch() for every domain event and registerAgentSchedules() at start.
 
 import type { PgBoss } from "pg-boss";
 import type { AgentName, DomainEvent, DomainEventType } from "@/agents/runtime/contracts";
@@ -13,7 +13,13 @@ const UNTRUSTED_EVENTS = new Set<DomainEventType>([
   "sponsor.reply_received",
 ]);
 
-export type DispatchEnv = { deps: RuntimeDeps<unknown>; gate: Gate };
+/** `deps` is fixed (tests) or built per event (the worker binds read services to each event). */
+export type DispatchEnv = {
+  deps: RuntimeDeps<unknown> | ((eventId: string) => RuntimeDeps<unknown>);
+  gate: Gate;
+};
+const depsFor = (env: DispatchEnv, eventId: string) =>
+  typeof env.deps === "function" ? env.deps(eventId) : env.deps;
 
 export async function dispatch(
   event: DomainEvent,
@@ -29,7 +35,7 @@ export async function dispatch(
         c.name,
         { type: "domain_event", ref: event.id, eventType: event.type },
         { eventId: event.eventId, payload: event.payload, untrusted: UNTRUSTED_EVENTS.has(event.type) },
-        env.deps,
+        depsFor(env, event.eventId),
         env.gate,
       ),
     })),
@@ -53,7 +59,13 @@ export async function registerAgentSchedules(
       await boss.schedule(queue, t.cron, null, { tz: "Asia/Kolkata" });
       await boss.work(queue, async () => {
         for (const eventId of await env.activeEvents())
-          await wake(c.name, { type: "schedule", ref: t.name }, { eventId, payload: {} }, env.deps, env.gate);
+          await wake(
+            c.name,
+            { type: "schedule", ref: t.name },
+            { eventId, payload: {} },
+            depsFor(env, eventId),
+            env.gate,
+          );
       });
       names.push(queue);
     }

@@ -785,6 +785,8 @@ export function buildHackNova(): EventWorld {
     from: string;
     to: string;
     req: number;
+    /** How many to assign in the seed (defaults to req). */
+    assign?: number;
   };
   const shiftDefs: ShiftDef[] = [
     {
@@ -845,6 +847,31 @@ export function buildHackNova(): EventWorld {
       from: "10:45",
       to: "13:00",
       req: 1,
+    },
+    {
+      // speaker_cancel scenario: the keynote's hall shift starts empty, and the crew of the session
+      // that fills the keynote slot moves into it (Commander bundle, #53).
+      key: "aud-keynote2",
+      role: "Hall support, Main Auditorium",
+      skill: "crowd",
+      room: "auditorium",
+      session: "s09",
+      day: DAY1,
+      from: "15:45",
+      to: "17:15",
+      req: 2,
+      assign: 0,
+    },
+    {
+      key: "sh3-evals",
+      role: "Hall support, Seminar Hall 3",
+      skill: "crowd",
+      room: "sh3",
+      session: "s10",
+      day: DAY1,
+      from: "16:45",
+      to: "18:15",
+      req: 2,
     },
     {
       key: "sh3-am",
@@ -957,7 +984,7 @@ export function buildHackNova(): EventWorld {
     // Ravi always takes the day 1 registration desk.
     const ordered =
       d.key === "reg-d1" ? [volunteers[0]!, ...candidates.filter((v) => v !== volunteers[0])] : candidates;
-    for (const v of ordered.slice(0, d.req)) {
+    for (const v of ordered.slice(0, d.assign ?? d.req)) {
       hoursPlanned.set(v.id, (hoursPlanned.get(v.id) ?? 0) + hours);
       busy.set(v.id, [...(busy.get(v.id) ?? []), [start, end]]);
       const started = start <= nowMs;
