@@ -113,8 +113,10 @@ export function worldServices(
           sessionIds: ids ? r.sessionChoices.filter((s) => ids.includes(s)) : r.sessionChoices,
         }))
         .filter((c) => c.sessionIds.length),
+    // Waitlisted people come in waitlist order (a stable sort keeps everyone else as stored).
     registrations: async (q = {}) =>
-      world.registrations
+      [...world.registrations]
+        .sort((a, b) => (a.waitlistPosition ?? 0) - (b.waitlistPosition ?? 0))
         .filter((r) => !q.sessionId || r.sessionChoices.includes(q.sessionId))
         .slice(0, q.limit ?? 50)
         .map((r) => ({
