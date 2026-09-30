@@ -412,6 +412,17 @@ export const PublicStatusResponse = z.object({
 });
 export type PublicStatusResponse = z.infer<typeof PublicStatusResponse>;
 
+/**
+ * One SSE message on GET /api/public/events/:slug/status/stream (issue #33). Sent as
+ * `event: status` with a full PublicStatusResponse whenever a session starts, ends, is delayed,
+ * cancelled or moved, or a public announcement goes out; `event: heartbeat` every 25 seconds.
+ */
+export const PublicStatusStreamMessage = z.discriminatedUnion("type", [
+  z.object({ type: z.literal("status"), status: PublicStatusResponse }),
+  z.object({ type: z.literal("heartbeat"), at: IsoDateTime }),
+]);
+export type PublicStatusStreamMessage = z.infer<typeof PublicStatusStreamMessage>;
+
 export const OtpRequest = z.object({
   email: z.email().max(254),
   turnstileToken: z.string().max(2048).optional().describe("Required when Turnstile keys are configured"),
@@ -894,6 +905,13 @@ export const ENDPOINTS = {
     path: "/api/public/events/:slug/status",
     auth: "public",
     response: PublicStatusResponse,
+  },
+  publicStatusStream: {
+    method: "GET",
+    path: "/api/public/events/:slug/status/stream",
+    auth: "public",
+    response: PublicStatusStreamMessage,
+    stream: "sse",
   },
   otpRequest: {
     method: "POST",
