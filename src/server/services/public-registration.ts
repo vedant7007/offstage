@@ -4,7 +4,7 @@
  *   otp/request   Turnstile, per-IP and per-email limits, then Better Auth sends the code.
  *   otp/verify    Better Auth checks the code and signs the person in (session cookie), and we
  *                 hand back a short-lived verificationToken bound to this email and event.
- *   register      Checks the token, then in one transaction (event row locked, so two people
+ *   register      Checks the token and the consent notice version, then in one transaction (event row locked, so two people
  *                 cannot take the last seat): registration, session choices, consent, attendee
  *                 membership, ticket when confirmed, domain event and audit row.
  */
@@ -29,6 +29,7 @@ import { badRequest, HttpError } from "@/server/http";
 import { emailHash, encrypt, encryptOptional, normalisePhone, phoneHash } from "@/server/pii";
 import { enforce, OTP_LIMITS } from "@/server/rate-limit";
 import { verifyTurnstile } from "@/server/turnstile";
+import { CONSENT_VERSION } from "@/lib/i18n/consent";
 import { eventBySlug, invalidatePublic } from "./public";
 import { issueTicket, myTicketFor } from "./tickets";
 
@@ -127,14 +128,14 @@ export async function verifyOtp(slug: string, input: OtpVerifyRequest, headers: 
 // Register
 // ---------------------------------------------------------------------------
 
-export async function register(
-  slug: string,
-  input: PublicRegisterRequest,
-  ip: string,
-  headerToken: string | null,
-): Promise<PublicRegisterResponse> {
+/**
+ * No Turnstile check here: the person passed it to get the code, the verification token proves
+ * that, and Turnstile tokens are single-use, so the page cannot send the same one twice.
+ */
+export async function register(slug: string, input: PublicRegisterRequest): Promise<PublicRegisterResponse> {
   const ev = await eventBySlug(slug);
-  await verifyTurnstile(input.turnstileToken ?? headerToken, ip);
+  if (input.consentVersion !== CONSENT_VERSION)
+    throw badRequest("The consent notice has changed. Reload the page and agree to the current one.");
   if (!checkVerificationToken(input.verificationToken, input.email, ev.id))
     throw new HttpError("otp_invalid", "Verify your email again; the check has expired");
 

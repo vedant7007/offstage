@@ -11,8 +11,12 @@ type Ctx = { params: Promise<{ slug: string }> };
 export const POST = route<Ctx>(async (req, ctx) => {
   const { slug } = await ctx.params;
   const body = await readJson(req, PublicRegisterRequest);
-  const ip = clientIp(req);
-  await enforce(`register:ip:${ip}`, 30, 3600, "Too many registrations from this network. Try again later.");
-  const res = await register(slug, body, ip, req.headers.get("x-turnstile-token"));
+  await enforce(
+    `register:ip:${clientIp(req)}`,
+    30,
+    3600,
+    "Too many registrations from this network. Try again later.",
+  );
+  const res = await register(slug, body);
   return json(PublicRegisterResponse, res, { status: 201 });
 });

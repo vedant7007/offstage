@@ -84,7 +84,7 @@ describe("register", () => {
       select count(*)::int as n from registrations where event_id = ${charity.event.id} and status = 'confirmed'`;
     await owner`update events set capacity = ${n + 1} where id = ${charity.event.id}`;
     const results = await Promise.all(
-      [1, 2, 3, 4, 5].map((i) => m.reg.register(SLUG, form(`race${i}@example.test`), "local", null)),
+      [1, 2, 3, 4, 5].map((i) => m.reg.register(SLUG, form(`race${i}@example.test`))),
     );
     const confirmed = results.filter((r) => r.status === "confirmed");
     expect(confirmed).toHaveLength(1);
@@ -94,21 +94,18 @@ describe("register", () => {
   });
 
   it("refuses the same email twice and a token for another email", async () => {
-    await expect(m.reg.register(SLUG, form("race1@example.test"), "local", null)).rejects.toMatchObject({
+    await expect(m.reg.register(SLUG, form("race1@example.test"))).rejects.toMatchObject({
       code: "conflict",
     });
     const f = { ...form("mallory@example.test"), email: "victim@example.test" };
-    await expect(m.reg.register(SLUG, f, "local", null)).rejects.toMatchObject({ code: "otp_invalid" });
+    await expect(m.reg.register(SLUG, f)).rejects.toMatchObject({ code: "otp_invalid" });
+    const stale = { ...form("stale@example.test"), consentVersion: "2025-01" };
+    await expect(m.reg.register(SLUG, stale)).rejects.toMatchObject({ code: "bad_request" });
   });
 
   it("flags the same name at the same college as a possible duplicate", async () => {
-    const a = await m.reg.register(SLUG, form("twin@example.test"), "local", null);
-    const b = await m.reg.register(
-      SLUG,
-      { ...form("twin.alt@example.test"), name: "donor TWIN" },
-      "local",
-      null,
-    );
+    const a = await m.reg.register(SLUG, form("twin@example.test"));
+    const b = await m.reg.register(SLUG, { ...form("twin.alt@example.test"), name: "donor TWIN" });
     expect(a.duplicateSuspected).toBe(false);
     expect(b.duplicateSuspected).toBe(true);
   });
@@ -119,7 +116,7 @@ describe("check-in", () => {
   /** A fresh confirmed registration's ticket: open one more seat, then register. */
   async function confirmedTicket(): Promise<{ ticketPayload: string; signature: string }> {
     await owner`update events set capacity = capacity + 1 where id = ${charity.event.id}`;
-    const r = await m.reg.register(SLUG, form(`scan${n++}@example.test`), "local", null);
+    const r = await m.reg.register(SLUG, form(`scan${n++}@example.test`));
     const [ticketPayload, signature] = r.ticket!.ticket.token.split(".");
     return { ticketPayload: ticketPayload!, signature: signature! };
   }
