@@ -1,0 +1,16 @@
+node_modules/
+.next/
+dist/
+build/
+coverage/
+.env
+.env.*
+!.env.example
+uploads/
+*.log
+playwright-report/
+test-results/
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
