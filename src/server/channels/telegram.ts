@@ -9,6 +9,7 @@ import type { Db } from "@/db/client";
 import type { Tx } from "@/server/actions/types";
 import * as t from "@/db/schema";
 import type { Logger } from "pino";
+import { parseAllowlist } from "@/server/channels/allowlist";
 import { decrypt, encrypt, lookupHash, normalisePhone, phoneHash } from "@/server/pii";
 
 const api = (method: string) => `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/${method}`;
@@ -51,6 +52,7 @@ export async function telegramLinkIndex(db: Tx) {
 }
 
 type Person = { type: "registration" | "volunteer"; id: string; phoneHash: string | null };
+type LinkTarget = Person | { type: null; id: null; phoneHash: string | null };
 
 async function personByPhone(db: Db, hash: string): Promise<Person | null> {
   const [reg] = await db
@@ -80,7 +82,7 @@ async function personByCode(db: Db, code: string): Promise<Person | null> {
   return vol ? { type: "volunteer", ...vol } : null;
 }
 
-async function link(db: Db, chatId: string, person: Person) {
+async function link(db: Db, chatId: string, person: LinkTarget) {
   const row = {
     chatIdHash: chatHash(chatId),
     chatIdEnc: encrypt(chatId),
@@ -125,14 +127,20 @@ export async function handleUpdate(db: Db, u: Update, log: Logger): Promise<void
     if (m.contact.user_id !== m.from?.id)
       return void (await reply({ text: "Please share your own number." }));
     const p = m.contact.phone_number;
-    const hash = phoneHash(normalisePhone(p.startsWith("+") ? p : `+${p}`) ?? "");
-    const person = hash ? await personByPhone(db, hash) : null;
+    const e164 = normalisePhone(p.startsWith("+") ? p : `+${p}`);
+    const hash = e164 ? phoneHash(e164) : null;
+    const inAllowlist = e164 ? parseAllowlist().phones.has(e164) : false;
+    // A team phone links even before the seed has put it on a registration; sends match links by phone hash.
+    const person =
+      (hash ? await personByPhone(db, hash) : null) ??
+      (inAllowlist ? { type: null, id: null, phoneHash: hash } : null);
     if (!person) {
-      log.info({ matched: false }, "telegram link by phone");
+      // No number in the log, only why it did not match.
+      log.info({ matched: false, normalised: Boolean(e164), inAllowlist }, "telegram link by phone");
       return void (await reply({ text: "I couldn't find a registration with that number." }));
     }
     await link(db, chatId, person);
-    log.info({ matched: true, via: "phone", type: person.type }, "telegram link");
+    log.info({ matched: true, via: "phone", type: person.type ?? "allowlist" }, "telegram link");
     return void (await reply({ text: LINKED, reply_markup: { remove_keyboard: true } }));
   }
 
