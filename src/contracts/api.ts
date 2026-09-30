@@ -122,6 +122,7 @@ export const StreamMessage = z.discriminatedUnion("type", [
     agent: AgentName,
     kind: z.string().max(40).describe("Step kind: llm, tool, propose, guard, fallback"),
   }),
+  z.object({ type: z.literal("outbox"), at: IsoDateTime.describe("Outbox rows changed status") }),
   z.object({ type: z.literal("heartbeat"), at: IsoDateTime }),
 ]);
 export type StreamMessage = z.infer<typeof StreamMessage>;
@@ -226,6 +227,31 @@ export const IntakeResponse = z.intersection(
   z.object({ eventId: Id, brief: EventBrief.partial() }),
 );
 export type IntakeResponse = z.infer<typeof IntakeResponse>;
+
+/** GET /api/events/:eventId/persona-feed. What three people see on their phones, for the console dock. */
+export const PersonaFeedItem = z.object({
+  id: Id,
+  at: IsoDateTime,
+  channel: z.enum(["in_app", "email", "sms", "whatsapp", "telegram", "task"]),
+  title: z.string().max(200).optional(),
+  body: z.string().max(4000),
+  status: z
+    .string()
+    .max(40)
+    .describe("queued, delivered, delivered_mock, failed or read for messages; the task status for tasks"),
+});
+export const PersonaFeedResponse = z.object({
+  personas: z.array(
+    z.object({
+      key: z.enum(["attendee", "volunteer", "speaker"]),
+      name: z.string().max(160),
+      role: z.string().max(80),
+      phone: z.string().max(24).optional().describe("Masked: country code and last 4 digits only"),
+      items: z.array(PersonaFeedItem).max(30),
+    }),
+  ),
+});
+export type PersonaFeedResponse = z.infer<typeof PersonaFeedResponse>;
 
 export const KillSwitchRequest = z.discriminatedUnion("scope", [
   z.object({ scope: z.literal("global"), enabled: z.boolean(), reason: z.string().max(300).optional() }),
@@ -839,6 +865,12 @@ export const ENDPOINTS = {
     path: "/api/events/:eventId/agent-runs/:runId",
     auth: "user",
     response: AgentRunResponse,
+  },
+  personaFeed: {
+    method: "GET",
+    path: "/api/events/:eventId/persona-feed",
+    auth: "user",
+    response: PersonaFeedResponse,
   },
   deliveryStats: {
     method: "GET",

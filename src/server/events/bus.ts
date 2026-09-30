@@ -139,3 +139,20 @@ export const subscribeRuns = channel<RunNotice>(RUNS_CHANNEL);
 export async function notifyRun(client: Pick<Db, "execute">, n: RunNotice): Promise<void> {
   await client.execute(sql`select pg_notify(${RUNS_CHANNEL}, ${JSON.stringify(n)})`).catch(() => undefined);
 }
+
+/** Outbox rows of an event changed status (sent, delivered_mock, failed), for the console phone dock. */
+export const OUTBOX_CHANNEL = "sutradhar_outbox";
+export interface OutboxNotice {
+  eventId: string;
+}
+export const subscribeOutbox = channel<OutboxNotice>(OUTBOX_CHANNEL);
+
+/** Best effort, one notice per event per delivery pass. */
+export async function notifyOutbox(client: Pick<Db, "execute">, eventIds: Iterable<string>): Promise<void> {
+  for (const eventId of new Set(eventIds))
+    await client
+      .execute(
+        sql`select pg_notify(${OUTBOX_CHANNEL}, ${JSON.stringify({ eventId } satisfies OutboxNotice)})`,
+      )
+      .catch(() => undefined);
+}

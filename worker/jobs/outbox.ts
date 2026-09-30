@@ -13,6 +13,7 @@ import { sendEmail } from "@/server/channels/email";
 import { driverFor } from "@/server/channels/registry";
 import { linkedChatIds, sendTelegram } from "@/server/channels/telegram";
 import { sendTwilio, twilioStatus } from "@/server/channels/twilio";
+import { notifyOutbox } from "@/server/events/bus";
 import { decrypt } from "@/server/pii";
 
 const BATCH = 200;
@@ -99,6 +100,10 @@ export async function deliverDue(log: Logger): Promise<{ real: number; mock: num
       .where(inArray(t.outbox.id, mockIds));
     counts.mock = mockIds.length;
   }
+  await notifyOutbox(
+    db,
+    rows.map((r) => r.eventId),
+  );
   return counts;
 }
 
@@ -109,7 +114,12 @@ export async function deliverDue(log: Logger): Promise<{ real: number; mock: num
  */
 export async function checkTwilioStatus(log: Logger): Promise<number> {
   const rows = await db
-    .select({ id: t.outbox.id, providerId: t.outbox.providerId, meta: t.outbox.meta })
+    .select({
+      id: t.outbox.id,
+      eventId: t.outbox.eventId,
+      providerId: t.outbox.providerId,
+      meta: t.outbox.meta,
+    })
     .from(t.outbox)
     .where(
       and(
@@ -137,6 +147,7 @@ export async function checkTwilioStatus(log: Logger): Promise<number> {
       .where(eq(t.outbox.id, row.id));
     if (late) {
       failed++;
+      await notifyOutbox(db, [row.eventId]);
       log.warn({ outboxId: row.id, code: s.errorCode }, "twilio reported a delivery failure");
     }
   }

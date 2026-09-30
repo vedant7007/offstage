@@ -56,6 +56,10 @@ export function maskPhone(phone: string | null | undefined): string {
   return `${prefix}${"*".repeat(national.length - 4)}${national.slice(-4)}`;
 }
 
+/** Any run of 10 or more digits (spaces and dashes allowed) in free text is a phone number: keep the last 4. */
+export const maskPhones = (text: string) =>
+  text.replace(/\+?\d[\d\s-]{8,}\d/g, (m) => (m.replace(/\D/g, "").length >= 10 ? maskPhone(m) : m));
+
 /** "sneha.reddy@gmail.com" -> "sn***@gmail.com" */
 export function maskEmail(email: string | null | undefined): string {
   if (!email) return "";
