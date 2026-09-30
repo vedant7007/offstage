@@ -64,6 +64,10 @@ export async function mockCall(name: EndpointName, args: Args): Promise<unknown>
       return responses.agentRun(w, p.runId);
     case "personaFeed":
       return { personas: [] };
+    case "realSends":
+    case "setRealSends":
+      // Mock mode never sends anything real.
+      return { on: false, source: "env", canChange: false };
     case "deliveryStats":
       return {
         channels: [

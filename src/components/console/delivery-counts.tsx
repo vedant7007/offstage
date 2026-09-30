@@ -28,15 +28,14 @@ const COLUMNS: Column<Row>[] = [
     header: "Failed",
     align: "end",
     cell: (r) => {
-      const codes = Object.entries(r.failureCodes ?? {});
+      // Readable notes from the server ("Twilio daily cap reached, resets in 5 hours"); codes as a fallback.
+      const notes = r.failureNotes?.length
+        ? r.failureNotes
+        : Object.entries(r.failureCodes ?? {}).map(([code, n]) => `error ${code}: ${n}`);
       return (
         <>
           {r.failed.toLocaleString("en-IN")}
-          {codes.length ? (
-            <span className="block text-xs text-fg-muted">
-              {codes.map(([code, n]) => `error ${code}: ${n}`).join(", ")}
-            </span>
-          ) : null}
+          {notes.length ? <span className="block text-xs text-fg-muted">{notes.join("; ")}</span> : null}
         </>
       );
     },

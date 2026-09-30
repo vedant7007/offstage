@@ -56,7 +56,11 @@ async function main() {
 
   const stopDelivery = await startOutboxDelivery(log);
   const telegram = new AbortController();
-  if (process.env.TELEGRAM_BOT_TOKEN) void pollTelegram(db, log, telegram.signal);
+  // Telegram allows one poller per bot token, so only the worker that owns the bot polls (the
+  // server). Sending needs only the token, so outbound Telegram works with polling off.
+  const polling = process.env.TELEGRAM_POLLING === "on" && Boolean(process.env.TELEGRAM_BOT_TOKEN);
+  log.info(`telegram polling: ${polling ? "on" : "off"}`);
+  if (polling) void pollTelegram(db, log, telegram.signal);
   log.info("worker started");
 
   let stopping = false;

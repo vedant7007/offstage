@@ -15,7 +15,7 @@ Do this 30 minutes before, in order. Tick each line.
 1. **Services.** `docker compose up -d db mailpit`, then `pnpm dev` and `pnpm worker` in two terminals. The worker prints `worker started`.
 2. **Only one worker.** Stop every other worktree's worker (another `pnpm worker` on the same Telegram bot token logs `telegram getUpdates 409` and steals replies).
 3. **Profile.** `.env` has `AI_PROFILE=demo` and `DEMO_MODE=true`. Run `pnpm ai:smoke`; every provider says ok.
-4. **Reset.** `pnpm demo:reset`. It prints `demo clock: now reads as ... 10:30 IST, HackNova day 1`. Then wait 15 seconds before clicking anything: the web app re-reads the demo clock every 15 seconds, and an approval inside that window runs on real time (quiet hours can hold the messages).
+4. **Reset.** `pnpm demo:reset`. It prints `demo clock: now reads as ... 10:30 IST, HackNova day 1`.
 5. **WhatsApp sandbox.** Each phone in `DEMO_REAL_RECIPIENTS` sends the join phrase to the sandbox number on demo morning (the join lasts 72 hours).
 6. **Twilio daily limit.** Do not rehearse with the real numbers on demo day. The trial account has a daily message cap; once it is spent every WhatsApp send fails with `twilio 429 code 63038` until the next day. Rehearse with `DEMO_REAL_RECIPIENTS` empty, then restore it.
 7. **Telegram.** Each team phone opened the bot once, sent `/start` and shared its number ("You're linked."). Links survive a reset.
@@ -101,5 +101,5 @@ Do this 30 minutes before, in order. Tick each line.
 
 ## After the demo
 
-- `pnpm demo:reset` returns the world to 10:30 IST for the next run (then wait 15 seconds).
+- `pnpm demo:reset` returns the world to 10:30 IST for the next run.
 - Not in this demo yet, keep them on the "Next" slide: the offline check-in scanner screen, the close-out report with the OD list, certificate verification, the evals page.
