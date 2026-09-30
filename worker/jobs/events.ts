@@ -82,11 +82,16 @@ export async function handleDomainEvent(id: string, log: Logger): Promise<void> 
 
 export async function registerDomainEventFanOut(boss: PgBoss, log: Logger): Promise<() => Promise<void>> {
   await boss.createQueue(DOMAIN_EVENT_QUEUE);
-  await boss.work<{ id: string }>(DOMAIN_EVENT_QUEUE, async (jobs) => {
-    // The periodic sync can lag a demo reset by up to 15 s; agents must stamp proposals with the current clock.
-    await syncDemoClock().catch((err: unknown) => log.warn({ err }, "demo clock sync failed"));
-    for (const job of jobs) await handleDomainEvent(job.data.id, log);
-  });
+  // Bursts (40 check-ins, 12 questions) drain in batches instead of one job per 2 s poll; order is kept.
+  await boss.work<{ id: string }>(
+    DOMAIN_EVENT_QUEUE,
+    { batchSize: 10, burstWhenBatchFull: true, pollingIntervalSeconds: 0.5 },
+    async (jobs) => {
+      // The periodic sync can lag a demo reset by up to 15 s; agents must stamp proposals with the current clock.
+      await syncDemoClock().catch((err: unknown) => log.warn({ err }, "demo clock sync failed"));
+      for (const job of jobs) await handleDomainEvent(job.data.id, log);
+    },
+  );
 
   const enqueue = (id: string) =>
     boss

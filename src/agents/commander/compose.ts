@@ -2,7 +2,7 @@
 // Schedule moves, the crew that follows them, an announcement per affected segment, and a schedule note in
 // the knowledge base. Everything here is deterministic; the model only chose the option and wrote the why.
 
-import type { BundleChild, Ripple } from "@/agents/runtime/contracts";
+import type { BundleChild, Channel, Ripple } from "@/agents/runtime/contracts";
 import type { ReadServices } from "@/agents/runtime/services";
 import type { AgentProposal } from "@/agents/runtime/types";
 import { announcement, plannedChange, template, type Change as HeraldChange } from "@/agents/herald/tools";
@@ -33,6 +33,7 @@ async function crewMoves(services: ReadServices, plan: PlanInput, actions: Sched
   const children: Child[] = [];
   const moved: Ripple["volunteers"] = [];
   const name = (id: string) => volunteers.find((v) => v.id === id)?.name ?? "A volunteer";
+  const roomName = (id: string) => plan.state.rooms.find((r) => r.id === id)?.name ?? "the venue";
   const cancelledId = plan.change?.type === "cancel" ? plan.change.sessionId : undefined;
   const filledSlots = new Set<string>();
 
@@ -73,6 +74,28 @@ async function crewMoves(services: ReadServices, plan: PlanInput, actions: Sched
             proposedBy: "crew_chief",
           },
         );
+        // The volunteer hears about their own move directly. The outbox sends for real only to allowlisted
+        // addresses; every other row is delivered to the mock driver.
+        const v = volunteers.find((x) => x.id === asg.volunteerId);
+        const channels: Channel[] = [
+          "in_app",
+          ...(v?.telegramLinked ? (["telegram"] as const) : []),
+          ...(v?.phoneMasked ? (["whatsapp"] as const) : []),
+        ];
+        const body = `Your shift moved: ${target.role} is now at ${roomName(target.roomId ?? room)}, ${when(target.startsAt)}. Reply OK to confirm.`;
+        children.push({
+          kind: "comms.send_direct",
+          payload: {
+            recipient: { type: "volunteer", id: asg.volunteerId },
+            channels,
+            subject: "Your shift moved",
+            bodyByChannel: Object.fromEntries(channels.map((c) => [c, body])),
+            category: "change",
+          },
+          summary: `Tell ${who} about the shift move`.slice(0, 120),
+          rationale: "A volunteer learns about their own shift change directly.",
+          proposedBy: "crew_chief",
+        });
         moved.push({
           id: asg.volunteerId,
           displayName: shortName(who),
@@ -151,6 +174,34 @@ async function announcements(services: ReadServices, plan: PlanInput, actions: S
     if (c) add(c, template(c));
   }
   return { children, announcements: out };
+}
+
+/** The speakers of a moved session hear it from us directly, not from the attendee announcement. */
+function speakerNotes(plan: PlanInput, actions: ScheduleAction[]): Child[] {
+  const room = (id: string) => plan.state.rooms.find((r) => r.id === id)?.name ?? "the venue";
+  const out: Child[] = [];
+  for (const a of actions) {
+    if (a.kind !== "schedule.move_session") continue;
+    const s = plan.state.sessions.find((x) => x.id === a.payload.sessionId)!;
+    const where = room(a.payload.newRoomId ?? s.roomId);
+    for (const speakerId of s.speakerIds ?? []) {
+      const body = `Your session "${s.title}" has moved to ${when(a.payload.newStartsAt)} in ${where}. Everything else stays the same. Reply here if the new time does not work for you.`;
+      out.push({
+        kind: "comms.send_direct",
+        payload: {
+          recipient: { type: "speaker", id: speakerId },
+          channels: ["email"],
+          subject: `Your session moved to ${formatTime(a.payload.newStartsAt)}`,
+          bodyByChannel: { email: body },
+          category: "change",
+        },
+        summary: `Tell the speaker of "${s.title}" about the move`.slice(0, 120),
+        rationale: "A speaker learns about their own session's move directly.",
+        proposedBy: "speaker_liaison",
+      });
+    }
+  }
+  return out;
 }
 
 function scheduleNote(plan: PlanInput, actions: ScheduleAction[]): Child | undefined {
@@ -241,6 +292,7 @@ export async function composeBundle(
     ...schedule,
     ...crew.children,
     ...comms.children,
+    ...speakerNotes(plan, option.actions),
     ...(note ? [note] : []),
   ]);
 

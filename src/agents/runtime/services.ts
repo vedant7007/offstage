@@ -20,6 +20,9 @@ import type {
 } from "./contracts";
 import type {
   BudgetCategory,
+  Escalation,
+  FoodCount,
+  FoodPref,
   Checkin,
   Checklist,
   FunnelSnapshot,
@@ -70,6 +73,12 @@ export interface ReadServices {
   checkins(sinceIso?: string): Promise<Checkin[]>;
   /** Speakers with status and requirements, never contact details. */
   speakerRoster(): Promise<SpeakerRosterEntry[]>;
+  /** Food preferences of confirmed registrations: everyone, and hackathon team members only. No names. */
+  foodPreferences(): Promise<{ all: FoodPref[]; teams: FoodPref[] }>;
+  /** Food counts already recorded for the caterer, per date and meal. */
+  recordedFoodCounts(): Promise<FoodCount[]>;
+  /** Helpdesk escalations: questions the helpdesk could not answer and passed to a person. */
+  escalations(): Promise<Escalation[]>;
   /** Attendee and volunteer helpdesk questions since an instant. Untrusted text: wrap before a prompt. */
   helpdeskQuestions(sinceIso: string): Promise<HelpdeskQuestion[]>;
 }
@@ -159,6 +168,15 @@ export function worldServices(
         sessionIds,
         requirementsSubmitted,
       })),
+    foodPreferences: async () => {
+      const confirmed = world.registrations.filter((r) => r.status === "confirmed");
+      return {
+        all: confirmed.map((r) => r.foodPref),
+        teams: confirmed.filter((r) => r.teamId).map((r) => r.foodPref),
+      };
+    },
+    recordedFoodCounts: async () => recordedCounts(world.inventory),
+    escalations: async () => world.escalations,
     helpdeskQuestions: async (since) => {
       const channel = new Map(world.conversations.map((c) => [c.id, c.channel]));
       return world.messages
@@ -179,4 +197,30 @@ export function snapshot(
   opts: { searchKb?: ReadServices["searchKb"] } = {},
 ): ReadServices {
   return worldServices(structuredClone(world), opts);
+}
+
+const DIET_KEYS = { veg: "veg", "non-veg": "nonVeg", vegan: "vegan", jain: "jain", other: "other" } as const;
+
+/** Food counts are stored as inventory rows named "<meal> <date> <diet>" (see the food count executor). */
+export function recordedCounts(items: { name: string; count: number }[]): FoodCount[] {
+  const by = new Map<string, FoodCount>();
+  for (const i of items) {
+    const m = /^(breakfast|lunch|snacks|dinner) (\d{4}-\d{2}-\d{2}) (veg|non-veg|vegan|jain|other)$/.exec(
+      i.name,
+    );
+    if (!m) continue;
+    const k = `${m[2]} ${m[1]}`;
+    const c = by.get(k) ?? {
+      date: m[2]!,
+      meal: m[1] as FoodCount["meal"],
+      veg: 0,
+      nonVeg: 0,
+      vegan: 0,
+      jain: 0,
+      other: 0,
+    };
+    c[DIET_KEYS[m[3] as keyof typeof DIET_KEYS]] = i.count;
+    by.set(k, c);
+  }
+  return [...by.values()];
 }

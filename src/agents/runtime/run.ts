@@ -2,6 +2,7 @@
 // tools and act only through the propose tool, traces every step, and falls back to rules when models fail.
 
 import { nowUtc } from "@/lib/time";
+import { tidy } from "./wording";
 import { createHash } from "node:crypto";
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
@@ -118,7 +119,11 @@ export async function runAgent<S>(
   let tokens = { inputTokens: 0, outputTokens: 0, costUsd: 0 };
 
   const proposeAndTrace = async (raw: AgentProposal) => {
-    const { dedupeKey, ...rest } = raw;
+    const { dedupeKey, ...rest } = {
+      ...raw,
+      summary: tidy(raw.summary),
+      ...(raw.rationale ? { rationale: tidy(raw.rationale) } : {}),
+    };
     const inputWithKey = {
       ...rest,
       idempotencyKey: idempotencyKey(config.name, trigger, runId, {

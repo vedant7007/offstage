@@ -11,7 +11,13 @@
 import { and, asc, desc, eq, gte } from "drizzle-orm";
 import type { ReadServices } from "@/agents/runtime/services";
 import { worldServices } from "@/agents/runtime/services";
-import { AGENT_DOMAIN, type Actor, type AgentConfigSummary, type Registration } from "@/contracts";
+import {
+  AGENT_DOMAIN,
+  type Actor,
+  type AgentConfigSummary,
+  type Escalation,
+  type Registration,
+} from "@/contracts";
 import type { EventWorld } from "@/contracts/fixtures";
 import { db as defaultDb, type Db } from "@/db/client";
 import * as t from "@/db/schema";
@@ -600,8 +606,50 @@ export function createReadServices(
     marketing: async () => (await get()).marketing(),
     checklists: async () => (await get()).checklists(),
     inventory: async () => (await get()).inventory(),
-    checkins: async (since) => (await get()).checkins(since),
+    // Straight from the table: Radar reads this on every check-in, so it must not load the whole event.
+    checkins: async (since) => {
+      const rows = await client
+        .select({ c: t.checkins, scannerName: t.users.name })
+        .from(t.checkins)
+        .leftJoin(t.users, eq(t.users.id, t.checkins.scannerUserId))
+        .where(
+          and(
+            eq(t.checkins.eventId, eventId),
+            since ? gte(t.checkins.serverTime, new Date(since)) : undefined,
+          ),
+        );
+      return rows.map(({ c, scannerName }) => ({
+        id: c.id,
+        eventId: c.eventId,
+        ticketId: c.ticketId,
+        registrationId: c.registrationId,
+        sessionId: c.sessionId ?? undefined,
+        scannerUserId: c.scannerUserId,
+        scannerName: scannerName ?? undefined,
+        clientId: c.clientId,
+        deviceTime: c.deviceTime.toISOString(),
+        serverTime: c.serverTime.toISOString(),
+        duplicate: c.duplicate,
+        originalCheckinId: c.originalCheckinId ?? undefined,
+      }));
+    },
     speakerRoster: async () => (await get()).speakerRoster(),
+    foodPreferences: async () => (await get()).foodPreferences(),
+    recordedFoodCounts: async () => (await get()).recordedFoodCounts(),
+    // Not part of the loaded world, so read straight from the table.
+    escalations: async () => {
+      const rows = await client.select().from(t.escalations).where(eq(t.escalations.eventId, eventId));
+      return rows.map((r) => ({
+        id: r.id,
+        eventId: r.eventId,
+        conversationId: r.conversationId ?? "",
+        summary: r.summary,
+        suggestedReply: r.suggestedReply ?? undefined,
+        priority: r.priority as Escalation["priority"],
+        status: r.status as Escalation["status"],
+        createdAt: r.createdAt.toISOString(),
+      }));
+    },
     // Not part of the loaded world (messages can be many), so read straight from the table.
     helpdeskQuestions: async (since) => {
       const rows = await client

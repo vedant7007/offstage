@@ -223,13 +223,13 @@ export const updateInventory: Executor<"logistics.inventory.update"> = {
   },
 };
 
-const DIETS = ["veg", "nonVeg", "vegan", "jain", "other"] as const;
+export const DIETS = ["veg", "nonVeg", "vegan", "jain", "other"] as const;
 const DIET_LABEL = { veg: "veg", nonVeg: "non-veg", vegan: "vegan", jain: "jain", other: "other" } as const;
 
 // There is no meal table, so food counts are inventory items named per day, meal and diet
 // ("lunch 2026-10-24 veg", unit "meals"): the caterer order is a count of things, and it gets
 // the same undo and history as any other stock.
-const mealName = (date: string, meal: string, d: (typeof DIETS)[number]) =>
+export const mealName = (date: string, meal: string, d: (typeof DIETS)[number]) =>
   `${meal} ${date} ${DIET_LABEL[d]}`;
 
 export const setFoodCount: Executor<"logistics.food_count.set"> = {

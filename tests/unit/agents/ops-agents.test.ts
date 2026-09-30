@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import type { Checklist, Incident, Milestone, RegistrationSummary, Session } from "@/contracts";
 import { ActionPayloads } from "@/contracts";
 import { fixtures, type EventWorld } from "@/contracts/fixtures";
-import { worldServices } from "@/agents/runtime/services";
+import { recordedCounts, worldServices } from "@/agents/runtime/services";
 import type { AgentConfig, AgentProposal, RunContext } from "@/agents/runtime/types";
 import type { ReadServices } from "@/agents/runtime/services";
 import { duplicates, toPromote } from "@/agents/registrar/logic";
@@ -300,6 +300,7 @@ describe("Chronicler", () => {
       sessions: w.sessions,
       incidents: w.incidents,
       helpdeskQuestions: 7,
+      escalations: [{ status: "open" }, { status: "answered" }, { status: "closed" }] as never,
       volunteers: [
         { active: true, hoursServed: 2.5 },
         { active: false, hoursServed: 9 },
@@ -320,6 +321,8 @@ describe("Chronicler", () => {
       moneyOutInr: 15_000,
       incidents: 2,
       incidentsResolved: 1,
+      escalations: 3,
+      escalationsOpen: 1,
     });
   });
 
@@ -341,5 +344,19 @@ describe("Chronicler", () => {
     const out = await run(chronicler, w, { type: "command", ref: "cmd-1" });
     expect(out.map((p) => p.kind)).toEqual(["report.generate", "playbook.add_lesson"]);
     expect(out[0]!.rationale).toContain("checked in");
+  });
+});
+
+describe("recorded food counts", () => {
+  it("reads the food count rows back per date and meal, ignoring other inventory", () => {
+    const got = recordedCounts([
+      { name: "lunch 2026-10-24 veg", count: 180 },
+      { name: "lunch 2026-10-24 non-veg", count: 120 },
+      { name: "lunch 2026-10-24 jain", count: 4 },
+      { name: "Lanyards", count: 500 },
+    ]);
+    expect(got).toEqual([
+      { date: "2026-10-24", meal: "lunch", veg: 180, nonVeg: 120, vegan: 0, jain: 4, other: 0 },
+    ]);
   });
 });

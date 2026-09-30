@@ -96,7 +96,7 @@ export async function getProposalDetail(
 }
 
 type RunRow = typeof t.agentRuns.$inferSelect;
-const toRun = (r: RunRow): AgentRun =>
+export const toRun = (r: RunRow): AgentRun =>
   AgentRun.parse({
     id: r.id,
     eventId: r.eventId,

@@ -1,6 +1,14 @@
 // The numbers of the final report, computed in code. The model may word them, never change them.
 
-import type { Checkin, Incident, LedgerEntry, RegistrationSummary, Session, Volunteer } from "@/contracts";
+import type {
+  Checkin,
+  Escalation,
+  Incident,
+  LedgerEntry,
+  RegistrationSummary,
+  Session,
+  Volunteer,
+} from "@/contracts";
 
 export type ReportFacts = {
   confirmed: number;
@@ -11,6 +19,8 @@ export type ReportFacts = {
   incidents: number;
   incidentsResolved: number;
   helpdeskQuestions: number;
+  escalations: number;
+  escalationsOpen: number;
   volunteers: number;
   volunteerHours: number;
   moneyInInr: number;
@@ -23,6 +33,7 @@ export function reportFacts(w: {
   sessions: Session[];
   incidents: Incident[];
   helpdeskQuestions: number;
+  escalations: Escalation[];
   volunteers: Volunteer[];
   ledger: LedgerEntry[];
 }): ReportFacts {
@@ -37,6 +48,8 @@ export function reportFacts(w: {
     incidents: w.incidents.length,
     incidentsResolved: w.incidents.filter((i) => i.status === "resolved").length,
     helpdeskQuestions: w.helpdeskQuestions,
+    escalations: w.escalations.length,
+    escalationsOpen: w.escalations.filter((e) => e.status === "open").length,
     volunteers: active.length,
     volunteerHours: Math.round(active.reduce((s, v) => s + v.hoursServed, 0) * 10) / 10,
     moneyInInr: sum(w.ledger.filter((e) => e.type === "income" && e.status === "received")),

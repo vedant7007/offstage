@@ -193,6 +193,15 @@ export function buildHackNova(): EventWorld {
       odLettersEnabled: true,
       certificatesEnabled: true,
       proposalTtlMinutes: 30,
+      // From the Food and Menu document: dinner and midnight snacks are for hackathon teams only.
+      mealPlan: [
+        { date: "2026-10-24", meal: "breakfast", time: "08:00", audience: "all" },
+        { date: "2026-10-24", meal: "lunch", time: "12:30", audience: "all" },
+        { date: "2026-10-24", meal: "snacks", time: "16:30", audience: "all" },
+        { date: "2026-10-24", meal: "dinner", time: "20:00", audience: "hackathon_teams" },
+        { date: "2026-10-25", meal: "breakfast", time: "07:30", audience: "all" },
+        { date: "2026-10-25", meal: "lunch", time: "12:30", audience: "all" },
+      ],
     },
     brief: {
       name: "HackNova 2026",

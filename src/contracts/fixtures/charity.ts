@@ -79,6 +79,7 @@ export function buildCharityDrive(hacknova: Pick<EventWorld, "org" | "personas">
     capacity: 150,
     status: "planning",
     settings: {
+      mealPlan: [],
       t3MoneyThresholdInr: 5_000,
       broadcastT3Recipients: 100,
       facultyApproverRequired: false,

@@ -57,6 +57,21 @@ export const EventSettings = z.object({
   odLettersEnabled: z.boolean().default(true),
   certificatesEnabled: z.boolean().default(true),
   proposalTtlMinutes: z.int().min(5).max(1440).default(30),
+  mealPlan: z
+    .array(
+      z.object({
+        date: IsoDate,
+        meal: Meal,
+        time: z
+          .string()
+          .regex(/^\d{2}:\d{2}$/)
+          .describe("IST serving start, HH:MM"),
+        audience: z.enum(["all", "hackathon_teams"]).default("all").describe("Who eats this meal"),
+      }),
+    )
+    .max(60)
+    .default([])
+    .describe("Meals the event serves. Logistics keeps a food count for each."),
 });
 export type EventSettings = z.infer<typeof EventSettings>;
 
