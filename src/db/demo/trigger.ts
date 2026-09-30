@@ -1,7 +1,7 @@
 import "@/server/load-env";
 import { and, asc, eq, inArray, isNull, sql as dsql } from "drizzle-orm";
-import { z } from "zod";
 import { DomainEventPayloads, type Actor } from "@/contracts";
+import { DemoScenario } from "@/contracts/api";
 import { HACKNOVA_SLUG } from "@/contracts/fixtures";
 import { db, sql, type Db } from "@/db/client";
 import * as t from "@/db/schema";
@@ -14,15 +14,8 @@ import { audit, publish } from "@/server/events/bus";
 const log = logger.child({ module: "demo.trigger" });
 
 /** Scripted demo disruptions (blueprint Section 11). */
-export const Scenario = z.enum([
-  "speaker_cancel",
-  "lunch_confusion",
-  "volunteer_noshow",
-  "queue_spike",
-  "budget_breach",
-  "projector_voice_note",
-]);
-export type Scenario = z.infer<typeof Scenario>;
+export const Scenario = DemoScenario;
+export type Scenario = DemoScenario;
 
 type Tx = Parameters<Parameters<Db["transaction"]>[0]>[0];
 interface Ctx {

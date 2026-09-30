@@ -2,6 +2,7 @@ import "@/server/load-env";
 import { HACKNOVA_NOW } from "@/contracts/fixtures";
 import { ownerDb, ownerSql } from "@/db/client";
 import { seed } from "@/db/seed";
+import { indexPendingPg } from "@/ai/rag/pg";
 import { logger } from "@/lib/logger";
 import { setDemoClock } from "@/server/clock";
 
@@ -32,6 +33,8 @@ async function main() {
 
     const db = ownerDb(client);
     const result = await seed(db);
+    // Index the seeded documents now, so the helpdesk never starts a demo with an unindexed FAQ.
+    const indexed = await indexPendingPg(db);
     const clock = await setDemoClock(db, realTime ? null : new Date(HACKNOVA_NOW));
     const ms = Date.now() - started;
     log.info(
@@ -40,6 +43,9 @@ async function main() {
     );
     console.log(
       `demo reset: ${tables.length} tables wiped, seeded ${result.events.join(" and ")} in ${ms} ms`,
+    );
+    console.log(
+      `knowledge base: indexed ${indexed.length} documents, ${indexed.reduce((s, d) => s + d.chunks, 0)} chunks`,
     );
     console.log(
       clock
