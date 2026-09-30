@@ -1,12 +1,7 @@
 import "@/server/load-env";
 import { PgBoss } from "pg-boss";
-import { commander } from "@/agents/commander/config";
-import { crewChief } from "@/agents/crew-chief/config";
-import { helpdesk } from "@/agents/helpdesk/config";
-import { herald } from "@/agents/herald/config";
-import { register } from "@/agents/runtime/registry";
+import { registerAllAgents } from "@/agents";
 import type { RuntimeDeps } from "@/agents/runtime/types";
-import { scheduler } from "@/agents/scheduler/config";
 import { createLogger } from "@/lib/logger";
 import { startDemoClockSync } from "@/server/clock";
 import { activeEventIds, dbGate, runtimeDepsFor } from "@/server/services/agent-runtime";
@@ -18,11 +13,6 @@ import { pollTelegram } from "@/server/channels/telegram";
 
 process.env.SUTRADHAR_SERVICE ??= "worker";
 const log = createLogger({ base: { service: "worker" } });
-
-/** Agents that exist today. Replace with a registerAllAgents() from src/agents once it exists. */
-function registerAgents(): void {
-  for (const config of [commander, scheduler, crewChief, herald, helpdesk]) register(config as never);
-}
 
 /**
  * Background worker: domain event fan-out to agents and the KB indexer, agent schedules,
@@ -36,7 +26,7 @@ async function main() {
   boss.on("error", (err: unknown) => log.error({ err }, "pg-boss error"));
   await boss.start();
   startDemoClockSync();
-  registerAgents();
+  registerAllAgents();
 
   const stopListening = await registerDomainEventFanOut(boss, log);
 

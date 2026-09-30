@@ -18,8 +18,11 @@ import type {
 } from "./contracts";
 
 type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
-/** A proposal as an agent writes it. The runtime adds the idempotency key. */
-export type AgentProposal = DistributiveOmit<ProposeInputRaw, "idempotencyKey">;
+/**
+ * A proposal as an agent writes it. The runtime adds the idempotency key. `dedupeKey` replaces the trigger in
+ * that key, for agents that see the same situation through many events (twelve lunch questions, one incident).
+ */
+export type AgentProposal = DistributiveOmit<ProposeInputRaw, "idempotencyKey"> & { dedupeKey?: string };
 
 /** What an agent run can see. `S` is the read-service surface: real services, a what-if snapshot, or a fake. */
 export type RunContext<S> = {

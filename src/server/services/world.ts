@@ -8,7 +8,7 @@
  * Vedant's worldServices, so the database and the fixtures give agents identical shapes:
  * masked contact details and public speaker fields only.
  */
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, desc, eq, gte } from "drizzle-orm";
 import type { ReadServices } from "@/agents/runtime/services";
 import { worldServices } from "@/agents/runtime/services";
 import { AGENT_DOMAIN, type Actor, type AgentConfigSummary, type Registration } from "@/contracts";
@@ -591,5 +591,38 @@ export function createReadServices(
     kbDocuments: async () => (await get()).kbDocuments(),
     searchKb: (query, k) => search(query, k),
     lessons: async () => (await get()).lessons(),
+    incidents: async () => (await get()).incidents(),
+    tasks: async () => (await get()).tasks(),
+    milestones: async () => (await get()).milestones(),
+    budget: async () => (await get()).budget(),
+    quotes: async () => (await get()).quotes(),
+    sponsors: async () => (await get()).sponsors(),
+    marketing: async () => (await get()).marketing(),
+    checklists: async () => (await get()).checklists(),
+    inventory: async () => (await get()).inventory(),
+    checkins: async (since) => (await get()).checkins(since),
+    speakerRoster: async () => (await get()).speakerRoster(),
+    // Not part of the loaded world (messages can be many), so read straight from the table.
+    helpdeskQuestions: async (since) => {
+      const rows = await client
+        .select({
+          messageId: t.messages.id,
+          text: t.messages.body,
+          at: t.messages.at,
+          channel: t.conversations.channel,
+        })
+        .from(t.messages)
+        .innerJoin(t.conversations, eq(t.conversations.id, t.messages.conversationId))
+        .where(
+          and(
+            eq(t.messages.eventId, eventId),
+            eq(t.messages.role, "user"),
+            gte(t.messages.at, new Date(since)),
+          ),
+        )
+        .orderBy(asc(t.messages.at))
+        .limit(500);
+      return rows.map((r) => ({ ...r, at: r.at.toISOString() }));
+    },
   };
 }
