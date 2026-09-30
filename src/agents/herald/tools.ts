@@ -7,6 +7,7 @@ import type { Channel } from "@/agents/runtime/contracts";
 import type { ReadServices } from "@/agents/runtime/services";
 import type { AgentProposal, RunContext, ToolDef } from "@/agents/runtime/types";
 import { formatDayShort, formatTime } from "@/lib/time";
+import type { ScheduleAction } from "@/solvers/schedule";
 
 type Ctx = RunContext<ReadServices>;
 
@@ -29,19 +30,51 @@ const slot = (iso: string, room: string): Slot => ({ day: formatDayShort(iso), t
 const say = (x: Slot) => `${x.day}, ${x.time}`;
 
 /** The people-facing change behind this trigger, or a reason there is nothing to announce yet. */
-export async function changeFor(ctx: Ctx): Promise<Change | { none: string }> {
-  const p = (ctx.payload ?? {}) as Record<string, unknown>;
+/** The session, a room-name lookup, and the fields every change shares. */
+async function lookup(services: ReadServices, sessionId: unknown) {
   const [sessions, rooms, event] = await Promise.all([
-    ctx.services.sessions(),
-    ctx.services.rooms(),
-    ctx.services.event(),
+    services.sessions(),
+    services.rooms(),
+    services.event(),
   ]);
-  const s = sessions.find((x) => x.id === p.sessionId);
-  if (!s) return { none: "The trigger names no known session." };
+  const s = sessions.find((x) => x.id === sessionId);
+  if (!s) return undefined;
   const room = (id: string) => rooms.find((r) => r.id === id)?.name ?? "the venue";
   const brief = event.brief?.attendeeChannels?.filter((c) => ATTENDEE_CHANNELS.includes(c));
   const channels: Channel[] = brief?.length ? brief : ["in_app", "email"];
-  const base = { sessionId: s.id, title: s.title, attendees: s.registeredCount, channels };
+  return { s, room, base: { sessionId: s.id, title: s.title, attendees: s.registeredCount, channels } };
+}
+
+/**
+ * The change a planned schedule action will make. The Commander drafts the announcement into the same
+ * bundle before anything runs, so this reads the current state plus the plan, not the applied result.
+ */
+export async function plannedChange(
+  services: ReadServices,
+  action: ScheduleAction,
+): Promise<Change | undefined> {
+  const found = await lookup(services, action.payload.sessionId);
+  if (!found) return undefined;
+  const { s, room, base } = found;
+  const before = slot(s.startsAt, room(s.roomId));
+  if (action.kind === "schedule.cancel_session")
+    return { ...base, kind: "cancelled", before, reason: action.payload.reason };
+  return {
+    ...base,
+    kind: "moved",
+    before,
+    after: slot(action.payload.newStartsAt, room(action.payload.newRoomId ?? s.roomId)),
+  };
+}
+
+export async function changeFor(ctx: Ctx): Promise<Change | { none: string }> {
+  const p = (ctx.payload ?? {}) as Record<string, unknown>;
+  // Changes made by an approved plan carry their announcements inside that plan.
+  if (typeof p.proposalId === "string")
+    return { none: "This change came from a plan that already announces it." };
+  const found = await lookup(ctx.services, p.sessionId);
+  if (!found) return { none: "The trigger names no known session." };
+  const { s, room, base } = found;
 
   if (ctx.trigger.eventType === "session.cancelled") {
     // Only once it is real: a speaker dropping out is not a cancellation until someone approves it.

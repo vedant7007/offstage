@@ -19,7 +19,6 @@ export const herald: AgentConfig<ReadServices> = {
   actions: [], // proposes only through propose_announcement
   systemPrompt: () => PROMPT,
   triggers: [
-    { type: "domain_event", eventType: "session.cancelled" },
     { type: "domain_event", eventType: "session.updated" },
     { type: "domain_event", eventType: "session.room_changed" },
   ],

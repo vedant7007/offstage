@@ -2,11 +2,11 @@
 // option, so the agent can never propose a schedule change the solver did not return.
 
 import { z } from "zod";
-import type { Ripple, Session } from "@/agents/runtime/contracts";
+import type { Session } from "@/agents/runtime/contracts";
 import type { ReadServices } from "@/agents/runtime/services";
 import type { AgentProposal, RunContext, ToolDef } from "@/agents/runtime/types";
 import { istDateKey, istToUtc } from "@/lib/time";
-import { shortName } from "@/lib/format";
+import { composeBundle } from "@/agents/commander/compose";
 import {
   detectClashes,
   replanOptions,
@@ -33,7 +33,13 @@ function changeFor(
   if (!session) return { change: null, note: "The trigger names no known session." };
   if (ctx.trigger.eventType === "session.cancelled")
     return {
-      change: { type: "cancel", sessionId: session.id, reason: str(p.reason) ?? "Speaker cancelled" },
+      change: {
+        type: "cancel",
+        sessionId: session.id,
+        reason: str(p.reason) ?? "Speaker cancelled",
+        // A speaker dropping out often arrives with the session already off; then only the gap needs a plan.
+        alreadyCancelled: session.status === "cancelled",
+      },
     };
   if (ctx.trigger.eventType === "session.updated" || ctx.trigger.eventType === "session.room_changed") {
     const involved = detectClashes(state).some((c) =>
@@ -57,16 +63,7 @@ export async function planFor(ctx: Ctx): Promise<Plan> {
     ctx.services.rooms(),
     ctx.services.sessionChoices(),
   ]);
-  // A session cancelled before the agent ran still frees its slot; the solver sees it as the thing being replanned.
-  const sessionId = str((ctx.payload as Record<string, unknown> | undefined)?.sessionId);
-  const alreadyCancelled = sessions.find((s) => s.id === sessionId)?.status === "cancelled";
-  const state: ScheduleState = {
-    rooms,
-    choices,
-    sessions: sessions.map((s) =>
-      s.id === sessionId && alreadyCancelled ? { ...s, status: "scheduled" as const } : s,
-    ),
-  };
+  const state: ScheduleState = { rooms, choices, sessions };
   const { change, note } = changeFor(ctx, sessions, state);
   if (!change) return { change, state, options: [], note };
 
@@ -81,94 +78,12 @@ export async function planFor(ctx: Ctx): Promise<Plan> {
       .filter((s) => s.kind === "meal" && istDateKey(s.startsAt) === day)
       .map((s) => ({ start: s.startsAt, end: s.endsAt })),
   };
-  let options = replanOptions(state, change, constraints);
-  if (alreadyCancelled)
-    options = options
-      .map((o) => ({ ...o, actions: o.actions.filter((a) => a.kind !== "schedule.cancel_session") }))
-      .filter((o) => o.actions.length);
-  return { change, state, options };
+  return { change, state, options: replanOptions(state, change, constraints) };
 }
 
-const hhmm = (iso: string) => new Date(Date.parse(iso) + 330 * 60_000).toISOString().slice(11, 16);
-
-/** The plan.bundle for one solver option. Summaries and ripple come from data, never from the model. */
-export async function bundleFor(
-  ctx: Ctx,
-  plan: Plan,
-  optionId: string,
-  rationale: string,
-): Promise<AgentProposal> {
-  const option = plan.options.find((o) => o.id === optionId);
-  if (!option) throw new Error(`Unknown option ${optionId}`);
-  const byId = new Map(plan.state.sessions.map((s) => [s.id, s]));
-  const roomName = (id: string) => plan.state.rooms.find((r) => r.id === id)?.name ?? id;
-
-  const children = option.actions.map((a) => {
-    const s = byId.get(a.payload.sessionId)!;
-    const summary =
-      a.kind === "schedule.cancel_session"
-        ? `Cancel "${s.title}"`
-        : `Move "${s.title}" to ${hhmm(a.payload.newStartsAt)}${a.payload.newRoomId ? ` in ${roomName(a.payload.newRoomId)}` : ""}`;
-    return {
-      kind: a.kind,
-      payload: a.payload,
-      summary: summary.slice(0, 120),
-      rationale: option.label,
-      proposedBy: "scheduler" as const,
-    };
-  });
-
-  const touched = option.actions.map((a) => byId.get(a.payload.sessionId)!);
-  const sample = (
-    await Promise.all(touched.map((s) => ctx.services.registrations({ sessionId: s.id, limit: 5 })))
-  )
-    .flat()
-    .slice(0, 5)
-    .map((r) => ({ registrationId: r.id, displayName: shortName(r.name) }));
-  const ripple: Ripple = {
-    sessions: children.map((c, i) => ({ id: touched[i]!.id, title: touched[i]!.title, change: c.summary })),
-    rooms: [
-      ...new Set(
-        option.actions.flatMap((a) => [
-          byId.get(a.payload.sessionId)!.roomId,
-          ...(a.kind === "schedule.move_session" && a.payload.newRoomId ? [a.payload.newRoomId] : []),
-        ]),
-      ),
-    ].map((id) => ({ id, name: roomName(id) })),
-    attendees: { count: option.metrics.attendeesAffected, sample },
-    volunteers: [],
-    announcements: [],
-    kbAnswers: [],
-  };
-
-  return {
-    kind: "plan.bundle",
-    payload: {
-      title: option.label,
-      children,
-      ripple,
-      options: plan.options.map((o) => ({
-        id: o.id,
-        label: o.label,
-        metrics: o.metrics,
-        chosen: o.id === optionId,
-      })),
-    },
-    summary: option.label.slice(0, 120),
-    rationale: rationale.slice(0, 600),
-    evidence: [
-      ...touched.map((s) => ({
-        type: "row" as const,
-        ref: `sessions/${s.id}`,
-        label: s.title.slice(0, 160),
-      })),
-      {
-        type: "metric" as const,
-        ref: `solver/${option.id}`,
-        label: `moved ${option.metrics.movedSessions}, cancelled ${option.metrics.cancelledSessions}, attendees ${option.metrics.attendeesAffected}`,
-      },
-    ],
-  };
+/** The plan.bundle for one solver option, with crew, announcements and the KB note composed in. */
+export function bundleFor(ctx: Ctx, plan: Plan, optionId: string, rationale: string): Promise<AgentProposal> {
+  return composeBundle(ctx.services, plan, optionId, rationale);
 }
 
 export const schedulerTools: ToolDef<ReadServices>[] = [
