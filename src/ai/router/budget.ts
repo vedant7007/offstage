@@ -1,14 +1,37 @@
 // Spend limits: per-run token budget, per-day USD cap, per-agent concurrency.
-// ponytail: daily spend lives in process memory, so web and worker each count their own spend.
-// Read and write the usage_budget row once Abhinav's schema lands so the cap is shared.
+// The daily cap is shared through a SpendStore (the usage_budget table) when one is plugged in with
+// useSpendStore(); without one, each process counts its own spend in memory.
+
+import { istDateKey } from "@/lib/time";
 
 const env = process.env;
 export const RUN_TOKEN_BUDGET = Number(env.AI_RUN_TOKEN_BUDGET ?? 30_000);
 const DAILY_CAP_USD = Number(env.AI_DAILY_CAP_USD ?? 3);
 const AGENT_CONCURRENCY = Number(env.AI_AGENT_CONCURRENCY ?? 2);
 
-// TODO(time): swap for the IST day helper in src/lib/time.ts when it exists.
-const istDay = (t = Date.now()) => new Date(t + 5.5 * 3600_000).toISOString().slice(0, 10);
+const istDay = () => istDateKey(Date.now());
+
+/** Shared spend for today. Abhinav's getUsage/addUsage over usage_budget, bound to an org or event. */
+export type SpendStore = {
+  get: () => Promise<{ spentUsd: number; capUsd: number }>;
+  add: (usd: number) => Promise<{ spentUsd: number; capUsd: number }>;
+};
+const REFRESH_MS = 30_000;
+let store: SpendStore | undefined;
+let shared: { spentUsd: number; capUsd: number; at: number; day: string } | undefined;
+
+const remember = (u: { spentUsd: number; capUsd: number }) =>
+  (shared = { ...u, at: Date.now(), day: istDay() });
+function refresh() {
+  store?.get().then(remember, () => undefined); // a failed read keeps the last known value
+}
+
+/** Plug in the shared store once at startup (worker and web). */
+export function useSpendStore(s: SpendStore | undefined) {
+  store = s;
+  shared = undefined;
+  refresh();
+}
 
 const runTokens = new Map<string, number>();
 let day = istDay();
@@ -25,6 +48,7 @@ function rollDay() {
 export function recordUsage(runId: string, tokens: number, usd: number) {
   rollDay();
   spentUsd += usd;
+  if (store && usd > 0) store.add(usd).then(remember, () => undefined);
   runTokens.set(runId, (runTokens.get(runId) ?? 0) + tokens);
 }
 
@@ -39,11 +63,14 @@ export function endRun(runId: string) {
 
 export function dailyCapHit(): boolean {
   rollDay();
-  return spentUsd >= DAILY_CAP_USD;
+  if (store && (!shared || Date.now() - shared.at > REFRESH_MS)) refresh();
+  const sharedHit = shared?.day === day && shared.spentUsd >= shared.capUsd;
+  return sharedHit || spentUsd >= DAILY_CAP_USD;
 }
 
 export function spentToday(): { day: string; usd: number; capUsd: number } {
   rollDay();
+  if (shared?.day === day) return { day, usd: Math.max(spentUsd, shared.spentUsd), capUsd: shared.capUsd };
   return { day, usd: spentUsd, capUsd: DAILY_CAP_USD };
 }
 
@@ -70,6 +97,8 @@ export async function withAgentSlot<T>(agent: string, fn: () => Promise<T>): Pro
 /** Test hook. */
 export function _resetBudget() {
   runTokens.clear();
+  store = undefined;
+  shared = undefined;
   spentUsd = 0;
   day = istDay();
 }
