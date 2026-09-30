@@ -31,7 +31,10 @@ export async function indexDocumentPg(db: Db, docId: string): Promise<number> {
             embedding: vectors[i]!,
           })),
         );
-      await tx.update(kbDocuments).set({ status: "ready", chunkCount: chunks.length, error: null }).where(eq(kbDocuments.id, doc.id));
+      await tx
+        .update(kbDocuments)
+        .set({ status: "ready", chunkCount: chunks.length, error: null })
+        .where(eq(kbDocuments.id, doc.id));
     });
     return chunks.length;
   } catch (e) {
