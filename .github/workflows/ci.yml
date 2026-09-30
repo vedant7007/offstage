@@ -17,6 +17,20 @@ jobs:
     name: check
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      db:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: sutradhar
+          POSTGRES_PASSWORD: sutradhar
+          POSTGRES_DB: sutradhar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sutradhar -d sutradhar"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
     steps:
       - uses: actions/checkout@v7
         with:
@@ -56,6 +70,11 @@ jobs:
 
       - name: Unit tests
         run: pnpm test
+
+      - name: Database tests (migrations, seed, demo triggers)
+        run: pnpm test:db
+        env:
+          DATABASE_URL: postgres://sutradhar:sutradhar@localhost:5432/sutradhar
 
       - name: Build
         run: pnpm build
