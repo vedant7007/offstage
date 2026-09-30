@@ -289,7 +289,10 @@ export const Volunteer = z.object({
   name: z.string().max(120),
   phoneMasked: z.string().optional(),
   skills: z.array(z.string().max(40)),
-  maxHours: z.number().positive(),
+  maxHours: z
+    .number()
+    .positive()
+    .describe("Total hours this volunteer can work across the whole event, not per day"),
   hoursServed: z.number().nonnegative(),
   telegramLinked: z.boolean(),
   active: z.boolean(),

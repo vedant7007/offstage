@@ -768,6 +768,12 @@ export function buildHackNova(): EventWorld {
   ensureSkill("crowd", 8);
   ensureSkill("helpdesk", 3);
   ensureSkill("runner", 3);
+  // Two AV-capable volunteers stay on standby on day 1 (no shift), so a no-show on any AV or
+  // lab support shift always has a legal replacement (demo trigger volunteer_noshow, issue #40).
+  const standby = new Set(volunteers.slice(-2).map((v) => v.id));
+  for (const v of volunteers.slice(-2)) {
+    for (const skill of ["av_tech", "crowd"]) if (!v.skills.includes(skill)) v.skills.push(skill);
+  }
 
   type ShiftDef = {
     key: string;
@@ -941,7 +947,9 @@ export function buildHackNova(): EventWorld {
     const start = new Date(s.startsAt).getTime();
     const end = new Date(s.endsAt).getTime();
     const hours = (end - start) / 3_600_000;
+    const isDay1 = s.startsAt < ist(DAY2, "00:00");
     const candidates = volunteers.filter((v) => {
+      if (isDay1 && standby.has(v.id)) return false;
       if (!v.skills.includes(d.skill)) return false;
       if ((hoursPlanned.get(v.id) ?? 0) + hours > v.maxHours) return false;
       return !(busy.get(v.id) ?? []).some(([a, b]) => a < end && start < b);
