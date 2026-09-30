@@ -1,3 +1,4 @@
+import { sql } from "drizzle-orm";
 import type { PgTable } from "drizzle-orm/pg-core";
 import { fixtures, type EventWorld } from "@/contracts/fixtures";
 import type { Db } from "@/db/client";
@@ -654,6 +655,11 @@ export async function seed(db: Db): Promise<{ events: string[]; ms: number }> {
     for (const [i, w] of worlds.entries()) {
       await seedWorld(tx as unknown as Db, w, { insertOrg: i === 0 });
     }
+    // Seeded history is not news: start the worker cursor after it, so agents do not react to it.
+    await tx.execute(sql`
+      insert into app_settings (key, value)
+      select 'worker.domain_event_seq', to_jsonb(coalesce(max(seq), 0)) from domain_events
+      on conflict (key) do update set value = excluded.value, updated_at = now()`);
   });
   const ms = Date.now() - started;
   log.info({ events: worlds.map((w) => w.event.slug), ms }, "seeded");
