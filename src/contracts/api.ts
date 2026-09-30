@@ -40,7 +40,7 @@ import {
   TaskStatus,
 } from "./enums";
 import { DomainEvent } from "./events";
-import { AgentName, Domain, EventType, Role } from "./identity";
+import { AgentName, Channel, Domain, EventType, Role } from "./identity";
 import { ActionKind, ActionProposal, ProposalStatus, RiskTier } from "./proposals";
 
 /**
@@ -713,6 +713,21 @@ type Endpoint = {
   stream?: "sse" | "ndjson";
 };
 
+/** GET /api/events/:eventId/delivery. Outbox rows per channel: real sends, mock deliveries and the rest. */
+export const DeliveryStatsResponse = z.object({
+  channels: z.array(
+    z.object({
+      channel: Channel,
+      real: z.number().int(),
+      mock: z.number().int(),
+      pending: z.number().int(),
+      failed: z.number().int(),
+      skipped: z.number().int(),
+    }),
+  ),
+});
+export type DeliveryStatsResponse = z.infer<typeof DeliveryStatsResponse>;
+
 export const ENDPOINTS = {
   health: {
     method: "GET",
@@ -786,6 +801,12 @@ export const ENDPOINTS = {
     path: "/api/events/:eventId/agent-runs/:runId",
     auth: "user",
     response: AgentRunResponse,
+  },
+  deliveryStats: {
+    method: "GET",
+    path: "/api/events/:eventId/delivery",
+    auth: "user",
+    response: DeliveryStatsResponse,
   },
   killSwitch: {
     method: "POST",

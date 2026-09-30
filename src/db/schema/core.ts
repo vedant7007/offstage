@@ -222,7 +222,7 @@ export const outbox = pgTable(
     /** sha256 of recipient + body; blocks repeats within 24 hours. */
     dedupeKey: text().notNull(),
     status: text()
-      .$type<"pending" | "sending" | "sent" | "failed" | "skipped">()
+      .$type<"pending" | "sending" | "sent" | "delivered_mock" | "failed" | "skipped">()
       .notNull()
       .default("pending"),
     attempts: integer().notNull().default(0),
@@ -240,6 +240,24 @@ export const outbox = pgTable(
     index().on(t.recipientId, t.createdAt),
     index().on(t.dedupeKey),
   ],
+);
+
+/**
+ * Telegram chats linked to a person, captured when someone sends /start to the bot and shares their
+ * phone (matched by phone hash) or opens a link code (matched by recipient id). Survives demo:reset,
+ * because it records real people's devices rather than demo data.
+ */
+export const telegramLinks = pgTable(
+  "telegram_links",
+  {
+    chatIdHash: text().primaryKey(),
+    chatIdEnc: text().notNull(),
+    phoneHash: text(),
+    recipientType: text(),
+    recipientId: text(),
+    linkedAt: createdAt(),
+  },
+  (t) => [index().on(t.phoneHash), index().on(t.recipientId)],
 );
 
 /** Small key-value store for process-wide settings, such as the demo clock offset. */

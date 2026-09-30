@@ -5,6 +5,7 @@ import type { Db } from "@/db/client";
 import * as t from "@/db/schema";
 import { logger } from "@/lib/logger";
 import { signTicket } from "@/server/checkin/ticket";
+import { parseAllowlist } from "@/server/channels/allowlist";
 import { emailHash, encrypt, phoneHash } from "@/server/pii";
 import { kbContent } from "./kb";
 
@@ -648,6 +649,37 @@ async function seedWorld(db: Db, w: EventWorld, opts: { insertOrg: boolean }) {
  * exactly as in `fixtures.worlds()`, so fixture ids match the database.
  * Runs in one transaction. Expects empty tables (use demo:reset to wipe first).
  */
+/**
+ * Gate 2 demo: each phone and email in DEMO_REAL_RECIPIENTS becomes the contact of one confirmed
+ * attendee of "Evaluating LLM apps" (the session the speaker_cancel plan moves), so the team's own
+ * phones are among the people told about the change. Everyone else stays fake and gets mock delivery.
+ */
+async function seedRealRecipients(db: Db): Promise<void> {
+  const { phones, emails } = parseAllowlist();
+  const contacts: { phone?: string; email?: string }[] = [
+    ...[...phones].map((phone) => ({ phone })),
+    ...[...emails].map((email) => ({ email })),
+  ];
+  if (!contacts.length) return;
+  const regs = await db.execute<{ id: string; event_id: string }>(sql`
+    select r.id, r.event_id from registrations r
+    join session_choices c on c.registration_id = r.id
+    join sessions s on s.id = c.session_id
+    where s.title = 'Evaluating LLM apps' and r.status = 'confirmed'
+    order by r.id limit ${contacts.length}`);
+  for (const [i, r] of [...regs].entries()) {
+    const c = contacts[i]!;
+    await db
+      .update(t.registrations)
+      .set({
+        ...(c.phone ? { phoneEnc: encrypt(c.phone), phoneHash: phoneHash(c.phone) } : {}),
+        ...(c.email ? { emailEnc: encrypt(c.email), emailHash: emailHash(c.email) } : {}),
+      })
+      .where(sql`${t.registrations.id} = ${r.id}`);
+  }
+  log.info({ contacts: Math.min(contacts.length, [...regs].length) }, "real demo recipients seeded");
+}
+
 export async function seed(db: Db): Promise<{ events: string[]; ms: number }> {
   const started = Date.now();
   const worlds = fixtures.worlds();
@@ -655,6 +687,7 @@ export async function seed(db: Db): Promise<{ events: string[]; ms: number }> {
     for (const [i, w] of worlds.entries()) {
       await seedWorld(tx as unknown as Db, w, { insertOrg: i === 0 });
     }
+    await seedRealRecipients(tx as unknown as Db);
     // Seeded history is not news: start the worker cursor after it, so agents do not react to it.
     await tx.execute(sql`
       insert into app_settings (key, value)

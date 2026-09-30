@@ -20,7 +20,7 @@ export type Lang = "en" | "hi" | "hinglish";
  */
 export const MIN_SIMILARITY = 0.55;
 export const MIN_CONFIDENCE = 0.6;
-/** Share of an English answer's content words that must appear in the text it cites. */
+/** Share of an English answer's content words that must appear in the question or the sources given. */
 export const MIN_SUPPORT = 0.5;
 
 /** An answer that admits the documents say nothing is not an answer. */
@@ -235,10 +235,12 @@ export async function answerQuestion(input: {
     ).values(),
   ];
   const check = moderate(out.answer);
-  const citedText = citations.map((c) => sources.find((s) => s.ref === c.ref)?.text ?? "").join(" ");
-  // English answers must be carried by the cited text itself; Hinglish and Hindi wording cannot match
+  // Answers may restate the question ("on day 1") or add a date from another source we gave, so support is
+  // measured against everything the model saw. An invented number or claim still fails.
+  const seenText = [question, ...sources.map((s) => `${s.label} ${s.text}`)].join(" ");
+  // English answers must be carried by that text; Hinglish and Hindi wording cannot match
   // English documents word for word, so they rely on the citation and confidence checks.
-  const score = support(out.answer, citedText);
+  const score = support(out.answer, seenText);
   const unsupported = language === "en" && (NOT_IN_SOURCES.test(out.answer) || score < MIN_SUPPORT);
   const reason: EscalationReason | undefined = out.needsEscalation
     ? "model_escalated"
