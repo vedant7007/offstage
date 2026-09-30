@@ -5,6 +5,7 @@
 import type {
   Announcement,
   Event,
+  KbChunkRef,
   KbDocument,
   PlaybookLesson,
   PublicSpeaker,
@@ -36,11 +37,16 @@ export interface ReadServices {
   /** With `sinceIso`, only announcements sent at or after it. */
   announcements(sinceIso?: string): Promise<Announcement[]>;
   kbDocuments(): Promise<KbDocument[]>;
+  /** Hybrid KB search. `score` is the cosine similarity of the chunk to the query, 0 to 1. */
+  searchKb(query: string, k?: number): Promise<KbChunkRef[]>;
   lessons(): Promise<PlaybookLesson[]>;
 }
 
 /** Read services over an in-memory world. Pass a clone (see snapshot) when the caller may mutate it. */
-export function worldServices(world: EventWorld): ReadServices {
+export function worldServices(
+  world: EventWorld,
+  opts: { searchKb?: ReadServices["searchKb"] } = {},
+): ReadServices {
   const checkedIn = new Map(
     world.checkins.filter((c) => !c.duplicate).map((c) => [c.registrationId, c.serverTime]),
   );
@@ -88,11 +94,16 @@ export function worldServices(world: EventWorld): ReadServices {
     announcements: async (since) =>
       world.announcements.filter((a) => !since || (a.sentAt !== undefined && a.sentAt >= since)),
     kbDocuments: async () => world.kbDocuments,
+    // Fixture documents carry no text, so search is injected (tests use the golden KB index).
+    searchKb: opts.searchKb ?? (async () => []),
     lessons: async () => world.playbookLessons.filter((l) => l.eventType === world.event.type),
   };
 }
 
 /** What-if snapshot: an isolated deep copy, so simulated runs can never touch the source state. */
-export function snapshot(world: EventWorld): ReadServices {
-  return worldServices(structuredClone(world));
+export function snapshot(
+  world: EventWorld,
+  opts: { searchKb?: ReadServices["searchKb"] } = {},
+): ReadServices {
+  return worldServices(structuredClone(world), opts);
 }

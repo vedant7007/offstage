@@ -6,7 +6,7 @@ import { tool, type ToolSet } from "ai";
 import { z } from "zod";
 import { generate, type Attempt } from "@/ai/router/router";
 import { endRun, withAgentSlot } from "@/ai/router/budget";
-import { screen, wrap } from "@/ai/guard";
+import { screen, wrap, type Verdict } from "@/ai/guard";
 import {
   ActionPayloads,
   Evidence,
@@ -27,6 +27,8 @@ export type RunResult = {
   /** Filled in simulation mode: what would have been proposed. */
   simulated: Extract<ProposeResult, { status: "simulated" }>[];
   text?: string;
+  /** Structured result of a pipeline agent, such as the Helpdesk answer. */
+  output?: unknown;
 };
 
 const RUNTIME_RULES = `How you work:
@@ -140,7 +142,10 @@ export async function runAgent<S>(
     return res;
   };
 
-  const finish = async (status: RunResult["status"], extra: { text?: string; error?: string } = {}) => {
+  const finish = async (
+    status: RunResult["status"],
+    extra: { text?: string; output?: unknown; error?: string } = {},
+  ) => {
     await Promise.all(pending);
     await deps.trace.finishRun(runId, {
       status: status === "blocked" ? "succeeded" : status,
@@ -152,7 +157,7 @@ export async function runAgent<S>(
       error: extra.error,
     });
     endRun(runId);
-    return { runId, status, proposalIds, simulated, text: extra.text };
+    return { runId, status, proposalIds, simulated, text: extra.text, output: extra.output };
   };
 
   const runFallback = async (reason: string, message: string, status: "fallback" | "budget_paused") => {
@@ -183,8 +188,9 @@ export async function runAgent<S>(
   try {
     // Untrusted trigger text is screened before any model sees it.
     let payloadText = typeof input.payload === "string" ? input.payload : JSON.stringify(input.payload ?? {});
+    let verdict: Verdict | undefined;
     if (ctx.untrusted) {
-      const v = await screen(payloadText, { source: config.name, runId });
+      const v = (verdict = await screen(payloadText, { source: config.name, runId }));
       step({ kind: "guard", verdict: v.verdict, reasons: v.reasons, score: v.score, by: v.by });
       if (v.verdict === "block") return finish("blocked", { error: "input blocked by guard" });
       payloadText = wrap(payloadText, `${trigger.eventType ?? trigger.type} payload`);
@@ -254,6 +260,14 @@ export async function runAgent<S>(
         costUsd: tokens.costUsd + costUsd,
       };
     };
+
+    if (config.pipeline) {
+      const pipeline = config.pipeline;
+      const out = await withAgentSlot(config.name, () =>
+        pipeline(ctx, { runId, critical: config.criticality === "critical", onAttempt, guard: verdict }),
+      );
+      return finish("succeeded", out);
+    }
 
     const res = await withAgentSlot(config.name, () =>
       generate({
