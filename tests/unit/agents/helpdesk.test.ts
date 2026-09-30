@@ -42,7 +42,8 @@ const OD = {
   docId: "kb-faq",
   docTitle: "FAQ",
   section: "Do I get an OD letter?",
-  snippet: "Deccan Institute students get OD...",
+  snippet:
+    "Deccan Institute students get On Duty attendance through their department; the OD list goes to HODs by 28 October.",
   score: 0.81,
 };
 const services = (score = 0.81) =>
@@ -188,5 +189,76 @@ describe("helpdesk agent", () => {
     });
     expect(screen).toHaveBeenCalledOnce(); // screened once by the runtime, not again by the pipeline
     expect(trace.stepsOf(res.runId).map((s) => s.kind)).toEqual(["guard", "llm", "propose"]);
+  });
+});
+
+describe("citation matching", () => {
+  it("accepts refs copied without the kb: prefix or with brackets, and returns the exact ref once", async () => {
+    // Brackets alone must match too, so check that path without the prefix-less fallback.
+    const { normRef } = await import("@/agents/helpdesk/answer");
+    expect(normRef("[kb:kb-venue#Rooms] Venue notes: Rooms")).toBe("kb:kb-venue#rooms");
+    expect(normRef("[live:rooms]")).toBe("live:rooms");
+    model = replies({
+      answer: "Yes, through your department.",
+      citations: [
+        { ref: "[kb:kb-faq#do i get an od letter?] FAQ: OD", label: "y" },
+        { ref: "kb-faq#Do I get an OD letter?", label: "x" },
+      ],
+      confidence: 0.9,
+      needsEscalation: false,
+    });
+    const r = await answerQuestion({
+      question: "Do I get an OD letter?",
+      services: services(),
+      runId: "r-norm",
+    });
+    expect(r.answer.needsEscalation).toBe(false);
+    expect(r.answer.citations).toEqual([
+      { ref: "kb:kb-faq#Do I get an OD letter?", label: "FAQ: Do I get an OD letter?" },
+    ]);
+  });
+});
+
+describe("grounding check", () => {
+  it("measures how much of an answer the cited text carries, numbers included", async () => {
+    const { support } = await import("@/agents/helpdesk/answer");
+    const src = "First prize is 50,000 INR, second prize is 30,000 INR.";
+    expect(support("The first prize is 50,000 INR.", src)).toBe(1);
+    expect(support("The first prize is 75,000 INR.", src)).toBeLessThan(0.6);
+    expect(support("The dress code for HackNova is casual and comfortable.", src)).toBe(0);
+    const menu = "Lunch, 12:30 to 14:00: veg biryani and dal.";
+    expect(support("Lunch is served from 12:30 PM to 2:00 PM.", menu)).toBeGreaterThanOrEqual(0.5);
+    expect(support("Lunch is served from 12:30 PM to 2 pm.", menu)).toBeGreaterThanOrEqual(0.5);
+    expect(support("Lunch is served from 1:30 PM to 3:00 PM.", menu)).toBe(0);
+  });
+
+  it("escalates an English answer the cited text does not carry", async () => {
+    model = replies({
+      answer: "The dress code for the event is smart casual.",
+      citations: [{ ref: "kb:kb-faq#Do I get an OD letter?", label: "x" }],
+      confidence: 0.95,
+      needsEscalation: false,
+    });
+    const r = await answerQuestion({
+      question: "What is the dress code?",
+      services: services(),
+      runId: "r-dress",
+    });
+    expect(r.answer.needsEscalation).toBe(true);
+  });
+
+  it("escalates an answer that admits the documents do not say", async () => {
+    model = replies({
+      answer: "The documents do not mention travel reimbursement for Deccan Institute students.",
+      citations: [{ ref: "kb:kb-faq#Do I get an OD letter?", label: "x" }],
+      confidence: 0.9,
+      needsEscalation: false,
+    });
+    const r = await answerQuestion({
+      question: "Is travel reimbursed?",
+      services: services(),
+      runId: "r-travel",
+    });
+    expect(r.answer.needsEscalation).toBe(true);
   });
 });

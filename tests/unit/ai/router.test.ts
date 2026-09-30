@@ -83,6 +83,16 @@ describe("router", () => {
     expect(JSON.stringify(m.doGenerateCalls[1]!.prompt)).toContain("failed validation");
   });
 
+  it("moves to the next provider when one keeps failing the schema", async () => {
+    const bad = new MockLanguageModelV4({ doGenerate: async () => text("not json") });
+    models.set("groq", bad);
+    models.set("ollama", new MockLanguageModelV4({ doGenerate: async () => text('{"seats":60}') }));
+    const r = await generate({ ...base, schema: z.object({ seats: z.number() }), budget: { runId: "r3b" } });
+    expect(r.ok && r.provider).toBe("ollama");
+    expect(r.ok && r.output).toEqual({ seats: 60 });
+    expect(bad.doGenerateCalls).toHaveLength(2); // one retry with the error, then hand off
+  });
+
   it("accepts the retry when the second output is valid", async () => {
     let n = 0;
     models.set(

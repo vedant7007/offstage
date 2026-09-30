@@ -8,6 +8,7 @@ import { moderate, screen, wrap, type Verdict } from "@/ai/guard";
 import type { HelpdeskAnswer } from "@/agents/runtime/contracts";
 import type { ReadServices } from "@/agents/runtime/services";
 import { formatTime, istDateKey } from "@/lib/time";
+import { terms } from "@/ai/rag";
 
 export type Lang = "en" | "hi" | "hinglish";
 
@@ -19,6 +20,39 @@ export type Lang = "en" | "hi" | "hinglish";
  */
 export const MIN_SIMILARITY = 0.55;
 export const MIN_CONFIDENCE = 0.6;
+/** Share of an English answer's content words that must appear in the text it cites. */
+export const MIN_SUPPORT = 0.5;
+
+/** An answer that admits the documents say nothing is not an answer. */
+const NOT_IN_SOURCES =
+  /\b(do(es)?n'?t|do(es)? not) (mention|say|specify|state|include|list)\b|\bnot (mentioned|specified|stated|listed|available in)\b|\bno (information|details|mention)\b/i;
+
+/** Fraction of the answer's content words (and every number) found in the source text. */
+export function support(answer: string, sourceText: string): number {
+  // Every number must appear whole in the source (commas ignored, so 3,00,000 and 300000 match).
+  // Clock times compare in 24-hour form, so "2:00 PM" matches "14:00" and "2 pm" matches "14:00".
+  const numbers = (s: string) => {
+    const times: string[] = [];
+    const rest = s.replace(
+      /\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b|\b(\d{1,2}):(\d{2})\b/gi,
+      (_m, h1, m1, ap, h2, m2) => {
+        let h = Number(h1 ?? h2);
+        if (ap && ap.toLowerCase() === "pm" && h < 12) h += 12;
+        if (ap && ap.toLowerCase() === "am" && h === 12) h = 0;
+        times.push(`${h}:${m1 ?? m2 ?? "00"}`);
+        return " ";
+      },
+    );
+    return [...times, ...(rest.match(/\d+(?:,\d{2,3})*(?:\.\d+)?/g) ?? []).map((n) => n.replace(/,/g, ""))];
+  };
+  const sourceNumbers = new Set(numbers(sourceText));
+  if (numbers(answer).some((n) => !sourceNumbers.has(n))) return 0;
+  const have = new Set(terms(sourceText));
+  // Numbers are checked above, so the word ratio looks at words only.
+  const words = [...new Set(terms(answer).filter((w) => w.length >= 4 && !/^\d+$/.test(w)))];
+  if (!words.length) return 1;
+  return words.filter((w) => have.has(w)).length / words.length;
+}
 
 const HINGLISH =
   /\b(kya|hai|hain|kahan|kaha|milega|milegi|kab|nahi|nahin|mera|meri|mujhe|kaise|kitne|baje|aur|kaun|kyun|hoga|chahiye|dusre|walon)\b/i;
@@ -88,6 +122,11 @@ export async function liveFacts(services: ReadServices): Promise<Source[]> {
   return facts;
 }
 
+/** "[kb:x#y] Some label" and "kb:x#y" both become "kb:x#y": models wrap refs in brackets and add labels. */
+export const normRef = (r: string) => (/\[([^\]]+)\]/.exec(r)?.[1] ?? r).trim().toLowerCase();
+/** Keys a source can be cited by: its ref, and its ref without the kb: or live: prefix. */
+const refKeys = (ref: string) => [normRef(ref), normRef(ref.replace(/^(kb|live):/i, ""))];
+
 const normalise = (q: string) =>
   q
     .toLowerCase()
@@ -97,7 +136,17 @@ const cache = new Map<string, HelpdeskAnswer>();
 const CACHE_SIZE = 30;
 export const _clearAnswerCache = () => cache.clear();
 
-export type AnswerResult = { answer: HelpdeskAnswer; blocked: boolean; cached: boolean; guard?: Verdict };
+export type EscalationReason =
+  "no_model" | "model_escalated" | "no_valid_citation" | "low_confidence" | "moderation" | "unsupported";
+export type AnswerResult = {
+  answer: HelpdeskAnswer;
+  blocked: boolean;
+  cached: boolean;
+  guard?: Verdict;
+  /** Why the answer escalated, for traces and evals. */
+  reason?: EscalationReason;
+  detail?: string;
+};
 
 export async function answerQuestion(input: {
   question: string;
@@ -169,22 +218,48 @@ export async function answerQuestion(input: {
       },
     ],
   });
-  if (!res.ok || !res.output) return { answer: escalate(question), blocked: false, cached: false, guard };
+  if (!res.ok || !res.output)
+    return { answer: escalate(question), blocked: false, cached: false, guard, reason: "no_model" };
 
   const out = res.output;
-  const allowed = new Map(sources.map((s) => [s.ref, s.label]));
-  // Keep only citations of sources we actually gave; an invented ref counts as no citation.
-  const citations = out.citations
-    .filter((c) => allowed.has(c.ref))
-    .map((c) => ({ ref: c.ref, label: allowed.get(c.ref)! }));
+  // Keep only citations of sources we actually gave; an invented ref counts as no citation. Models copy
+  // refs loosely (gpt-oss drops the "kb:" prefix), so match on a normalised key and return our exact ref.
+  const allowed = new Map<string, Source>();
+  for (const src of sources) for (const k of refKeys(src.ref)) allowed.set(k, src);
+  const citations = [
+    ...new Map(
+      out.citations.flatMap((c) => {
+        const src = allowed.get(normRef(c.ref));
+        return src ? [[src.ref, { ref: src.ref, label: src.label }] as const] : [];
+      }),
+    ).values(),
+  ];
   const check = moderate(out.answer);
-  if (
-    out.needsEscalation ||
-    !citations.length ||
-    out.confidence < MIN_CONFIDENCE ||
-    check.verdict !== "allow"
-  )
-    return { answer: escalate(out.escalationSummary ?? question), blocked: false, cached: false, guard };
+  const citedText = citations.map((c) => sources.find((s) => s.ref === c.ref)?.text ?? "").join(" ");
+  // English answers must be carried by the cited text itself; Hinglish and Hindi wording cannot match
+  // English documents word for word, so they rely on the citation and confidence checks.
+  const score = support(out.answer, citedText);
+  const unsupported = language === "en" && (NOT_IN_SOURCES.test(out.answer) || score < MIN_SUPPORT);
+  const reason: EscalationReason | undefined = out.needsEscalation
+    ? "model_escalated"
+    : !citations.length
+      ? "no_valid_citation"
+      : out.confidence < MIN_CONFIDENCE
+        ? "low_confidence"
+        : check.verdict !== "allow"
+          ? "moderation"
+          : unsupported
+            ? "unsupported"
+            : undefined;
+  if (reason)
+    return {
+      answer: escalate(out.escalationSummary || question),
+      blocked: false,
+      cached: false,
+      guard,
+      reason,
+      detail: reason === "unsupported" ? `support ${score.toFixed(2)}` : undefined,
+    };
 
   const answer: HelpdeskAnswer = {
     answer: out.answer,

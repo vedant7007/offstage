@@ -74,6 +74,8 @@ async function run(tier: "smart" | "fast", provider: Provider, model: string) {
       seats: z.number().int(),
       registered: z.number().int(),
       overbooked: z.boolean(),
+      // Optional on purpose: Groq strict mode rejects optional fields, which silently broke real schemas.
+      note: z.string().optional(),
     }),
     instructions: "Extract the facts from the note into the schema.",
     messages: [{ role: "user", content: "Note: Lab 204 has 60 seats and 95 people registered for it." }],

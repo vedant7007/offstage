@@ -24,5 +24,7 @@ export function providerOptions(link: Link, tier: Tier) {
   // Only the gpt-oss chat models take reasoning effort; Prompt Guard rejects it with a 400.
   if (link.provider !== "groq" || (tier !== "smart" && tier !== "fast")) return undefined;
   // gpt-oss reasoning tokens count toward the 8K TPM free-tier limit, so keep effort low outside smart.
-  return { groq: { reasoningEffort: tier === "smart" ? "medium" : "low" } } as const;
+  // strictJsonSchema off: Groq strict mode rejects schemas with optional fields (400 on every call); the
+  // router validates every output with zod and retries once, so non-strict JSON mode loses nothing.
+  return { groq: { reasoningEffort: tier === "smart" ? "medium" : "low", strictJsonSchema: false } } as const;
 }
