@@ -2,23 +2,14 @@
 
 import { cn } from "@/lib/utils";
 import { CalendarDays, HandHelping, IndianRupee, Lock, Send, Ticket, Undo2, Users } from "lucide-react";
+import type { Channel, Impact } from "@/contracts";
 import { useT } from "@/lib/i18n/provider";
 import { formatInr } from "@/lib/format";
 import { InfoChip } from "./chip";
 
-/** Keys match Channel in src/contracts. */
-export type ChannelKey = "in_app" | "email" | "telegram" | "whatsapp" | "sms";
-
-/** Same shape as ActionProposal.impact in src/contracts. */
-export type Impact = {
-  people: number;
-  attendees: number;
-  volunteers: number;
-  sessions: number;
-  moneyInr?: number;
-  channels: ChannelKey[];
-  reversible: boolean;
-};
+/** Same as Channel from @/contracts. Kept as a published alias. */
+export type ChannelKey = Channel;
+export type { Impact };
 
 /** Who and what a proposal touches. Zero counts are left out; reversibility is always shown. */
 function ImpactChips({ impact, className }: { impact: Impact; className?: string }) {

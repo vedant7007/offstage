@@ -19,12 +19,13 @@ import {
   Wallet,
   type LucideIcon,
 } from "lucide-react";
+import type { AgentName } from "@/contracts";
 import { useT } from "@/lib/i18n/provider";
 
 /**
  * Each agent has its own icon. Colour is shared: every agent uses the teal "agent" tone so
  * agent activity is recognisable at a glance, and the Commander alone wears the curtain colour
- * because it leads the team. Keys match AgentName in src/contracts.
+ * because it leads the team.
  */
 const AGENTS = {
   commander: Compass,
@@ -41,9 +42,10 @@ const AGENTS = {
   helpdesk: MessageCircleQuestionMark,
   radar: Radar,
   chronicler: BookOpen,
-} satisfies Record<string, LucideIcon>;
+} satisfies Record<AgentName, LucideIcon>;
 
-export type AgentKey = keyof typeof AGENTS;
+/** Same as AgentName from @/contracts. Kept as a published alias. */
+export type AgentKey = AgentName;
 export const AGENT_KEYS = Object.keys(AGENTS) as AgentKey[];
 
 const isAgent = (value: string): value is AgentKey => value in AGENTS;
