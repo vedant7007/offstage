@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import { FlaskConical, History, Inbox, Network, Newspaper, Sparkles } from "lucide-react";
+import { FileText, FlaskConical, History, Inbox, Network, Newspaper, Sparkles } from "lucide-react";
 import { AppShell, Button, EmptyState, ThemeToggle } from "@/components/ui";
 import { PersonaSwitcher } from "@/components/console/persona-switcher";
 import { RealSendsBadge } from "@/components/console/real-sends";
@@ -43,6 +43,7 @@ export default async function ConsoleLayout({ children, params }: LayoutProps<"/
         { href: `${base}/briefing`, label: "Briefing", icon: <Newspaper aria-hidden /> },
         { href: `${base}/whatif`, label: "What if", icon: <FlaskConical aria-hidden /> },
         { href: `${base}/timeline`, label: "Timeline", icon: <History aria-hidden /> },
+        { href: `${base}/report`, label: "Close-out report", icon: <FileText aria-hidden /> },
         { href: "/console/new", label: "Plan a new event", icon: <Sparkles aria-hidden /> },
       ]}
       actions={

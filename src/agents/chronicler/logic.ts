@@ -2,6 +2,7 @@
 
 import type {
   Checkin,
+  CloseoutReport,
   Escalation,
   Incident,
   LedgerEntry,
@@ -9,6 +10,7 @@ import type {
   Session,
   Volunteer,
 } from "@/contracts";
+import { formatInr } from "@/lib/format";
 
 export type ReportFacts = {
   confirmed: number;
@@ -69,3 +71,42 @@ export const minutesToResolve = (i: Incident) =>
   i.resolvedAt
     ? Math.max(0, Math.round((Date.parse(i.resolvedAt) - Date.parse(i.createdAt)) / 60_000))
     : null;
+
+// The close-out report page (src/server/services/closeout.ts) counts in SQL; these turn its numbers into text.
+export type CloseoutFacts = Omit<CloseoutReport, "summary" | "generatedAt">;
+
+/** The numbers as "label: value" lines: what the model sees, and what its summary is checked against. */
+export function closeoutFactLines(f: CloseoutFacts): string {
+  const a = f.attendance;
+  const sent = f.messages.reduce((s, m) => s + m.real + m.mock, 0);
+  return [
+    `Registered: ${a.registered}`,
+    `Confirmed: ${a.confirmed}`,
+    `Attended: ${a.attended}`,
+    `No-shows: ${a.noShows}`,
+    `Attendance rate: ${a.ratePct}%`,
+    `Sessions: ${f.sessions.total}`,
+    `Sessions changed: ${f.sessions.changed}`,
+    `Sessions cancelled: ${f.sessions.cancelled}`,
+    `Messages delivered (real and mock): ${sent}`,
+    `In-app notifications: ${f.inAppNotifications}`,
+    `Helpdesk questions: ${f.helpdesk.questions}`,
+    `Injection attempts blocked: ${f.helpdesk.blocked}`,
+    `Escalations: ${f.helpdesk.escalations}`,
+    `Escalations still open: ${f.helpdesk.escalationsOpen}`,
+    `Incidents: ${f.incidents.total}`,
+    `Incidents resolved: ${f.incidents.resolved}`,
+    `Budget cap: ${formatInr(f.budget.capInr)}`,
+    `Budget spent or committed: ${formatInr(f.budget.spentInr)}`,
+    `Income received: ${formatInr(f.budget.incomeInr)}`,
+    `Proposals: ${f.approvals.reduce((s, x) => s + x.total, 0)}`,
+    `Proposals executed: ${f.approvals.reduce((s, x) => s + x.executed, 0)}`,
+    `Certificates issued: ${f.certificates.issued}`,
+    `OD letters: ${f.odLetters.students}`,
+  ].join("\n");
+}
+
+export function closeoutRulesSummary(f: CloseoutFacts): string {
+  const a = f.attendance;
+  return `${a.attended} of ${a.confirmed} confirmed people attended (${a.ratePct}%). ${f.sessions.changed} sessions changed and ${f.sessions.cancelled} were cancelled. The helpdesk took ${f.helpdesk.questions} questions and escalated ${f.helpdesk.escalations}. ${f.incidents.resolved} of ${f.incidents.total} incidents were resolved.`;
+}
