@@ -25,18 +25,32 @@ for (const scheme of ["light", "dark"] as const) {
   });
 }
 
-test("landing explains the product and links to the demo and the console", async ({ page }) => {
+test("landing tells the story in eleven cues and links to the live demo", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Tell OFFSTAGE about your event.");
-  await expect(page.getByRole("heading", { name: "The law of the system" })).toBeVisible();
-  for (const step of ["Agents propose", "Policy decides", "Humans approve", "Code executes"]) {
-    await expect(page.getByRole("listitem").filter({ hasText: step })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("OFFSTAGE");
+  await expect(page.getByRole("link", { name: "Enter live demo" })).toHaveAttribute("href", "/console");
+  for (const cue of ["14 AI agents.", "The agents propose.", "The rule.", "The show goes on."]) {
+    await expect(
+      page.getByRole("heading", { level: 2, name: new RegExp(cue.replace(".", "\.")) }),
+    ).toBeAttached();
   }
-  await expect(page.getByRole("link", { name: "See the demo event" })).toHaveAttribute(
-    "href",
-    "/e/hacknova-2026",
-  );
-  await expect(page.getByRole("link", { name: "Start your event" })).toHaveAttribute("href", "/console");
+  await expect(page.getByRole("link", { name: "Enter the live demo" })).toHaveAttribute("href", "/console");
+  await expect(page.getByRole("link", { name: "Demo event" })).toHaveAttribute("href", "/e/hacknova-2026");
+  await expect(
+    page.getByText("Agents propose. Policy decides. Humans approve. Code executes."),
+  ).toBeAttached();
+});
+
+test("landing with reduced motion shows every cue as still text", async ({ browser }) => {
+  const context = await browser.newContext({ reducedMotion: "reduce" });
+  const page = await context.newPage();
+  const errors = collectErrors(page);
+  await page.goto("/");
+  await expect(page.locator("[data-mode='poster']")).toBeAttached();
+  await expect(page.getByRole("heading", { level: 2, name: /14 AI agents/ })).toBeVisible();
+  expect(page.locator("canvas")).toHaveCount(0);
+  expect(errors).toEqual([]);
+  await context.close();
 });
 
 test("about our AI reads in all three languages", async ({ page, context }) => {
