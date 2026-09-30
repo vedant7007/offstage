@@ -797,3 +797,28 @@ export const MetricsSnapshot = z.object({
   modelSpendUsdToday: z.number().nonnegative(),
 });
 export type MetricsSnapshot = z.infer<typeof MetricsSnapshot>;
+
+// ---------------------------------------------------------------------------
+// Orgs, users, memberships
+// ---------------------------------------------------------------------------
+
+export const Org = z.object({ id: Id, name: z.string().max(160), slug: z.string().max(64) });
+export type Org = z.infer<typeof Org>;
+
+export const User = z.object({
+  id: Id,
+  name: z.string().max(120),
+  email: z.email(),
+  createdAt: IsoDateTime,
+});
+export type User = z.infer<typeof User>;
+
+export const EventMembership = z.object({
+  id: Id,
+  orgId: Id,
+  eventId: Id,
+  userId: Id,
+  role: Role,
+  domains: z.array(Domain).describe("Only meaningful for role 'lead'"),
+});
+export type EventMembership = z.infer<typeof EventMembership>;
