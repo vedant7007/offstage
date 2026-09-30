@@ -20,6 +20,7 @@ export const commander: AgentConfig<ReadServices> = {
   triggers: [{ type: "domain_event", eventType: "session.cancelled" }],
   maxSteps: 4,
   criticality: "normal",
+  mustPropose: true,
   fallback: async (ctx) => {
     const plan = await planFor(ctx);
     const first = plan.options[0];
@@ -30,7 +31,7 @@ export const commander: AgentConfig<ReadServices> = {
         ctx,
         plan,
         first.id,
-        `Chosen by rules while models were unavailable: the option with the fewest moved sessions (${m.movedSessions}), affecting ${m.attendeesAffected} attendees.`,
+        `Chosen by rules: the option with the fewest moved sessions (${m.movedSessions}), affecting ${m.attendeesAffected} attendees.`,
       ),
     ];
   },

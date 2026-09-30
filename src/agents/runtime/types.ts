@@ -61,6 +61,8 @@ export type AgentConfig<S = unknown> = {
   triggers: TriggerDef[];
   maxSteps: number;
   criticality: "critical" | "normal";
+  /** Every run must end in a proposal (a disruption always needs a plan): if the model proposes nothing, the fallback runs. */
+  mustPropose?: boolean;
   /** Rules-only path when models fail or the budget pauses the agent. */
   fallback: (ctx: RunContext<S>) => Promise<AgentProposal[]>;
   /**
