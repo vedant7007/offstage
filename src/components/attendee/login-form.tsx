@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { DemoPersona } from "@/contracts";
 import { Alert, Button, Field, Input } from "@/components/ui";
+import { DemoInboxLink } from "@/components/public/register/demo-inbox-link";
 import { Turnstile } from "@/components/public/register/turnstile";
 import { useLocale, useT } from "@/lib/i18n/provider";
 
@@ -140,6 +141,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
         {sent ? (
           <>
             <p aria-live="polite">{t("login.codeSent", { email: email.trim() })}</p>
+            {demoMode ? <DemoInboxLink slug={demoEventSlug} email={email.trim()} sent={sent} /> : null}
             <Field label={t("login.code")} error={error?.field === "code" ? error.text : undefined} required>
               <Input
                 ref={codeRef}

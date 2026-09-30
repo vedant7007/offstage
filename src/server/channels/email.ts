@@ -8,6 +8,7 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { logger } from "@/lib/logger";
 import { maskEmail } from "@/lib/format";
+import { copyToDemoInbox, demoInboxAllowed, isPersonaEmail } from "./demo-inbox";
 
 const log = logger.child({ module: "channels.email" });
 
@@ -45,6 +46,14 @@ export async function sendEmail(msg: EmailMessage): Promise<EmailResult> {
   if (driver === "mock") {
     log.info({ kind: msg.kind, to: maskEmail(msg.to) }, "email (mock driver, not sent)");
     return { driver };
+  }
+  // Demo inbox (DEMO_MODE only): eligible OTP emails also go to Mailpit; seeded personas only there.
+  if (driver === "smtp" && msg.kind === "otp" && demoInboxAllowed(msg.to)) {
+    await copyToDemoInbox({ from, to: msg.to, subject: msg.subject, text: msg.text, html: msg.html });
+    if (isPersonaEmail(msg.to)) {
+      log.info({ kind: msg.kind, to: maskEmail(msg.to) }, "email to a demo persona: demo inbox only");
+      return { driver: "demo-inbox" };
+    }
   }
   if (driver === "mailpit" || driver === "smtp") {
     const info = await smtp().sendMail({

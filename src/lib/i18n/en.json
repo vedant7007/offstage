@@ -601,5 +601,9 @@
       "stepVerify": "Verify email",
       "kvBudget": "Budget"
     }
+  },
+  "demoInbox": {
+    "link": "Demo inbox: open the code we sent",
+    "hint": "Demo mode only, for demo accounts."
   }
 }
