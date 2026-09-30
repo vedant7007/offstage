@@ -1,0 +1,26 @@
+{
+  "agentsOff": [],
+  "budget": [
+    { "key": "venue", "name": "Venue and AV", "pct": 15 },
+    { "key": "catering", "name": "Catering", "pct": 35 },
+    { "key": "prizes", "name": "Prizes", "pct": 20 },
+    { "key": "marketing", "name": "Marketing", "pct": 8 },
+    { "key": "swag", "name": "Swag and kits", "pct": 12 },
+    { "key": "contingency", "name": "Contingency", "pct": 10 }
+  ],
+  "milestones": [
+    { "title": "Confirm venue and rooms", "domain": "logistics", "daysBefore": 45, "critical": true },
+    { "title": "Open registrations", "domain": "registrations", "daysBefore": 35, "critical": true },
+    { "title": "Close sponsor commitments", "domain": "sponsorship", "daysBefore": 25, "critical": false },
+    {
+      "title": "Publish problem statements and rules",
+      "domain": "planning",
+      "daysBefore": 14,
+      "critical": true
+    },
+    { "title": "Confirm judges and mentors", "domain": "speakers", "daysBefore": 10, "critical": true },
+    { "title": "Volunteer shifts assigned", "domain": "crew", "daysBefore": 5, "critical": false },
+    { "title": "Send final food count to caterer", "domain": "logistics", "daysBefore": 3, "critical": true },
+    { "title": "Judge briefing pack ready", "domain": "planning", "daysBefore": 2, "critical": false }
+  ]
+}

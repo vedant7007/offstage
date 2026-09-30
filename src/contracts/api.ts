@@ -2,6 +2,7 @@ import { z } from "zod";
 import { Id, IsoDate, IsoDateTime, PageQuery, page } from "./common";
 import { AgentConfigSummary, AgentRun, AgentStep } from "./agents";
 import {
+  EventBrief,
   Announcement,
   Briefing,
   Certificate,
@@ -203,6 +204,22 @@ export const CommandResponse = z.discriminatedUnion("status", [
   z.object({ status: z.literal("refused"), reason: z.string().max(600) }),
 ]);
 export type CommandResponse = z.infer<typeof CommandResponse>;
+
+/**
+ * POST /api/agents/intake. The Commander's interview: describe the event, answer what it asks, get a plan.
+ * Without `eventId` it creates a draft event owned by the caller; every turn returns the event id.
+ */
+export const IntakeRequest = z.object({
+  eventId: Id.optional(),
+  conversationId: Id.optional().describe("Continue an interview"),
+  text: z.string().trim().min(1).max(4000),
+});
+export type IntakeRequest = z.infer<typeof IntakeRequest>;
+export const IntakeResponse = z.intersection(
+  CommandResponse,
+  z.object({ eventId: Id, brief: EventBrief.partial() }),
+);
+export type IntakeResponse = z.infer<typeof IntakeResponse>;
 
 export const KillSwitchRequest = z.discriminatedUnion("scope", [
   z.object({ scope: z.literal("global"), enabled: z.boolean(), reason: z.string().max(300).optional() }),
@@ -881,6 +898,13 @@ export const ENDPOINTS = {
     auth: "user",
     body: CommandRequest,
     response: CommandResponse,
+  },
+  intake: {
+    method: "POST",
+    path: "/api/agents/intake",
+    auth: "user",
+    body: IntakeRequest,
+    response: IntakeResponse,
   },
   getBriefing: {
     method: "GET",

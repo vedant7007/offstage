@@ -6,6 +6,7 @@ import type { ProposalResponse, Ripple, ScheduleOption } from "@/contracts";
 import { api } from "@/lib/api-client";
 import { Alert, Button, PageHeader, ProposalCard, Section, Skeleton } from "@/components/ui";
 import { agentOf, ApproveButton, metaOf, RejectButton } from "./proposal-bits";
+import { PlanPreview, type PlanPayload } from "./plan-preview";
 import { OptionCards, RippleView } from "./ripple-view";
 
 type BundlePayload = {
@@ -43,6 +44,7 @@ export function ProposalDetail({ eventId, proposalId }: { eventId: string; propo
 
   const p = data.proposal;
   const bundle = p.kind === "plan.bundle" ? (p.payload as unknown as BundlePayload) : null;
+  const plan = p.kind === "plan.create" ? (p.payload as unknown as PlanPayload) : null;
   const actions = data.canApprove ? (
     <>
       <ApproveButton eventId={eventId} proposal={p} onDone={load} />
@@ -70,11 +72,13 @@ export function ProposalDetail({ eventId, proposalId }: { eventId: string; propo
         tier={p.riskTier}
         evidence={p.evidence}
         impact={p.impact}
-        diff={bundle ? undefined : p.diff}
+        diff={bundle || plan ? undefined : p.diff}
         meta={metaOf(p)}
         actions={actions}
         headingLevel="h2"
       />
+
+      {plan ? <PlanPreview plan={plan} /> : null}
 
       {bundle?.options?.length ? (
         <Section

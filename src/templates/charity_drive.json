@@ -1,0 +1,32 @@
+{
+  "agentsOff": ["sponsorship", "speaker_liaison"],
+  "budget": [
+    { "key": "venue", "name": "Venue and permits", "pct": 25 },
+    { "key": "supplies", "name": "Supplies", "pct": 30 },
+    { "key": "catering", "name": "Refreshments", "pct": 20 },
+    { "key": "marketing", "name": "Outreach", "pct": 15 },
+    { "key": "contingency", "name": "Contingency", "pct": 10 }
+  ],
+  "milestones": [
+    {
+      "title": "Permissions and partner confirmed",
+      "domain": "planning",
+      "daysBefore": 30,
+      "critical": true
+    },
+    {
+      "title": "Open volunteer and donor sign-ups",
+      "domain": "registrations",
+      "daysBefore": 21,
+      "critical": true
+    },
+    {
+      "title": "Outreach to colleges and groups",
+      "domain": "marketing",
+      "daysBefore": 14,
+      "critical": false
+    },
+    { "title": "Volunteer shifts assigned", "domain": "crew", "daysBefore": 5, "critical": true },
+    { "title": "Supplies checked and counted", "domain": "logistics", "daysBefore": 2, "critical": true }
+  ]
+}

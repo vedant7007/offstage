@@ -316,3 +316,150 @@ export const addLesson: Executor<"playbook.add_lesson"> = {
       .where(and(eq(t.playbookLessons.id, u.lessonId as string), eq(t.playbookLessons.orgId, ctx.orgId)));
   },
 };
+
+// ---------------------------------------------------------------- the event plan (Commander intake)
+
+export const createPlan: Executor<"plan.create"> = {
+  kind: "plan.create",
+  async describe(p) {
+    return {
+      diff: [
+        ...p.milestones.map((m) => ({
+          entity: "milestones",
+          id: null,
+          before: null,
+          after: { title: m.title, domain: m.domain, dueOn: m.dueOn },
+        })),
+        ...p.budget.categories.map((c) => ({
+          entity: "budget_categories",
+          id: c.categoryId ?? null,
+          before: null,
+          after: { key: c.key, name: c.name, capInr: c.capInr },
+        })),
+        ...p.agentTeam.map((a) => ({
+          entity: "agent_configs",
+          id: null,
+          before: null,
+          after: { agent: a.agent, enabled: a.enabled, humanLeadRole: a.humanLeadRole, mandate: a.mandate },
+        })),
+      ],
+      impact: impact(),
+      preconditions: [],
+    };
+  },
+  async execute(p, ctx) {
+    const milestoneIds: string[] = [];
+    for (const m of p.milestones) {
+      const [row] = await ctx.db
+        .insert(t.milestones)
+        .values({
+          eventId: ctx.eventId,
+          title: m.title,
+          domain: m.domain,
+          dueOn: m.dueOn,
+          ownerRole: m.ownerRole,
+          dependsOn: [],
+          critical: m.critical,
+          notes: m.notes ?? null,
+        })
+        .returning({ id: t.milestones.id });
+      milestoneIds.push(row!.id);
+    }
+    // Budget categories by key: an existing one gets the new cap, a new key is created.
+    const existing = await ctx.db
+      .select()
+      .from(t.budgetCategories)
+      .where(eq(t.budgetCategories.eventId, ctx.eventId));
+    const createdCategoryIds: string[] = [];
+    const previousCaps: { id: string; capInr: number }[] = [];
+    for (const c of p.budget.categories) {
+      const old = existing.find((e) => e.key === c.key);
+      if (old) {
+        previousCaps.push({ id: old.id, capInr: old.capInr });
+        await ctx.db
+          .update(t.budgetCategories)
+          .set({ name: c.name, capInr: c.capInr, version: bumpVersion(t.budgetCategories) })
+          .where(eq(t.budgetCategories.id, old.id));
+      } else {
+        const [row] = await ctx.db
+          .insert(t.budgetCategories)
+          .values({ eventId: ctx.eventId, key: c.key, name: c.name, capInr: c.capInr })
+          .returning({ id: t.budgetCategories.id });
+        createdCategoryIds.push(row!.id);
+      }
+    }
+    // The org chart: which agents run for this event, who leads each, and what it owns.
+    const before = await ctx.db.select().from(t.agentConfigs).where(eq(t.agentConfigs.eventId, ctx.eventId));
+    for (const a of p.agentTeam) {
+      const values = {
+        enabled: a.enabled,
+        humanLeadRole: a.humanLeadRole,
+        humanLeadUserId: a.humanLeadUserId ?? null,
+        mandate: a.mandate,
+      };
+      await ctx.db
+        .insert(t.agentConfigs)
+        .values({ eventId: ctx.eventId, agent: a.agent, ...values })
+        .onConflictDoUpdate({ target: [t.agentConfigs.eventId, t.agentConfigs.agent], set: values });
+    }
+    const [ev] = await ctx.db
+      .select({ status: t.events.status })
+      .from(t.events)
+      .where(eq(t.events.id, ctx.eventId));
+    if (ev?.status === "draft")
+      await ctx.db.update(t.events).set({ status: "planning" }).where(eq(t.events.id, ctx.eventId));
+    return {
+      undoData: {
+        milestoneIds,
+        createdCategoryIds,
+        previousCaps,
+        agentConfigs: before.map((b) => ({
+          agent: b.agent,
+          enabled: b.enabled,
+          humanLeadRole: b.humanLeadRole,
+          humanLeadUserId: b.humanLeadUserId,
+          mandate: b.mandate,
+        })),
+        previousStatus: ev?.status ?? null,
+      },
+    };
+  },
+  async inverse(_p, u, ctx) {
+    const ids = u.milestoneIds as string[];
+    if (ids.length)
+      await ctx.db
+        .delete(t.milestones)
+        .where(and(eq(t.milestones.eventId, ctx.eventId), sql`${t.milestones.id} = any(${ids})`));
+    const created = u.createdCategoryIds as string[];
+    if (created.length)
+      await ctx.db
+        .delete(t.budgetCategories)
+        .where(
+          and(eq(t.budgetCategories.eventId, ctx.eventId), sql`${t.budgetCategories.id} = any(${created})`),
+        );
+    for (const c of u.previousCaps as { id: string; capInr: number }[])
+      await ctx.db
+        .update(t.budgetCategories)
+        .set({ capInr: c.capInr })
+        .where(eq(t.budgetCategories.id, c.id));
+    const previous = u.agentConfigs as {
+      agent: string;
+      enabled: boolean;
+      humanLeadRole: string;
+      humanLeadUserId: string | null;
+      mandate: string | null;
+    }[];
+    await ctx.db.delete(t.agentConfigs).where(eq(t.agentConfigs.eventId, ctx.eventId));
+    if (previous.length)
+      await ctx.db
+        .insert(t.agentConfigs)
+        .values(
+          previous.map((a) => ({ eventId: ctx.eventId, ...a, humanLeadRole: a.humanLeadRole as never })),
+        );
+    if (u.previousStatus)
+      await ctx.db
+        .update(t.events)
+        .set({ status: u.previousStatus as string })
+        .where(eq(t.events.id, ctx.eventId));
+  },
+};

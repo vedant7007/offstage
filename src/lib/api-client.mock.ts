@@ -104,6 +104,14 @@ export async function mockCall(name: EndpointName, args: Args): Promise<unknown>
     case "me":
     case "setActiveEvent":
       return responses.me(w, "attendee");
+    case "intake":
+      return {
+        status: "questions",
+        conversationId: "mock-intake",
+        questions: [{ id: "name", text: "Mock mode: the Commander does not run. What is the event called?" }],
+        eventId: w.event.id,
+        brief: {},
+      };
     case "demoTrigger":
       return { message: "Mock mode: scenarios do not run." };
     case "switchPersona":

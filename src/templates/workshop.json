@@ -1,0 +1,18 @@
+{
+  "agentsOff": ["sponsorship"],
+  "budget": [
+    { "key": "venue", "name": "Venue and AV", "pct": 30 },
+    { "key": "catering", "name": "Catering", "pct": 30 },
+    { "key": "speakers", "name": "Speaker travel and stay", "pct": 20 },
+    { "key": "marketing", "name": "Marketing", "pct": 10 },
+    { "key": "contingency", "name": "Contingency", "pct": 10 }
+  ],
+  "milestones": [
+    { "title": "Confirm venue and rooms", "domain": "logistics", "daysBefore": 30, "critical": true },
+    { "title": "Confirm speakers", "domain": "speakers", "daysBefore": 25, "critical": true },
+    { "title": "Open registrations", "domain": "registrations", "daysBefore": 21, "critical": true },
+    { "title": "Collect speaker requirements", "domain": "speakers", "daysBefore": 7, "critical": false },
+    { "title": "Send final food count to caterer", "domain": "logistics", "daysBefore": 3, "critical": true },
+    { "title": "Room and AV check", "domain": "logistics", "daysBefore": 1, "critical": false }
+  ]
+}
