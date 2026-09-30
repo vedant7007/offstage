@@ -1,6 +1,7 @@
 // runAgent: one engine for every agent. Creates the run, builds the context, lets the model read through
 // tools and act only through the propose tool, traces every step, and falls back to rules when models fail.
 
+import { nowUtc } from "@/lib/time";
 import { createHash } from "node:crypto";
 import { tool, type ToolSet } from "ai";
 import { z } from "zod";
@@ -95,7 +96,7 @@ export async function runAgent<S>(
     status: "running",
     simulation,
     modelTier: config.modelTier,
-    startedAt: new Date(started).toISOString(),
+    startedAt: nowUtc().toISOString(),
     stepCount: 0,
     proposalIds: [],
     inputTokens: 0,
@@ -149,7 +150,7 @@ export async function runAgent<S>(
     await Promise.all(pending);
     await deps.trace.finishRun(runId, {
       status: status === "blocked" ? "succeeded" : status,
-      finishedAt: new Date().toISOString(),
+      finishedAt: nowUtc().toISOString(),
       stepCount: index,
       proposalIds,
       ...tokens,
