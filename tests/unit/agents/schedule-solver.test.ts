@@ -103,7 +103,7 @@ describe("replanOptions", () => {
       kind: "schedule.move_session",
       payload: { sessionId: "s6", newStartsAt: t("14:00"), newEndsAt: t("15:00") },
     });
-    expect(pull.label).toContain("14:00");
+    expect(pull.label).toContain("2:00 PM");
     for (const o of opts) {
       expect(isValid(state, o.actions)).toBe(true);
       expect(o.actions.some(inLunch)).toBe(false);
