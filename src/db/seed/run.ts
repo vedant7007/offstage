@@ -1,11 +1,12 @@
 import "@/server/load-env";
-import { sql } from "@/db/client";
+import { ownerDb, ownerSql } from "@/db/client";
 import { seed } from "@/db/seed";
 import { logger } from "@/lib/logger";
 
-seed()
+const client = ownerSql();
+seed(ownerDb(client))
   .catch((err: unknown) => {
-    logger.error({ err }, "seed failed");
+    logger.error({ err }, "seed failed (run pnpm demo:reset to wipe and reseed)");
     process.exitCode = 1;
   })
-  .finally(() => sql.end({ timeout: 5 }));
+  .finally(() => client.end({ timeout: 5 }));

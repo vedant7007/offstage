@@ -31,7 +31,9 @@
     "sync": "tsx scripts/sync.ts",
     "ai:smoke": "tsx src/ai/smoke.ts",
     "ai:models": "tsx src/ai/rag/prefetch.ts",
-    "evals": "tsx tests/evals/run.ts"
+    "evals": "tsx tests/evals/run.ts",
+    "db:counts": "tsx src/db/counts.ts",
+    "test:db": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "5.0.102",
