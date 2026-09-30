@@ -347,5 +347,62 @@
     "required": "Yeh zaroori hai.",
     "invalidEmail": "name@college.edu jaisa email daalo",
     "invalidPhone": "10 se 12 digit ka phone number daalo"
+  },
+  "verify": {
+    "title": "Certificate check",
+    "intro": "Koi bhi yahan certificate check kar sakta hai. Hum sirf wahi dikhate hain jo certificate par likha hai.",
+    "valid": "Valid certificate",
+    "validBody": "Yeh certificate organisers ne issue kiya hai aur revoke nahi hua hai.",
+    "revoked": "Revoke hua certificate",
+    "revokedBody": "Organisers ne yeh certificate {date} ko revoke kar diya. Yeh ab valid nahi hai.",
+    "notFound": "Koi certificate nahi mila",
+    "notFoundBody": "Is ID ka koi certificate nahi mila. Link check karo, ya certificate ke neeche chhapi ID dekho.",
+    "recipient": "Kise mila",
+    "certificate": "Certificate",
+    "kind": "Type",
+    "event": "Event",
+    "eventDates": "Event ki dates",
+    "hours": "Volunteer hours",
+    "issuedBy": "Issue kiya",
+    "issuedOn": "Issue date",
+    "id": "Certificate ID",
+    "kinds": {
+      "attendee": "Participation",
+      "winner": "Winner",
+      "volunteer": "Volunteer",
+      "speaker": "Speaker"
+    }
+  },
+  "speakerForm": {
+    "title": "{event} ke liye speaker details",
+    "intro": "Batao ki tumhare session ke liye kya chahiye. Lagbhag teen minute lagenge, aur update ke liye phir se bhej sakte ho.",
+    "avTitle": "Audio aur video",
+    "avHint": "Room mein jo bhi chahiye, sab chuno.",
+    "av": {
+      "projector_hdmi": "HDMI ke saath projector",
+      "usb_c_adapter": "USB-C se HDMI adapter",
+      "clicker": "Slide clicker",
+      "lapel_mic": "Lapel mic",
+      "handheld_mic": "Handheld mic",
+      "video_sound": "Videos ke liye sound",
+      "internet": "Wired ya reliable internet",
+      "whiteboard": "Whiteboard aur markers",
+      "power_strip": "Attendees ke liye power strip"
+    },
+    "travel": "Travel",
+    "travelHint": "Optional. Aane aur jaane ka time, aur kya pickup chahiye.",
+    "stay": "Stay",
+    "stayHint": "Optional. Agar rehne ki jagah chahiye toh dates.",
+    "materials": "Session materials",
+    "materialsHint": "Optional. Slides ka link, ya jo attendees ko pehle install karna ho.",
+    "bio": "Tumhara bio",
+    "bioHint": "Public event page par dikhega. Teen-chaar lines kaafi hain.",
+    "bioConfirm": "Mera bio sahi hai aur public mein dikhaya ja sakta hai",
+    "bioError": "Aage badhne ke liye apna bio confirm karo.",
+    "submit": "Details bhejo",
+    "sent": "Thank you, tumhari details program team tak pahunch gayi",
+    "sentBody": "Kuch bhi badalne ke liye yeh link phir se khol sakte ho.",
+    "error": "Tumhari details nahi bhej paye. Kuch nahi khoya; phir se try karo.",
+    "badLink": "Yeh link expire ho gaya hai ya valid nahi hai. Program team se naya link maango."
   }
 }
