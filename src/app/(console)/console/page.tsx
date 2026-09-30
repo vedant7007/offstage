@@ -11,7 +11,12 @@ export default async function ConsoleIndex() {
   if (!info) redirect("/");
   const eventId =
     info.activeEventId ??
-    (await db.select({ eventId: memberships.eventId }).from(memberships).where(eq(memberships.userId, info.userId)).limit(1))[0]
-      ?.eventId;
+    (
+      await db
+        .select({ eventId: memberships.eventId })
+        .from(memberships)
+        .where(eq(memberships.userId, info.userId))
+        .limit(1)
+    )[0]?.eventId;
   redirect(eventId ? `/console/${eventId}/approvals` : "/");
 }

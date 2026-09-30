@@ -75,9 +75,7 @@ async function personByCode(db: Db, code: string): Promise<Person | null> {
     .from(t.registrations);
   const reg = regs.find((r) => telegramLinkCode(r.id) === code);
   if (reg) return { type: "registration", ...reg };
-  const vols = await db
-    .select({ id: t.volunteers.id, phoneHash: t.volunteers.phoneHash })
-    .from(t.volunteers);
+  const vols = await db.select({ id: t.volunteers.id, phoneHash: t.volunteers.phoneHash }).from(t.volunteers);
   const vol = vols.find((v) => telegramLinkCode(v.id) === code);
   return vol ? { type: "volunteer", ...vol } : null;
 }
@@ -124,7 +122,8 @@ export async function handleUpdate(db: Db, u: Update, log: Logger): Promise<void
 
   if (m.contact) {
     // Only the account's own number, not a forwarded contact card.
-    if (m.contact.user_id !== m.from?.id) return void (await reply({ text: "Please share your own number." }));
+    if (m.contact.user_id !== m.from?.id)
+      return void (await reply({ text: "Please share your own number." }));
     const p = m.contact.phone_number;
     const hash = phoneHash(normalisePhone(p.startsWith("+") ? p : `+${p}`) ?? "");
     const person = hash ? await personByPhone(db, hash) : null;

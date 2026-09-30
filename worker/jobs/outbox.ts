@@ -65,7 +65,14 @@ export async function deliverDue(log: Logger): Promise<{ real: number; mock: num
       const { providerId } = await sendReal(row, to);
       await db
         .update(t.outbox)
-        .set({ status: "sent", driver, providerId: providerId ?? null, attempts: row.attempts + 1, sentAt: nowUtc(), error: null })
+        .set({
+          status: "sent",
+          driver,
+          providerId: providerId ?? null,
+          attempts: row.attempts + 1,
+          sentAt: nowUtc(),
+          error: null,
+        })
         .where(eq(t.outbox.id, row.id));
       counts.real++;
       log.info({ outboxId: row.id, channel: row.channel, driver }, "outbox sent (real)");

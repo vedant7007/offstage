@@ -25,7 +25,12 @@ export function parseAllowlist(raw = process.env.DEMO_REAL_RECIPIENTS ?? ""): Al
 }
 
 /** Whether a decrypted outbox address may get a real message on this channel. */
-export function isAllowed(list: Allowlist, channel: string, address: string, linkedChats: Set<string>): boolean {
+export function isAllowed(
+  list: Allowlist,
+  channel: string,
+  address: string,
+  linkedChats: Set<string>,
+): boolean {
   switch (channel) {
     case "email":
       return list.emails.has(normaliseEmail(address));

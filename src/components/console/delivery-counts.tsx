@@ -6,7 +6,12 @@ import { api } from "@/lib/api-client";
 import { DataTable, type Column } from "@/components/ui";
 
 type Row = DeliveryStatsResponse["channels"][number];
-const LABEL: Record<string, string> = { email: "Email", telegram: "Telegram", whatsapp: "WhatsApp", sms: "SMS" };
+const LABEL: Record<string, string> = {
+  email: "Email",
+  telegram: "Telegram",
+  whatsapp: "WhatsApp",
+  sms: "SMS",
+};
 const num = (key: keyof Omit<Row, "channel">, header: string): Column<Row> => ({
   key,
   header,
@@ -38,12 +43,5 @@ export function DeliveryCounts({ eventId }: { eventId: string }) {
   }, [eventId]);
 
   if (!rows?.length) return null;
-  return (
-    <DataTable
-      caption="Message delivery"
-      columns={COLUMNS}
-      rows={rows}
-      rowKey={(r) => r.channel}
-    />
-  );
+  return <DataTable caption="Message delivery" columns={COLUMNS} rows={rows} rowKey={(r) => r.channel} />;
 }

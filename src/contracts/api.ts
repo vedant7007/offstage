@@ -1048,4 +1048,3 @@ export const ENDPOINTS = {
 } as const satisfies Record<string, Endpoint>;
 
 export type EndpointName = keyof typeof ENDPOINTS;
-

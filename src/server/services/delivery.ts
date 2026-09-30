@@ -5,7 +5,10 @@ import { db as defaultDb, type Db } from "@/db/client";
 import * as t from "@/db/schema";
 import { requirePermission } from "@/server/authz";
 
-export async function deliveryStats(actor: UserActor, client: Db = defaultDb): Promise<DeliveryStatsResponse> {
+export async function deliveryStats(
+  actor: UserActor,
+  client: Db = defaultDb,
+): Promise<DeliveryStatsResponse> {
   requirePermission(actor, "proposal.read", { eventId: actor.eventId });
   const rows = await client
     .select({ channel: t.outbox.channel, status: t.outbox.status, n: sql<number>`count(*)::int` })
@@ -14,7 +17,14 @@ export async function deliveryStats(actor: UserActor, client: Db = defaultDb): P
     .groupBy(t.outbox.channel, t.outbox.status);
   const by = new Map<string, DeliveryStatsResponse["channels"][number]>();
   for (const r of rows) {
-    const c = by.get(r.channel) ?? { channel: r.channel as never, real: 0, mock: 0, pending: 0, failed: 0, skipped: 0 };
+    const c = by.get(r.channel) ?? {
+      channel: r.channel as never,
+      real: 0,
+      mock: 0,
+      pending: 0,
+      failed: 0,
+      skipped: 0,
+    };
     if (r.status === "sent") c.real += r.n;
     else if (r.status === "delivered_mock") c.mock += r.n;
     else if (r.status === "failed") c.failed += r.n;
