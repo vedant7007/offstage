@@ -18,6 +18,10 @@ async function api() {
 }
 
 /** A route that does not exist yet answers with a plain 404 page, not an ApiError body. */
+/** Layouts and pages render in parallel, so a page can run before the layout's sign-in redirect. */
+const unauthenticated = (err: unknown) =>
+  err instanceof ApiClientError && (err.status === 401 || err.code === "unauthenticated");
+
 const routeMissing = (err: unknown) =>
   err instanceof ApiClientError && err.status === 404 && err.code !== "not_found";
 
@@ -25,13 +29,18 @@ export async function getMe(): Promise<MeResponse | null> {
   try {
     return await (await api()).me();
   } catch (err) {
-    if (err instanceof ApiClientError && (err.status === 401 || err.code === "unauthenticated")) return null;
+    if (unauthenticated(err)) return null;
     throw err;
   }
 }
 
 export async function getMyRegistration(): Promise<MyRegistrationResponse["registration"]> {
-  return (await (await api()).myRegistration()).registration;
+  try {
+    return (await (await api()).myRegistration()).registration;
+  } catch (err) {
+    if (unauthenticated(err)) return null;
+    throw err;
+  }
 }
 
 function isSeededAttendee(registrationId: string | undefined) {
@@ -47,7 +56,7 @@ export async function getMyTicket(
     if (routeMissing(err)) {
       return isSeededAttendee(registrationId) ? { data: fixtures.api.myTicket(), source: "fixture" } : null;
     }
-    if (err instanceof ApiClientError && err.code === "not_found") return null;
+    if (unauthenticated(err) || (err instanceof ApiClientError && err.code === "not_found")) return null;
     throw err;
   }
 }
@@ -61,7 +70,7 @@ export async function getMySchedule(
     if (routeMissing(err)) {
       return isSeededAttendee(registrationId) ? { data: fixtures.api.mySchedule(), source: "fixture" } : null;
     }
-    if (err instanceof ApiClientError && err.code === "not_found") return null;
+    if (unauthenticated(err) || (err instanceof ApiClientError && err.code === "not_found")) return null;
     throw err;
   }
 }

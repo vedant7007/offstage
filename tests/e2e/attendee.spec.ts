@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { collectErrors } from "./helpers";
+import { collectErrors, waitForPath } from "./helpers";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
@@ -13,7 +13,7 @@ async function expectAccessible(page: Page) {
 async function signInAsSneha(page: Page) {
   await page.goto("/login?next=/me");
   await page.getByRole("button", { name: "Sneha, attendee" }).click();
-  await page.waitForURL("**/me", { timeout: 20_000 });
+  await waitForPath(page, "/me");
 }
 
 test("the portal asks people who are not signed in to sign in first", async ({ page }) => {
@@ -46,7 +46,7 @@ test("the seeded attendee sees her ticket and can show it full screen", async ({
 test("the schedule lists her sessions and the whole event", async ({ page }) => {
   await signInAsSneha(page);
   await page.getByRole("link", { name: "Schedule" }).first().click();
-  await page.waitForURL("**/me/schedule");
+  await waitForPath(page, "/me/schedule");
   await expect(page.getByRole("heading", { level: 1, name: "Schedule" })).toBeVisible();
   await expect(page.getByText("Workshop: Fine-tuning small language models").first()).toBeVisible();
   await expect(page.getByRole("switch", { name: /Remind me 15 minutes/ })).toBeVisible();
@@ -58,7 +58,7 @@ test("the schedule lists her sessions and the whole event", async ({ page }) => 
 test("sign-in never redirects to another site", async ({ page }) => {
   await page.goto("/login?next=//evil.example");
   await page.getByRole("button", { name: "Sneha, attendee" }).click();
-  await page.waitForURL("**/me", { timeout: 20_000 });
+  await waitForPath(page, "/me");
   expect(new URL(page.url()).host).toBe(new URL(page.url()).host);
   expect(page.url()).toMatch(/\/me$/);
 });

@@ -2,7 +2,7 @@ import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
 import type { ChatResult } from "@/contracts";
 import { fixtures } from "@/contracts/fixtures";
-import { collectErrors } from "./helpers";
+import { collectErrors, waitForPath } from "./helpers";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
@@ -24,7 +24,7 @@ async function mockChat(page: Page, pick: (message: string) => ChatResult) {
 async function openChat(page: Page) {
   await page.goto("/login?next=/me/chat");
   await page.getByRole("button", { name: "Sneha, attendee" }).click();
-  await page.waitForURL("**/me/chat", { timeout: 20_000 });
+  await waitForPath(page, "/me/chat");
   await expect(page.getByRole("heading", { level: 1, name: "Helpdesk" })).toBeVisible();
 }
 

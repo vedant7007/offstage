@@ -487,7 +487,7 @@
     "title": "Helpdesk",
     "honest": "This assistant answers from the event's own documents and shows where each answer came from. When it is not sure, it passes your question to a person.",
     "label": "Your question",
-    "placeholder": "Ask about the schedule, venue, food, rules...",
+    "placeholder": "Ask about the event",
     "send": "Send",
     "suggestions": "Common questions",
     "you": "You",

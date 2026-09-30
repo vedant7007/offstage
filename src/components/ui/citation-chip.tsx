@@ -25,13 +25,13 @@ function CitationChip({ document, section, snippet, className }: CitationChipPro
           section ? t("citation.open", { document, section }) : t("citationExtra.openDoc", { document })
         }
         className={cn(
-          "inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-full border border-agent bg-agent-soft px-3 text-sm font-medium text-agent-soft-fg md:min-h-9",
+          "inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-card border border-agent bg-agent-soft px-3 py-1.5 text-left text-sm font-medium text-agent-soft-fg md:min-h-9",
           "transition-colors duration-(--duration-fast) ease-out hover:bg-surface-sunken",
           className,
         )}
       >
         <FileText aria-hidden className="size-4 shrink-0" />
-        <span className="truncate">{section ? `${document}, ${section}` : document}</span>
+        <span className="min-w-0">{section ? `${document}, ${section}` : document}</span>
       </SheetTrigger>
       <SheetContent title={document} description={section ? t("citation.section", { section }) : undefined}>
         <p className="mb-2 text-xs font-semibold tracking-wide text-fg-muted uppercase">
