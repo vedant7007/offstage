@@ -253,6 +253,63 @@ export const PersonaFeedResponse = z.object({
 });
 export type PersonaFeedResponse = z.infer<typeof PersonaFeedResponse>;
 
+/** GET /api/events/:eventId/closeout. The close-out report: every number from SQL, the model writes only the summary. */
+const Count = z.int().nonnegative();
+export const CloseoutReport = z.object({
+  eventId: Id,
+  eventName: z.string(),
+  generatedAt: IsoDateTime,
+  attendance: z.object({
+    registered: Count,
+    confirmed: Count,
+    attended: Count,
+    noShows: Count.describe("Confirmed and never checked in"),
+    ratePct: z.number().min(0).max(100),
+  }),
+  sessions: z.object({
+    total: Count,
+    changed: Count.describe("Moved, re-roomed, delayed or cancelled by an executed proposal"),
+    cancelled: Count,
+  }),
+  messages: z.array(
+    z.object({ channel: z.string(), real: Count, mock: Count, failed: Count, skipped: Count }),
+  ),
+  inAppNotifications: Count,
+  helpdesk: z.object({ questions: Count, blocked: Count, escalations: Count, escalationsOpen: Count }),
+  incidents: z.object({ total: Count, resolved: Count, open: Count, emergencies: Count }),
+  budget: z.object({
+    capInr: z.number().nonnegative(),
+    spentInr: z.number().nonnegative(),
+    incomeInr: z.number().nonnegative(),
+    categories: z.array(z.object({ name: z.string(), capInr: z.number(), spentInr: z.number() })),
+  }),
+  approvals: z.array(
+    z.object({
+      tier: RiskTier,
+      total: Count,
+      executed: Count,
+      rejected: Count,
+      pending: Count,
+      other: Count.describe("Approved and waiting, expired, failed or undone"),
+    }),
+  ),
+  certificates: z.object({
+    issued: Count,
+    revoked: Count,
+    byKind: z.array(z.object({ kind: z.string(), count: Count })),
+    sampleId: Id.optional().describe("One valid certificate, for the public verify page link"),
+  }),
+  odLetters: z.object({ lists: Count, students: Count }),
+  lessons: z.array(
+    z.object({ title: z.string(), detail: z.string(), source: z.enum(["incident", "playbook"]) }),
+  ),
+  summary: z
+    .object({ text: z.string().max(1200), generatedAt: IsoDateTime, by: z.enum(["model", "rules"]) })
+    .nullable()
+    .describe("Written on request; null until then or when the numbers changed since"),
+});
+export type CloseoutReport = z.infer<typeof CloseoutReport>;
+
 export const KillSwitchRequest = z.discriminatedUnion("scope", [
   z.object({ scope: z.literal("global"), enabled: z.boolean(), reason: z.string().max(300).optional() }),
   z.object({
@@ -902,6 +959,18 @@ export const ENDPOINTS = {
     path: "/api/events/:eventId/agent-runs/:runId",
     auth: "user",
     response: AgentRunResponse,
+  },
+  closeout: {
+    method: "GET",
+    path: "/api/events/:eventId/closeout",
+    auth: "user",
+    response: CloseoutReport,
+  },
+  closeoutSummary: {
+    method: "POST",
+    path: "/api/events/:eventId/closeout/summary",
+    auth: "user",
+    response: CloseoutReport,
   },
   personaFeed: {
     method: "GET",
