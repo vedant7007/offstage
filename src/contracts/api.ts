@@ -309,6 +309,48 @@ export const CloseoutReport = z.object({
     .describe("Written on request; null until then or when the numbers changed since"),
 });
 export type CloseoutReport = z.infer<typeof CloseoutReport>;
+/** GET /api/events/:eventId/evals. The golden-set run on record, plus live per-agent numbers for this event. */
+const Rate = z.number().min(0).max(1);
+export const GoldenRun = z.object({
+  at: IsoDateTime,
+  profile: z.string().max(20),
+  index: z.enum(["memory", "postgres"]),
+  helpdesk: z.object({
+    questions: z.int().nonnegative(),
+    groundingRate: Rate,
+    refusalRate: Rate,
+    avgLatencyMs: z.int().nonnegative(),
+  }),
+  retrieval: z.object({ hitRate: Rate, k: z.int().positive() }),
+  guard: z.object({ injections: z.int().nonnegative(), injectionBlockRate: Rate, benignAllowRate: Rate }),
+  solver: z.object({ checked: z.int().nonnegative(), passed: z.int().nonnegative() }),
+  costUsd: z.number().nonnegative(),
+  thresholds: z.record(z.string(), z.number()),
+  pass: z.record(z.string(), z.boolean()),
+  misses: z.array(z.string().max(400)).max(30),
+});
+export type GoldenRun = z.infer<typeof GoldenRun>;
+export const EvalsResponse = z.object({
+  golden: GoldenRun.nullable(),
+  running: z.object({ startedAt: IsoDateTime }).nullable(),
+  lastError: z.string().max(300).nullable(),
+  canRun: z.boolean().describe("Only the event owner reruns the golden set"),
+  live: z.object({
+    agents: z.array(
+      z.object({
+        agent: AgentName,
+        runs: z.int().nonnegative(),
+        failed: z.int().nonnegative(),
+        avgLatencyMs: z.int().nonnegative(),
+        avgCostUsd: z.number().nonnegative(),
+        totalCostUsd: z.number().nonnegative(),
+      }),
+    ),
+    injectionsBlocked: z.int().nonnegative().describe("Messages the guard blocked at this event"),
+    guardScreened: z.int().nonnegative(),
+  }),
+});
+export type EvalsResponse = z.infer<typeof EvalsResponse>;
 
 export const KillSwitchRequest = z.discriminatedUnion("scope", [
   z.object({ scope: z.literal("global"), enabled: z.boolean(), reason: z.string().max(300).optional() }),
@@ -971,6 +1013,18 @@ export const ENDPOINTS = {
     path: "/api/events/:eventId/closeout/summary",
     auth: "user",
     response: CloseoutReport,
+  },
+  evals: {
+    method: "GET",
+    path: "/api/events/:eventId/evals",
+    auth: "user",
+    response: EvalsResponse,
+  },
+  runEvals: {
+    method: "POST",
+    path: "/api/events/:eventId/evals/run",
+    auth: "user",
+    response: EvalsResponse,
   },
   personaFeed: {
     method: "GET",
