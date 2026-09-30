@@ -1,3 +1,5 @@
+import { createHmac, timingSafeEqual } from "node:crypto";
+
 /**
  * Twilio Messages API for WhatsApp (sandbox) and SMS. Callers must check the allowlist first: trial
  * accounts can only reach verified numbers, and we never send outside DEMO_REAL_RECIPIENTS anyway.
@@ -40,4 +42,31 @@ export async function twilioStatus(sid: string): Promise<{ status: string; error
   const data = (await res.json().catch(() => ({}))) as { status?: string; error_code?: number | null };
   if (!res.ok || !data.status) throw new Error(`twilio status ${res.status}`);
   return { status: data.status, errorCode: data.error_code ?? null };
+}
+
+/**
+ * Twilio request signature (X-Twilio-Signature): base64 HMAC-SHA1, keyed with the auth token, over
+ * the full public URL Twilio called followed by every POST parameter as name+value, sorted by name.
+ * https://www.twilio.com/docs/usage/webhooks/webhooks-security
+ */
+export function validTwilioSignature(
+  signature: string | null,
+  url: string,
+  params: URLSearchParams,
+  token = process.env.TWILIO_AUTH_TOKEN,
+): boolean {
+  if (!signature || !token) return false;
+  const data = [...new Set(params.keys())].sort().reduce(
+    (acc, k) =>
+      acc +
+      params
+        .getAll(k)
+        .map((v) => k + v)
+        .join(""),
+    url,
+  );
+  const expected = createHmac("sha1", token).update(data, "utf8").digest("base64");
+  const a = Buffer.from(signature);
+  const b = Buffer.from(expected);
+  return a.length === b.length && timingSafeEqual(a, b);
 }
