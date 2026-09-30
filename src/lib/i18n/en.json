@@ -259,6 +259,22 @@
       "done": "Finished"
     }
   },
+  "board": {
+    "title": "Live status",
+    "updated": "Updated at {time} IST",
+    "now": "Now",
+    "next": "Next",
+    "nothingNow": "Nothing on right now",
+    "nothingNext": "Nothing else scheduled",
+    "rooms": "Rooms",
+    "announcements": "Announcements",
+    "askHelpdesk": "Ask the helpdesk",
+    "helpdeskAt": "Questions? Ask the helpdesk at {url}",
+    "backToEvent": "Back to the event page",
+    "projector": "Projector view",
+    "live": "Live",
+    "reconnecting": "Reconnecting. Showing the last update."
+  },
   "design": {
     "title": "Design system",
     "intro": "Every primitive and shared component in every state. Use the controls to check both themes and a 360 px phone width.",

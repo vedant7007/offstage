@@ -258,5 +258,21 @@
       "cancelled": "Cancel",
       "done": "Khatam"
     }
+  },
+  "board": {
+    "title": "Live status",
+    "updated": "{time} IST par update hua",
+    "now": "Abhi",
+    "next": "Agla",
+    "nothingNow": "Abhi kuch nahi chal raha",
+    "nothingNext": "Aage kuch scheduled nahi hai",
+    "rooms": "Rooms",
+    "announcements": "Announcements",
+    "askHelpdesk": "Helpdesk se poochho",
+    "helpdeskAt": "Sawaal hai? {url} par helpdesk se poochho",
+    "backToEvent": "Event page par wapas jao",
+    "projector": "Projector view",
+    "live": "Live",
+    "reconnecting": "Phir se connect ho raha hai. Aakhri update dikha rahe hain."
   }
 }

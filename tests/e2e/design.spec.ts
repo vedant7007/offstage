@@ -1,16 +1,8 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { collectErrors } from "./helpers";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
-
-function collectConsoleErrors(page: Page) {
-  const errors: string[] = [];
-  page.on("console", (msg) => {
-    if (msg.type() === "error") errors.push(msg.text());
-  });
-  page.on("pageerror", (err) => errors.push(err.message));
-  return errors;
-}
 
 async function seriousViolations(page: Page) {
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
@@ -29,7 +21,7 @@ for (const scheme of ["light", "dark"] as const) {
     test.use({ colorScheme: scheme });
 
     test("renders with no console errors and no serious accessibility violations", async ({ page }) => {
-      const errors = collectConsoleErrors(page);
+      const errors = collectErrors(page);
       await page.goto("/design");
       await expect(page.getByRole("heading", { level: 1, name: "Design system" })).toBeVisible();
       await expect(page.locator("html")).toHaveClass(new RegExp(`\\b${scheme}\\b`));
