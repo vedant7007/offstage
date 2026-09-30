@@ -32,3 +32,31 @@ export function otpEmail(input: { otp: string; minutes: number; purpose: string 
 </body></html>`;
   return { subject: `${otp} is your Sutradhar code`, text, html };
 }
+
+export function ticketEmail(input: {
+  eventName: string;
+  ticketUrl: string;
+  waitlistPosition?: number;
+}): RenderedEmail {
+  const { eventName, ticketUrl, waitlistPosition } = input;
+  const waitlisted = waitlistPosition !== undefined;
+  const lead = waitlisted
+    ? `You are on the waitlist for ${eventName}, position ${waitlistPosition}. We will tell you if a seat opens up.`
+    : `You are registered for ${eventName}. Your ticket QR code is ready.`;
+  const action = waitlisted ? "See your registration" : "Open your ticket";
+  const text = [
+    lead,
+    "",
+    `${action}: ${ticketUrl}`,
+    "Sign in with this email address and the one-time code we send you.",
+    "",
+    "Show the QR code at the registration desk. Do not share it: the first scan wins.",
+  ].join("\n");
+  const html = `<!doctype html><html><body style="font-family:system-ui,sans-serif;line-height:1.5;color:#1a1a1a">
+<p>${escapeHtml(lead)}</p>
+<p><a href="${escapeHtml(ticketUrl)}">${action}</a></p>
+<p>Sign in with this email address and the one-time code we send you.</p>
+<p style="color:#555">Show the QR code at the registration desk. Do not share it: the first scan wins.</p>
+</body></html>`;
+  return { subject: waitlisted ? `Waitlist: ${eventName}` : `Your ticket for ${eventName}`, text, html };
+}
