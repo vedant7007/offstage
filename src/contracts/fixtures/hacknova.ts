@@ -2,6 +2,7 @@ import type { Faker } from "@faker-js/faker";
 import type { AgentConfigSummary, AgentRun, AgentStep } from "../agents";
 import type {
   Announcement,
+  Availability,
   Briefing,
   BudgetCategory,
   Checkin,
@@ -962,6 +963,45 @@ export function buildHackNova(): EventWorld {
       });
       if (started) v.hoursServed += Math.round(((Math.min(end, nowMs) - start) / 3_600_000) * 10) / 10;
     }
+  });
+
+  // Availability windows. Most volunteers are around both days; every 7th is only free on day 1,
+  // around the shifts they already hold, so the crew solver has a real constraint to respect.
+  const availability: Availability[] = [];
+  volunteers.forEach((v, i) => {
+    const mine = shiftAssignments
+      .filter((a) => a.volunteerId === v.id)
+      .map((a) => shifts.find((s) => s.id === a.shiftId)!);
+    const allDay1 = mine.every((s) => s.startsAt < ist(DAY2, "00:00"));
+    if (i > 0 && i % 7 === 0 && mine.length > 0 && allDay1) {
+      const start = mine.map((s) => s.startsAt).sort()[0]!;
+      const end = mine
+        .map((s) => s.endsAt)
+        .sort()
+        .at(-1)!;
+      availability.push({
+        id: id("availability", `${v.id}:d1`),
+        eventId,
+        volunteerId: v.id,
+        start: addMinutesIso(start, -30),
+        end: addMinutesIso(end, 30),
+      });
+      return;
+    }
+    availability.push({
+      id: id("availability", `${v.id}:d1`),
+      eventId,
+      volunteerId: v.id,
+      start: ist(DAY1, "07:30"),
+      end: ist(DAY1, "23:59"),
+    });
+    availability.push({
+      id: id("availability", `${v.id}:d2`),
+      eventId,
+      volunteerId: v.id,
+      start: ist(DAY2, "07:30"),
+      end: ist(DAY2, "18:00"),
+    });
   });
 
   // ---------------------------------------------------------------- check-ins so far (day 1, until 10:30)
@@ -2355,6 +2395,7 @@ export function buildHackNova(): EventWorld {
     tickets,
     checkins,
     volunteers,
+    availability,
     shifts,
     shiftAssignments,
     tasks,

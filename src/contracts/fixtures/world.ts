@@ -2,6 +2,7 @@ import type { AgentConfigSummary, AgentRun, AgentStep } from "../agents";
 import type { DemoPersona } from "../api";
 import type {
   Announcement,
+  Availability,
   Briefing,
   BudgetCategory,
   BudgetCategoryStatus,
@@ -66,6 +67,7 @@ export interface EventWorld {
   tickets: Ticket[];
   checkins: Checkin[];
   volunteers: Volunteer[];
+  availability: Availability[];
   shifts: Shift[];
   shiftAssignments: ShiftAssignment[];
   tasks: Task[];

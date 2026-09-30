@@ -297,6 +297,16 @@ export const Volunteer = z.object({
 });
 export type Volunteer = z.infer<typeof Volunteer>;
 
+/** When a volunteer said they can work. A volunteer with no windows is treated as always available. */
+export const Availability = z.object({
+  id: Id,
+  eventId: Id,
+  volunteerId: Id,
+  start: IsoDateTime,
+  end: IsoDateTime,
+});
+export type Availability = z.infer<typeof Availability>;
+
 export const Shift = z.object({
   id: Id,
   eventId: Id,
