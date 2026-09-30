@@ -7,4 +7,4 @@ export {
   type GenerateResult,
 } from "./router";
 export { chain, probeOllama, profile, type Tier, type Provider } from "./tiers";
-export { spentToday, withAgentSlot, endRun } from "./budget";
+export { spentToday, withAgentSlot, endRun, useSpendStore, type SpendStore } from "./budget";

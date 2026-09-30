@@ -61,3 +61,46 @@ describe("withAgentSlot", () => {
     expect(peak).toBe(2);
   });
 });
+
+describe("shared spend store", () => {
+  const settle = () => new Promise((r) => setTimeout(r, 0));
+
+  it("writes spend through and pauses when another process has used the shared cap", async () => {
+    const { _resetBudget, dailyCapHit, recordUsage, useSpendStore } =
+      await import("../../../src/ai/router/budget");
+    _resetBudget();
+    let spent = 2.9;
+    const added: number[] = [];
+    useSpendStore({
+      get: async () => ({ spentUsd: spent, capUsd: 3 }),
+      add: async (usd) => {
+        added.push(usd);
+        spent += usd;
+        return { spentUsd: spent, capUsd: 3 };
+      },
+    });
+    await settle();
+    expect(dailyCapHit()).toBe(false);
+    recordUsage("r1", 100, 0.2); // locally tiny, but the shared total crosses the cap
+    await settle();
+    expect(added).toEqual([0.2]);
+    expect(dailyCapHit()).toBe(true);
+    _resetBudget();
+  });
+
+  it("keeps the local cap working when the store fails", async () => {
+    const { _resetBudget, dailyCapHit, recordUsage, useSpendStore } =
+      await import("../../../src/ai/router/budget");
+    _resetBudget();
+    useSpendStore({
+      get: async () => Promise.reject(new Error("db down")),
+      add: async () => Promise.reject(new Error("db down")),
+    });
+    await settle();
+    expect(dailyCapHit()).toBe(false);
+    recordUsage("r2", 0, 5);
+    await settle();
+    expect(dailyCapHit()).toBe(true);
+    _resetBudget();
+  });
+});
