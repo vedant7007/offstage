@@ -3,6 +3,9 @@ allowBuilds:
   esbuild: true
   sharp: true
   unrs-resolver: true
+  # onnxruntime-node postinstall only fetches optional CUDA binaries; CPU binaries ship in the package.
+  onnxruntime-node: false
+  protobufjs: false
 minimumReleaseAgeExclude:
   - "@next/env@16.3.7"
   - "@next/eslint-plugin-next@16.3.7"
@@ -16,3 +19,11 @@ minimumReleaseAgeExclude:
   - "@next/swc-win32-x64-msvc@16.3.7"
   - eslint-config-next@16.3.7
   - next@16.3.7
+  - '@ai-sdk/amazon-bedrock@5.0.102'
+  - '@ai-sdk/anthropic@4.0.69'
+  - '@ai-sdk/gateway@4.0.101'
+  - '@ai-sdk/groq@4.0.53'
+  - '@ai-sdk/openai@4.0.82'
+  - '@ai-sdk/provider-utils@5.0.52'
+  - '@ai-sdk/provider@4.0.20'
+  - ai@7.0.123

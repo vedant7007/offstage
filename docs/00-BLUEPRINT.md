@@ -254,6 +254,8 @@ Organizer/Leads --->   route handlers + server actions -> authz -> services
 - Per-day spend cap in code; when hit, non-critical agents pause, critical (Helpdesk, Radar, Registrar) continue on Ollama.
 
 > **Update 2026-09-30:** Groq is refusing paid upgrades for now, so we stay on the free tier. Provider order is set by `AI_PROFILE` (`dev` / `demo`) and the router gets a per-provider token bucket. See `docs/decisions/ADR-001-model-access.md`. The plan above applies again once the upgrade is possible.
+>
+> **Update 2026-09-30 (versions):** the AI SDK is now v7 (`ai@7`), not v6. `generateObject` is deprecated in favour of `generateText` with `Output.object`. Nova 2 Lite is reached from ap-south-1 through `global.amazon.nova-2-lite-v1:0`. The local model is `qwen3:4b-instruct`, the largest Qwen3 that fits fully on the 6 GB GPU at 8k context. See `docs/decisions/ADR-003-ai-stack-versions.md`.
 
 ---
 
