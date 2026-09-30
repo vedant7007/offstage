@@ -133,3 +133,15 @@ export async function retrieve(
       };
     });
 }
+
+/** Adapter to the shared KbChunkRef shape, with cosine similarity as the score. */
+export async function searchKb(eventId: string, query: string, k = 5) {
+  return (await retrieve(eventId, query, { k })).map((h) => ({
+    chunkId: h.chunkId,
+    docId: h.docId,
+    docTitle: h.docTitle,
+    section: h.section === h.docTitle ? "" : h.section,
+    snippet: h.snippet,
+    score: h.similarity,
+  }));
+}

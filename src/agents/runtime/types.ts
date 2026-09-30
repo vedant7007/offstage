@@ -1,6 +1,8 @@
 // One engine, fourteen configs. An agent is data: purpose, prompt, tools, triggers, limits, fallback.
 
 import type { z } from "zod";
+import type { Attempt } from "@/ai/router/router";
+import type { Verdict } from "@/ai/guard";
 import type {
   ActionKind,
   AgentActor,
@@ -61,6 +63,11 @@ export type AgentConfig<S = unknown> = {
   criticality: "critical" | "normal";
   /** Rules-only path when models fail or the budget pauses the agent. */
   fallback: (ctx: RunContext<S>) => Promise<AgentProposal[]>;
+  /**
+   * Replaces the model tool loop for fixed pipelines (Helpdesk). The runtime still screens untrusted input,
+   * traces, budgets and falls back. Model calls must pass io.onAttempt so they are traced.
+   */
+  pipeline?: (ctx: RunContext<S>, io: PipelineIO) => Promise<{ text?: string; output?: unknown }>;
 };
 
 type NewStep = AgentStep extends infer T
@@ -68,6 +75,14 @@ type NewStep = AgentStep extends infer T
     ? Omit<T, "id" | "runId" | "index" | "at">
     : never
   : never;
+
+export type PipelineIO = {
+  runId: string;
+  critical: boolean;
+  onAttempt: (a: Attempt) => void;
+  /** The guard verdict on untrusted input, when there was any. */
+  guard?: Verdict;
+};
 
 /** Where runs and steps go: agent_runs / agent_steps in production, memory in tests and what-if. */
 export type TraceStore = {
