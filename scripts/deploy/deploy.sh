@@ -21,8 +21,11 @@ REV=$(git rev-parse --short HEAD)
 TAR=$(mktemp -t sutradhar-XXXX.tar.gz)
 git archive --format=tar.gz -o "$TAR" HEAD
 echo "Shipping $REV ($(du -h "$TAR" | cut -f1))"
-scp -i "$KEY" -q "$TAR" "$HOST:/tmp/sutradhar.tar.gz"
-scp -i "$KEY" -q "$ENV_FILE" "$HOST:/tmp/sutradhar.env"
-scp -i "$KEY" -q scripts/deploy/remote.sh "$HOST:/tmp/sutradhar-remote.sh"
+[ -s "$TAR" ] || { echo "git archive produced nothing"; exit 1; }
+# Copy into the remote home with relative names (no absolute remote paths: Git Bash on Windows
+# rewrites them), then move them where remote.sh expects them.
+scp -i "$KEY" -q "$TAR" "$HOST:sutradhar.tar.gz"
+scp -i "$KEY" -q "$ENV_FILE" "$HOST:sutradhar.env"
+scp -i "$KEY" -q scripts/deploy/remote.sh "$HOST:sutradhar-remote.sh"
 rm -f "$TAR"
-"${SSH[@]}" "sudo SEED=$SEED REV=$REV bash /tmp/sutradhar-remote.sh"
+"${SSH[@]}" "sudo mv sutradhar.tar.gz sutradhar.env sutradhar-remote.sh /tmp/ && sudo SEED=$SEED REV=$REV bash /tmp/sutradhar-remote.sh"
