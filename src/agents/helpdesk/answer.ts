@@ -11,8 +11,13 @@ import { formatTime, istDateKey } from "@/lib/time";
 
 export type Lang = "en" | "hi" | "hinglish";
 
-/** Minimum similarity of the best KB chunk before we even ask the model (tuned on tests/evals/helpdesk.jsonl). */
-export const MIN_SIMILARITY = 0.62;
+/**
+ * Minimum similarity of the best KB chunk before documents reach the model. On tests/evals/helpdesk.jsonl
+ * answerable questions go as low as 0.559 (Hinglish, the embedder is English-only) while some no-source
+ * questions reach 0.67, so this only drops clearly unrelated chunks; the model plus the citation check
+ * decide the rest.
+ */
+export const MIN_SIMILARITY = 0.55;
 export const MIN_CONFIDENCE = 0.6;
 
 const HINGLISH =
