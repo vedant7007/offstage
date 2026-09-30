@@ -90,6 +90,11 @@ DEMO_REAL_RECIPIENTS=
 # server's Mailpit, and the OTP screen links to them. Personas (@sutradhar.test) never go to SES.
 MAILPIT_SMTP_HOST=mailpit
 MAILPIT_URL=http://mailpit:8025
+# Only this server polls the Telegram bot. Laptops keep the default (off) and still send.
+TELEGRAM_POLLING=on
+# Real WhatsApp and Telegram to DEMO_REAL_RECIPIENTS only when on. Leave off and switch it on from
+# the console (Demo scenarios, owner only) just before the demo; demo:reset turns it back off.
+REAL_SENDS=off
 ```
 
 Keep the same `AUTH_SECRET`, `PII_ENCRYPTION_KEY` and ticket keys as the database you seed, or
@@ -108,12 +113,18 @@ for `https://<DOMAIN>/api/health`. Later deploys: the same command without `--se
 
 ## 4. Channels
 
-- **Telegram**: the worker long-polls the bot, so nothing points anywhere. Telegram allows one
-  poller per bot token: the server owns the bot now, so run any laptop worker with the token blanked
-  (`TELEGRAM_BOT_TOKEN= pnpm worker`, issue #89). A second poller shows up in the server's worker
-  log as `telegram getUpdates 409`. Links (a person's chat id, encrypted with `PII_ENCRYPTION_KEY`)
-  survive `demo:reset`; a chat linked on a laptop can be copied into the server's `telegram_links`
-  when both use the same key, or the person sends `/start` to the bot again.
+- **Telegram**: a worker long-polls the bot only with `TELEGRAM_POLLING=on`, and Telegram allows one
+  poller per bot token, so only the server sets it. Every other worker (laptops) keeps the default
+  `off`; sending needs only the token, so laptops still deliver outbound Telegram. The worker logs
+  `telegram polling: on` or `off` at start; a second poller shows in the server's log as
+  `telegram getUpdates 409`. Links (a person's chat id, encrypted with `PII_ENCRYPTION_KEY`) survive
+  `demo:reset`; a chat linked on a laptop can be copied into the server's `telegram_links` when both
+  use the same key, or the person sends `/start` to the bot again.
+- **Real sends**: with `REAL_SENDS` off, every outbox message, allowlisted or not, goes to the mock
+  driver and the worker logs `real sends off`. The owner switches it on in the console (Demo
+  scenarios panel; the header then shows REAL SENDS ON). `demo:reset` returns it to the `.env`
+  default. The Message delivery table explains failures, for example "Twilio daily cap reached,
+  resets in 5 hours".
 - **WhatsApp**: Twilio has no API for the sandbox's inbound URL, so set it in the Console:
   Messaging, Try it out, Send a WhatsApp message, Sandbox settings, "When a message comes in" =
   `https://your-host.sslip.io/api/channels/twilio/whatsapp`, method POST, Save. The route

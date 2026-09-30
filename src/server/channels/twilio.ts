@@ -70,3 +70,40 @@ export function validTwilioSignature(
   const b = Buffer.from(expected);
   return a.length === b.length && timingSafeEqual(a, b);
 }
+
+let capCache: { at: number; resetsAt: Date | null } | undefined;
+
+/**
+ * When the trial's daily cap (63038, a rolling 24 hours) frees a slot again: the oldest message the
+ * account sent in the last 24 hours, plus 24 hours. Asks Twilio, because other machines share the
+ * account. Cached for 10 minutes; null when Twilio cannot be asked.
+ */
+export async function twilioCapResetsAt(now = new Date()): Promise<Date | null> {
+  if (capCache && now.getTime() - capCache.at < 10 * 60_000) return capCache.resetsAt;
+  const sid = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  if (!sid || !token) return null;
+  const since = new Date(now.getTime() - 24 * 3_600_000);
+  const day = since.toISOString().slice(0, 10);
+  let resetsAt: Date | null = null;
+  try {
+    const res = await fetch(
+      `https://api.twilio.com/2010-04-01/Accounts/${sid}/Messages.json?DateSent%3E=${day}&PageSize=200`,
+      {
+        headers: { authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}` },
+        signal: AbortSignal.timeout(10_000),
+      },
+    );
+    const data = (await res.json()) as { messages?: { date_sent: string | null; direction: string }[] };
+    const sent = (data.messages ?? [])
+      .filter((m) => m.direction.startsWith("outbound") && m.date_sent)
+      .map((m) => new Date(m.date_sent!))
+      .filter((d) => d > since)
+      .sort((a, b) => a.getTime() - b.getTime());
+    resetsAt = sent[0] ? new Date(sent[0].getTime() + 24 * 3_600_000) : null;
+  } catch {
+    resetsAt = null;
+  }
+  capCache = { at: now.getTime(), resetsAt };
+  return resetsAt;
+}

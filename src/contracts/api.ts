@@ -797,10 +797,24 @@ export const DeliveryStatsResponse = z.object({
       skipped: z.number().int(),
       /** Failed rows by provider error code, such as { "63015": 4 }. */
       failureCodes: z.record(z.string(), z.number().int()).default({}),
+      /** The failures in words, such as "Twilio daily cap reached, resets in 5 hours". */
+      failureNotes: z.array(z.string().max(200)).default([]),
     }),
   ),
 });
 export type DeliveryStatsResponse = z.infer<typeof DeliveryStatsResponse>;
+
+/** GET and POST /api/events/:eventId/real-sends. Off: allowlisted messages also go to the mock driver. */
+export const RealSendsResponse = z.object({
+  on: z.boolean(),
+  source: z.enum(["env", "console"]).describe("env: REAL_SENDS default; console: switched at runtime"),
+  changedAt: IsoDateTime.optional(),
+  canChange: z.boolean().describe("Owner, in demo mode"),
+});
+export type RealSendsResponse = z.infer<typeof RealSendsResponse>;
+
+export const SetRealSendsRequest = z.object({ on: z.boolean() });
+export type SetRealSendsRequest = z.infer<typeof SetRealSendsRequest>;
 
 export const ENDPOINTS = {
   health: {
@@ -810,6 +824,19 @@ export const ENDPOINTS = {
     response: z.object({ ok: z.boolean() }).loose(),
   },
 
+  realSends: {
+    method: "GET",
+    path: "/api/events/:eventId/real-sends",
+    auth: "user",
+    response: RealSendsResponse,
+  },
+  setRealSends: {
+    method: "POST",
+    path: "/api/events/:eventId/real-sends",
+    auth: "user",
+    body: SetRealSendsRequest,
+    response: RealSendsResponse,
+  },
   overview: {
     method: "GET",
     path: "/api/events/:eventId/overview",
