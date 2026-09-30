@@ -348,6 +348,31 @@
     "invalidEmail": "Enter an email like name@college.edu",
     "invalidPhone": "Enter a phone number with 10 to 12 digits"
   },
+  "verify": {
+    "title": "Certificate check",
+    "intro": "Anyone can check a certificate here. We show only what the certificate itself shows.",
+    "valid": "Valid certificate",
+    "validBody": "This certificate was issued by the organisers and has not been revoked.",
+    "revoked": "Revoked certificate",
+    "revokedBody": "The organisers revoked this certificate on {date}. It is no longer valid.",
+    "notFound": "No certificate found",
+    "notFoundBody": "We could not find a certificate with this ID. Check the link or the ID printed at the bottom of the certificate.",
+    "recipient": "Awarded to",
+    "certificate": "Certificate",
+    "kind": "Type",
+    "event": "Event",
+    "eventDates": "Event dates",
+    "hours": "Volunteer hours",
+    "issuedBy": "Issued by",
+    "issuedOn": "Issued on",
+    "id": "Certificate ID",
+    "kinds": {
+      "attendee": "Participation",
+      "winner": "Winner",
+      "volunteer": "Volunteer",
+      "speaker": "Speaker"
+    }
+  },
   "design": {
     "title": "Design system",
     "intro": "Every primitive and shared component in every state. Use the controls to check both themes and a 360 px phone width.",

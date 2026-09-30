@@ -347,5 +347,30 @@
     "required": "Yeh zaroori hai.",
     "invalidEmail": "name@college.edu jaisa email daalo",
     "invalidPhone": "10 se 12 digit ka phone number daalo"
+  },
+  "verify": {
+    "title": "Certificate check",
+    "intro": "Koi bhi yahan certificate check kar sakta hai. Hum sirf wahi dikhate hain jo certificate par likha hai.",
+    "valid": "Valid certificate",
+    "validBody": "Yeh certificate organisers ne issue kiya hai aur revoke nahi hua hai.",
+    "revoked": "Revoke hua certificate",
+    "revokedBody": "Organisers ne yeh certificate {date} ko revoke kar diya. Yeh ab valid nahi hai.",
+    "notFound": "Koi certificate nahi mila",
+    "notFoundBody": "Is ID ka koi certificate nahi mila. Link check karo, ya certificate ke neeche chhapi ID dekho.",
+    "recipient": "Kise mila",
+    "certificate": "Certificate",
+    "kind": "Type",
+    "event": "Event",
+    "eventDates": "Event ki dates",
+    "hours": "Volunteer hours",
+    "issuedBy": "Issue kiya",
+    "issuedOn": "Issue date",
+    "id": "Certificate ID",
+    "kinds": {
+      "attendee": "Participation",
+      "winner": "Winner",
+      "volunteer": "Volunteer",
+      "speaker": "Speaker"
+    }
   }
 }
