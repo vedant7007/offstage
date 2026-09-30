@@ -77,7 +77,8 @@ async function inbox(client: Db, eventId: string, who: { userId?: string; type: 
       .filter((o) => o.status !== "skipped")
       .map((o) => ({
         id: o.id,
-        at: (o.sentAt ?? o.createdAt).toISOString(),
+        // sentAt and scheduledFor are on the demo clock; createdAt is the database's real time.
+        at: (o.sentAt ?? o.scheduledFor ?? o.createdAt).toISOString(),
         channel: o.channel as Item["channel"],
         title: o.subject ? maskPhones(o.subject) : undefined,
         body: maskPhones(o.body),

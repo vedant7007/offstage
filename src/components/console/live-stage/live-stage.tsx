@@ -6,6 +6,7 @@ import { formatTime } from "@/lib/time";
 import { GlassBox } from "./glass-box";
 import { PersonaDock } from "./persona-dock";
 import { StageCanvas } from "./stage-canvas";
+import { LOG_TONE as TONE } from "./theme";
 import { useStage } from "./use-stage";
 
 const DATA = [
@@ -20,22 +21,13 @@ const CHANNELS = [
   ["email", "Email"],
   ["whatsapp", "WhatsApp"],
   ["telegram", "Telegram"],
+  ["sms", "SMS"],
 ] as const;
-const TONE = {
-  agent: "text-agent-text",
-  human: "text-curtain-text",
-  system: "text-fg-muted",
-  warn: "text-danger-text",
-};
 
 /** The Live Stage: the Commander and its agents at work, from real runs and proposals, as they happen. */
 export function LiveStage({ eventId }: { eventId: string }) {
   const s = useStage(eventId);
   const [open, setOpen] = React.useState<string | null>(null);
-  const logRef = React.useRef<HTMLOListElement>(null);
-  React.useEffect(() => {
-    logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
-  }, [s.log.length]);
 
   const two = s.pending.filter((p) => p.riskTier === "T3").length;
   const needsPerson = s.pending.filter((p) => p.riskTier === "T2" || p.riskTier === "T3").length;
@@ -97,13 +89,10 @@ export function LiveStage({ eventId }: { eventId: string }) {
         <h2 id="stage-log" className="border-b border-border px-3 py-2 text-sm font-semibold">
           What is happening
         </h2>
-        <ol
-          ref={logRef}
-          role="log"
-          className="h-40 overflow-y-auto px-3 py-2 font-mono text-xs leading-relaxed"
-        >
+        {/* Newest first; the hook keeps at most 200 lines. */}
+        <ol role="log" className="h-40 overflow-y-auto px-3 py-2 font-mono text-xs leading-relaxed">
           {s.log.length ? (
-            s.log.map((l) => (
+            [...s.log].reverse().map((l) => (
               <li key={l.id} className={TONE[l.tone ?? "system"]}>
                 <span className="text-fg-muted tabular-nums">{formatTime(l.at)}</span> {l.text}
               </li>

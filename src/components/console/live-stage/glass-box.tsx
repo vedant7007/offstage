@@ -1,7 +1,14 @@
 "use client";
 
 import * as React from "react";
-import type { ActionProposal, AgentName, AgentRun, AgentStep, DeliveryStatsResponse } from "@/contracts";
+import type {
+  ActionProposal,
+  AgentName,
+  AgentRun,
+  AgentStep,
+  DeliveryStatsResponse,
+  Evidence,
+} from "@/contracts";
 import { api } from "@/lib/api-client";
 import { formatTime } from "@/lib/time";
 import {
@@ -63,19 +70,36 @@ function StepLine({ s }: { s: AgentStep }) {
 }
 
 function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
-  const [data, setData] = React.useState<{ run: AgentRun; steps: AgentStep[] } | null | undefined>(undefined);
+  const [data, setData] = React.useState<
+    { run: AgentRun; steps: AgentStep[]; cited: Evidence[] } | null | undefined
+  >(undefined);
   React.useEffect(() => {
     api
       .call("listAgentRuns", { params: { eventId }, query: { agent, limit: 1 } })
-      .then((r) =>
-        r.items[0] ? api.call("getAgentRun", { params: { eventId, runId: r.items[0].id } }) : null,
-      )
+      .then(async (r) => {
+        if (!r.items[0]) return null;
+        const res = await api.call("getAgentRun", { params: { eventId, runId: r.items[0].id } });
+        // The facts the run cited: the evidence on the proposals it made.
+        const props = await Promise.all(
+          res.run.proposalIds
+            .slice(0, 5)
+            .map((id) => api.call("getProposal", { params: { eventId, proposalId: id } }).catch(() => null)),
+        );
+        const seen = new Set<string>();
+        const cited = props
+          .flatMap((p) => p?.proposal.evidence ?? [])
+          .filter((e) => !seen.has(e.ref) && Boolean(seen.add(e.ref)));
+        return { ...res, cited };
+      })
       .then(setData, () => setData(null));
   }, [eventId, agent]);
   if (data === undefined) return <Skeleton className="h-32" />;
   if (!data)
     return <EmptyState title="No runs yet" description="This agent has not been woken for this event." />;
-  const { run, steps } = data;
+  const { run, steps, cited } = data;
+  const models = [
+    ...new Set(steps.flatMap((s) => (s.kind === "llm" && s.ok ? [`${s.provider} ${s.model}`] : []))),
+  ];
   return (
     <section aria-label="Latest run" className="flex flex-col gap-3">
       <KeyValueList
@@ -83,12 +107,26 @@ function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
           { label: "Status", value: run.status },
           { label: "Woken by", value: run.trigger.eventType ?? run.trigger.type },
           { label: "Started", value: formatTime(run.startedAt) },
-          { label: "Model tier", value: run.modelTier },
+          { label: "Model", value: models.join(", ") || `No model call (${run.modelTier} tier)` },
           { label: "Tokens", value: `${run.inputTokens} in, ${run.outputTokens} out` },
           { label: "Cost", value: usd(run.costUsd) },
           { label: "Latency", value: run.latencyMs ? `${run.latencyMs} ms` : "running" },
         ]}
       />
+      {cited.length ? (
+        <section aria-label="Cited facts" className="flex flex-col gap-1">
+          <h3 className="font-semibold">Cited facts</h3>
+          <ul className="flex flex-col gap-1 text-sm">
+            {cited.map((e) => (
+              <li key={e.ref} className="flex flex-wrap items-center gap-1.5">
+                <Badge tone="neutral">{e.type}</Badge> {e.label}
+                <span className="font-mono text-xs text-fg-muted">{e.ref}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+      <h3 className="font-semibold">Steps</h3>
       <ol className="flex flex-col gap-2 text-sm">
         {steps.map((s) => (
           <li key={s.id} className="flex flex-wrap items-center gap-1.5">
