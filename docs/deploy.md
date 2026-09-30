@@ -13,7 +13,7 @@ browser ── https ──> Caddy :443 ──> app :3000 (Next.js)
 
 | | |
 |---|---|
-| URL | https://65-0-183-192.sslip.io |
+| URL | https://your-host.sslip.io (permanent: Elastic IP `203.0.113.10`, `eipalloc-0123456789abcdef0`) |
 | Instance | `i-0123456789abcdef0`, `t3.medium`, Ubuntu 24.04, ap-south-1, 30 GB gp3 (encrypted) |
 | Security group | `sg-0123456789abcdef0` (`offstage-web`): 22 from one laptop IP, 80 and 443 open |
 | Key pair | `offstage-deploy` (ed25519), private key at `~/.ssh/offstage-deploy.pem` on Vedant's laptop |
@@ -28,7 +28,7 @@ browser ── https ──> Caddy :443 ──> app :3000 (Next.js)
 | One instance | Ubuntu 24.04, `t3.medium` (2 vCPU, 4 GB), 30 GB gp3, region `ap-south-1`. The deploy script adds 4 GB of swap for the Next.js build. |
 | Security group | Inbound 22 from your IP only, 80 and 443 from anywhere. Nothing else: Postgres and Mailpit bind to localhost. |
 | Key pair | For SSH. Keep the `.pem` outside the repo. |
-| A host name | Let's Encrypt does not issue certificates for `*.compute.amazonaws.com`, so use the free `sslip.io` name for the instance's IP: `65-0-183-192.sslip.io` for `65.0.183.192`. |
+| A host name | Let's Encrypt does not issue certificates for `*.compute.amazonaws.com`, so use the free `sslip.io` name for the instance's IP: `your-host.sslip.io` for the Elastic IP `203.0.113.10`. |
 | Turnstile | Cloudflare's official test keys (site `1x00000000000000000000AA`, secret `1x0000000000000000000000000000000AA`) pass on any host name. Real keys need the host name on the widget. |
 | Email | `EMAIL_DRIVER=smtp` through Amazon SES. The account is out of the SES sandbox (50,000 a day) and `example.org` is verified with DKIM, so any recipient works with `EMAIL_FROM=OFFSTAGE <offstage@example.org>`. |
 
@@ -68,8 +68,8 @@ Public IP: `aws ec2 describe-instances $P --filters Name=tag:Project,Values=offs
 Copy `.env` to `.env.cloud` (ignored by git) and change:
 
 ```bash
-DOMAIN=65-0-183-192.sslip.io
-APP_URL=https://65-0-183-192.sslip.io
+DOMAIN=your-host.sslip.io
+APP_URL=https://your-host.sslip.io
 TRUST_PROXY=true
 POSTGRES_PASSWORD=<long random string>
 DB_PORT=127.0.0.1:5432                          # Postgres only on the host's loopback
@@ -86,6 +86,10 @@ TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
 # may still be polling it) nor sends real WhatsApp, SMS or Telegram messages.
 TELEGRAM_BOT_TOKEN=
 DEMO_REAL_RECIPIENTS=
+# Demo inbox (DEMO_MODE only): OTP emails to seeded personas and allowlisted emails also go to the
+# server's Mailpit, and the OTP screen links to them. Personas (@sutradhar.test) never go to SES.
+MAILPIT_SMTP_HOST=mailpit
+MAILPIT_URL=http://mailpit:8025
 ```
 
 Keep the same `AUTH_SECRET`, `PII_ENCRYPTION_KEY` and ticket keys as the database you seed, or
@@ -94,7 +98,7 @@ generate new ones with `pnpm keys` before the first `--seed` (the seed encrypts 
 ## 3. Deploy
 
 ```bash
-HOST=ubuntu@65.0.183.192 KEY=~/.ssh/offstage-deploy.pem ENV_FILE=.env.cloud scripts/deploy/deploy.sh --seed
+HOST=ubuntu@203.0.113.10 KEY=~/.ssh/offstage-deploy.pem ENV_FILE=.env.cloud scripts/deploy/deploy.sh --seed
 ```
 
 The script ships the current commit (the repo is private, so the host never clones it), installs
@@ -104,17 +108,23 @@ for `https://<DOMAIN>/api/health`. Later deploys: the same command without `--se
 
 ## 4. Channels
 
-- **Telegram**: nothing to point anywhere; the worker long-polls the bot. Only one worker may poll a
-  bot token: stop the laptop worker first, then set `TELEGRAM_BOT_TOKEN` in `.env.cloud` and redeploy.
-- **WhatsApp**: in the Twilio console, Messaging, Try it out, WhatsApp sandbox settings, set "When a
-  message comes in" to `https://<DOMAIN>/api/channels/twilio/whatsapp` (POST). The route checks
-  Twilio's signature against `APP_URL`, so `APP_URL` must be exactly the public https address.
-  Only numbers in `DEMO_REAL_RECIPIENTS` get replies.
+- **Telegram**: the worker long-polls the bot, so nothing points anywhere. Telegram allows one
+  poller per bot token: the server owns the bot now, so run any laptop worker with the token blanked
+  (`TELEGRAM_BOT_TOKEN= pnpm worker`, issue #89). A second poller shows up in the server's worker
+  log as `telegram getUpdates 409`. Links (a person's chat id, encrypted with `PII_ENCRYPTION_KEY`)
+  survive `demo:reset`; a chat linked on a laptop can be copied into the server's `telegram_links`
+  when both use the same key, or the person sends `/start` to the bot again.
+- **WhatsApp**: Twilio has no API for the sandbox's inbound URL, so set it in the Console:
+  Messaging, Try it out, Send a WhatsApp message, Sandbox settings, "When a message comes in" =
+  `https://your-host.sslip.io/api/channels/twilio/whatsapp`, method POST, Save. The route
+  checks Twilio's signature against `APP_URL`, so `APP_URL` must be exactly that https address.
+  Only numbers in `DEMO_REAL_RECIPIENTS` get replies, and each phone must have joined the sandbox
+  in the last 72 hours. A trial account is capped at 50 messages a day (error 63038).
 
 ## 5. Operate
 
 ```bash
-ssh -i ~/.ssh/offstage-deploy.pem ubuntu@65.0.183.192
+ssh -i ~/.ssh/offstage-deploy.pem ubuntu@203.0.113.10
 cd /opt/sutradhar
 sudo docker compose --profile cloud ps
 sudo docker compose --profile cloud logs -f --tail 100 app worker
@@ -125,8 +135,8 @@ sudo docker compose exec db pg_dump -U sutradhar sutradhar | gzip > backup.sql.g
 
 ## 6. Stop and start to save credits
 
-A stopped instance costs nothing for compute; the 30 GB disk (about USD 0.09 a day) is still billed
-and the data survives. Compose restarts every container when the instance boots.
+A stopped instance costs nothing for compute; the 30 GB disk (about USD 0.09 a day) and the Elastic IP
+(about USD 0.12 a day) are still billed, and the data survives. Compose restarts every container when the instance boots.
 
 ```bash
 P="--profile offstage-deploy --region ap-south-1"
@@ -138,15 +148,12 @@ aws ec2 wait instance-running $P --instance-ids $ID
 aws ec2 describe-instances $P --instance-ids $ID --query 'Reservations[0].Instances[0].PublicIpAddress' --output text
 ```
 
-**The public IP changes on every start**, and with it the sslip.io name. After a start: put the
-new name in `DOMAIN` and `APP_URL` in `.env.cloud`, allow SSH from your current IP if it changed,
-run `scripts/deploy/deploy.sh` (no `--seed`), and update the Twilio webhook URL. To keep one URL for
-the whole event instead, attach an Elastic IP (it is billed about USD 0.12 a day, also while the
-instance is stopped):
+The Elastic IP `203.0.113.10` stays attached across stops, so the URL, the certificate and the
+Twilio webhook do not change. After a start, only allow SSH from your current IP if it changed:
 
 ```bash
-EIP=$(aws ec2 allocate-address $P --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Project,Value=offstage}]" --query AllocationId --output text)
-aws ec2 associate-address $P --instance-id $ID --allocation-id $EIP
+SG=$(aws ec2 describe-security-groups $P --group-names offstage-web --query 'SecurityGroups[0].GroupId' --output text)
+aws ec2 authorize-security-group-ingress $P --group-id $SG --protocol tcp --port 22 --cidr "$(curl -s https://checkip.amazonaws.com)/32"
 ```
 
 ## 7. Tear down
@@ -161,9 +168,8 @@ aws ec2 terminate-instances $P --instance-ids $ID            # the disk is delet
 aws ec2 wait instance-terminated $P --instance-ids $ID
 aws ec2 delete-security-group $P --group-name offstage-web
 aws ec2 delete-key-pair $P --key-name offstage-deploy && rm -f ~/.ssh/offstage-deploy.pem
-# Only if you allocated one:
-aws ec2 describe-addresses $P --filters Name=tag:Project,Values=offstage --query 'Addresses[].AllocationId' --output text \
-  | xargs -r -n1 aws ec2 release-address $P --allocation-id
+# The Elastic IP keeps billing until it is released:
+aws ec2 describe-addresses $P --filters Name=tag:Project,Values=offstage --query 'Addresses[].AllocationId' --output text   | xargs -r -n1 aws ec2 release-address $P --allocation-id
 ```
 
 Then point the Twilio sandbox webhook back (or clear it), and restart the laptop worker if you
@@ -178,9 +184,9 @@ On-demand prices in ap-south-1; check the AWS pricing calculator for current num
 | While running | Per hour | Per day |
 |---|---|---|
 | `t3.medium` | USD 0.0448 | USD 1.08 |
-| Public IPv4 address | USD 0.005 | USD 0.12 |
+| Elastic IP (public IPv4) | USD 0.005 | USD 0.12 |
 | 30 GB gp3 | | USD 0.09 |
 | **Total** | | **about USD 1.29** |
 
-Stopped: about USD 0.09 a day (the disk), plus USD 0.12 a day if an Elastic IP is attached. Model,
-SES and Twilio usage are billed separately and are small for a demo.
+Stopped: about USD 0.21 a day (the disk plus the Elastic IP, which is billed while stopped too).
+Model, SES and Twilio usage are billed separately and are small for a demo.
