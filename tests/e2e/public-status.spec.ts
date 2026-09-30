@@ -1,5 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { collectErrors } from "./helpers";
 
 const STATUS = "/e/hacknova-2026/status";
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
@@ -11,9 +12,7 @@ for (const [label, path] of [
   for (const scheme of ["light", "dark"] as const) {
     test(`${label} in ${scheme}: accessible, no errors, fits the screen`, async ({ page }) => {
       await page.emulateMedia({ colorScheme: scheme });
-      const errors: string[] = [];
-      page.on("console", (msg) => msg.type() === "error" && errors.push(msg.text()));
-      page.on("pageerror", (err) => errors.push(err.message));
+      const errors = collectErrors(page);
       await page.goto(path);
       await expect(page.getByRole("heading", { level: 1, name: "Live status" })).toBeVisible();
       const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();

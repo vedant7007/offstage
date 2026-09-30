@@ -1,12 +1,11 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
+import { collectErrors } from "./helpers";
 
 const WCAG_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "wcag22aa"];
 
 async function check(page: Page, path: string) {
-  const errors: string[] = [];
-  page.on("console", (msg) => msg.type() === "error" && errors.push(msg.text()));
-  page.on("pageerror", (err) => errors.push(err.message));
+  const errors = collectErrors(page);
   await page.goto(path);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
   const results = await new AxeBuilder({ page }).withTags(WCAG_TAGS).analyze();
