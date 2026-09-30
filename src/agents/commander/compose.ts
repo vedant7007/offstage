@@ -20,6 +20,44 @@ const overlaps = (a: { startsAt: string; endsAt: string }, b: { startsAt: string
 const when = (iso: string) => `${formatDayShort(iso)}, ${formatTime(iso)}`;
 const ACTIVE = new Set(["assigned", "checked_in"]);
 
+/** What a volunteer reads when their shift moves. Seeded role names often already carry the room. */
+export const movedText = (role: string, room: string, at: string) =>
+  role.includes(room)
+    ? `Your shift moved: ${role}, now ${at}. Reply OK to confirm.`
+    : `Your shift moved: ${role} is now at ${room}, ${at}. Reply OK to confirm.`;
+
+export const releasedText = (role: string, at: string) =>
+  `You're released from ${role} at ${at}. Crew Chief may reassign you soon.`;
+
+/** A direct note to one volunteer. The outbox sends for real only to allowlisted addresses; every other
+ * row goes to the mock driver. */
+function crewNote(
+  v: { telegramLinked: boolean; phoneMasked?: string } | undefined,
+  volunteerId: string,
+  subject: string,
+  body: string,
+  summary: string,
+): Child {
+  const channels: Channel[] = [
+    "in_app",
+    ...(v?.telegramLinked ? (["telegram"] as const) : []),
+    ...(v?.phoneMasked ? (["whatsapp"] as const) : []),
+  ];
+  return {
+    kind: "comms.send_direct",
+    payload: {
+      recipient: { type: "volunteer", id: volunteerId },
+      channels,
+      subject,
+      bodyByChannel: Object.fromEntries(channels.map((c) => [c, body])),
+      category: "change",
+    },
+    summary: summary.slice(0, 120),
+    rationale: "A volunteer learns about their own shift change directly.",
+    proposedBy: "crew_chief",
+  };
+}
+
 /** Crew follows the sessions: people on a moved session's shift go to the shift covering its new slot. */
 async function crewMoves(services: ReadServices, plan: PlanInput, actions: ScheduleAction[]) {
   const [shifts, assignments, volunteers, availability] = await Promise.all([
@@ -74,28 +112,15 @@ async function crewMoves(services: ReadServices, plan: PlanInput, actions: Sched
             proposedBy: "crew_chief",
           },
         );
-        // The volunteer hears about their own move directly. The outbox sends for real only to allowlisted
-        // addresses; every other row is delivered to the mock driver.
-        const v = volunteers.find((x) => x.id === asg.volunteerId);
-        const channels: Channel[] = [
-          "in_app",
-          ...(v?.telegramLinked ? (["telegram"] as const) : []),
-          ...(v?.phoneMasked ? (["whatsapp"] as const) : []),
-        ];
-        const body = `Your shift moved: ${target.role} is now at ${roomName(target.roomId ?? room)}, ${when(target.startsAt)}. Reply OK to confirm.`;
-        children.push({
-          kind: "comms.send_direct",
-          payload: {
-            recipient: { type: "volunteer", id: asg.volunteerId },
-            channels,
-            subject: "Your shift moved",
-            bodyByChannel: Object.fromEntries(channels.map((c) => [c, body])),
-            category: "change",
-          },
-          summary: `Tell ${who} about the shift move`.slice(0, 120),
-          rationale: "A volunteer learns about their own shift change directly.",
-          proposedBy: "crew_chief",
-        });
+        children.push(
+          crewNote(
+            volunteers.find((x) => x.id === asg.volunteerId),
+            asg.volunteerId,
+            "Your shift moved",
+            movedText(target.role, roomName(target.roomId ?? room), when(target.startsAt)),
+            `Tell ${who} about the shift move`,
+          ),
+        );
         moved.push({
           id: asg.volunteerId,
           displayName: shortName(who),
@@ -117,6 +142,15 @@ async function crewMoves(services: ReadServices, plan: PlanInput, actions: Sched
           rationale: "The session this shift served is cancelled.",
           proposedBy: "crew_chief",
         });
+        children.push(
+          crewNote(
+            volunteers.find((v) => v.id === asg.volunteerId),
+            asg.volunteerId,
+            "You are released from a shift",
+            releasedText(x.role, when(x.startsAt)),
+            `Tell ${who} they are released`,
+          ),
+        );
         moved.push({
           id: asg.volunteerId,
           displayName: shortName(who),
