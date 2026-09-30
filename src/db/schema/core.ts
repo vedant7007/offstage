@@ -241,3 +241,10 @@ export const outbox = pgTable(
     index().on(t.dedupeKey),
   ],
 );
+
+/** Small key-value store for process-wide settings, such as the demo clock offset. */
+export const appSettings = pgTable("app_settings", {
+  key: text().primaryKey(),
+  value: jsonb().$type<unknown>().notNull(),
+  updatedAt: updatedAt(),
+});

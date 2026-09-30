@@ -33,9 +33,24 @@ export function toDate(input: DateInput): Date {
   return d;
 }
 
-/** Current instant. Use this instead of `new Date()` so tests can reason about one entry point. */
+let clockOffsetMs = 0;
+
+/**
+ * Current instant. Use this instead of `new Date()` everywhere in app, worker and agent code.
+ * In demo mode the clock can run ahead or behind real time by a fixed offset, so the seeded
+ * event (24 Oct 2026) is "live" during a demo. See src/server/clock.ts.
+ */
 export function nowUtc(): Date {
-  return new Date();
+  return new Date(Date.now() + clockOffsetMs);
+}
+
+/** Shift nowUtc() by a fixed offset. Only src/server/clock.ts and tests call this. */
+export function setClockOffsetMs(ms: number): void {
+  clockOffsetMs = Number.isFinite(ms) ? ms : 0;
+}
+
+export function getClockOffsetMs(): number {
+  return clockOffsetMs;
 }
 
 /** ISO 8601 string in UTC, the only format we store and send over the wire. */
