@@ -18,5 +18,5 @@ export default async function ConsoleIndex() {
         .where(eq(memberships.userId, info.userId))
         .limit(1)
     )[0]?.eventId;
-  redirect(eventId ? `/console/${eventId}/approvals` : "/");
+  redirect(eventId ? `/console/${eventId}` : "/");
 }

@@ -10,12 +10,15 @@ import type { NewStep, RuntimeDeps, TraceStore } from "@/agents/runtime/types";
 import type { AgentActor, AgentName, AgentRun, ProposeInputRaw } from "@/contracts";
 import { db as defaultDb, type Db } from "@/db/client";
 import * as t from "@/db/schema";
+import { nowUtc } from "@/lib/time";
 import { propose } from "@/server/actions/propose";
+import { notifyRun } from "@/server/events/bus";
 import { createReadServices } from "./world";
 
 /** agent_runs and agent_steps. Steps arrive already redacted by the runtime. */
 export function dbTraceStore(client: Db = defaultDb): TraceStore {
   const eventOfRun = new Map<string, string>();
+  const agentOfRun = new Map<string, string>();
   return {
     async startRun(run: Omit<AgentRun, "id">) {
       const [row] = await client
@@ -39,6 +42,8 @@ export function dbTraceStore(client: Db = defaultDb): TraceStore {
         })
         .returning({ id: t.agentRuns.id });
       eventOfRun.set(row!.id, run.eventId);
+      agentOfRun.set(row!.id, run.agent);
+      await notifyRun(client, { eventId: run.eventId, runId: row!.id, agent: run.agent, phase: "started" });
       return row!.id;
     },
     async addStep(runId: string, index: number, step: NewStep) {
@@ -57,8 +62,16 @@ export function dbTraceStore(client: Db = defaultDb): TraceStore {
         runId,
         index,
         kind,
+        at: nowUtc(),
         data: data as Record<string, unknown>,
         costUsd: kind === "llm" && "costUsd" in data ? (data.costUsd as number) : null,
+      });
+      await notifyRun(client, {
+        eventId,
+        runId,
+        agent: agentOfRun.get(runId) ?? "",
+        phase: "step",
+        stepKind: kind,
       });
     },
     async finishRun(runId: string, patch: Partial<AgentRun>) {
@@ -73,7 +86,17 @@ export function dbTraceStore(client: Db = defaultDb): TraceStore {
       if (patch.latencyMs !== undefined) set.latencyMs = patch.latencyMs;
       if (patch.error !== undefined) set.error = patch.error;
       if (Object.keys(set).length) await client.update(t.agentRuns).set(set).where(eq(t.agentRuns.id, runId));
+      const eventId = eventOfRun.get(runId);
+      if (eventId)
+        await notifyRun(client, {
+          eventId,
+          runId,
+          agent: agentOfRun.get(runId) ?? "",
+          phase: "finished",
+          status: patch.status,
+        });
       eventOfRun.delete(runId);
+      agentOfRun.delete(runId);
     },
   };
 }

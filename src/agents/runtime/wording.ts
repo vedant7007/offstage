@@ -59,3 +59,6 @@ export function undash<T>(v: T): T {
     return Object.fromEntries(Object.entries(v).map(([k, x]) => [k, undash(x)])) as T;
   return v;
 }
+
+/** Agent-written text as people should read it: no escaped quotes from tool arguments, no dashes. */
+export const tidy = (s: string) => undash(s.replace(/\\"/g, '"').replace(/\n/g, " ").trim());

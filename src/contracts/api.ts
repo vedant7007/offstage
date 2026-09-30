@@ -116,6 +116,12 @@ export const StreamMessage = z.discriminatedUnion("type", [
   }),
   z.object({ type: z.literal("metrics"), metrics: MetricsSnapshot }),
   z.object({ type: z.literal("agent_run"), run: AgentRun }),
+  z.object({
+    type: z.literal("agent_step"),
+    runId: Id,
+    agent: AgentName,
+    kind: z.string().max(40).describe("Step kind: llm, tool, propose, guard, fallback"),
+  }),
   z.object({ type: z.literal("heartbeat"), at: IsoDateTime }),
 ]);
 export type StreamMessage = z.infer<typeof StreamMessage>;

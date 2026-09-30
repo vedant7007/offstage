@@ -85,34 +85,57 @@ export interface Notice {
   type: DomainEventType;
 }
 
-const listeners = new Map<string, Set<(n: Notice) => void>>();
-let listening: Promise<unknown> | undefined;
+/** One LISTEN connection per channel per process, fanned out to subscribers by event id. */
+function channel<N extends { eventId: string }>(name: string) {
+  const listeners = new Map<string, Set<(n: N) => void>>();
+  let listening: Promise<unknown> | undefined;
+  return (eventId: string, fn: (n: N) => void): (() => void) => {
+    listening ??= rawSql
+      .listen(name, (raw) => {
+        let n: N;
+        try {
+          n = JSON.parse(raw) as N;
+        } catch {
+          return;
+        }
+        for (const l of listeners.get(n.eventId) ?? []) l(n);
+      })
+      .catch((err: unknown) => {
+        logger
+          .child({ module: "bus" })
+          .error({ err, channel: name }, "LISTEN failed; streams fall back to polling");
+        listening = undefined;
+      });
+    const set = listeners.get(eventId) ?? new Set();
+    set.add(fn);
+    listeners.set(eventId, set);
+    return () => {
+      set.delete(fn);
+      if (!set.size) listeners.delete(eventId);
+    };
+  };
+}
 
 /**
  * Call `fn` for every domain event of one event (the NOTIFY payload: id, event, type) until the
  * returned function is called. The first subscriber opens the process's LISTEN connection;
  * postgres.js reconnects it on its own if the database restarts.
  */
-export function subscribe(eventId: string, fn: (n: Notice) => void): () => void {
-  listening ??= rawSql
-    .listen(EVENTS_CHANNEL, (raw) => {
-      let n: Notice;
-      try {
-        n = JSON.parse(raw) as Notice;
-      } catch {
-        return;
-      }
-      for (const l of listeners.get(n.eventId) ?? []) l(n);
-    })
-    .catch((err: unknown) => {
-      logger.child({ module: "bus" }).error({ err }, "LISTEN failed; streams fall back to polling");
-      listening = undefined;
-    });
-  const set = listeners.get(eventId) ?? new Set();
-  set.add(fn);
-  listeners.set(eventId, set);
-  return () => {
-    set.delete(fn);
-    if (!set.size) listeners.delete(eventId);
-  };
+export const subscribe = channel<Notice>(EVENTS_CHANNEL);
+
+/** Agent run lifecycle, for the Live Stage: a run starting, each step, and the run finishing. */
+export const RUNS_CHANNEL = "sutradhar_runs";
+export interface RunNotice {
+  eventId: string;
+  runId: string;
+  agent: string;
+  phase: "started" | "step" | "finished";
+  stepKind?: string;
+  status?: string;
+}
+export const subscribeRuns = channel<RunNotice>(RUNS_CHANNEL);
+
+/** Best effort: a missed notice only delays the stage until the next one. */
+export async function notifyRun(client: Pick<Db, "execute">, n: RunNotice): Promise<void> {
+  await client.execute(sql`select pg_notify(${RUNS_CHANNEL}, ${JSON.stringify(n)})`).catch(() => undefined);
 }

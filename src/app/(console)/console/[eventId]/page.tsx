@@ -1,6 +1,6 @@
-import { redirect } from "next/navigation";
+import { LiveStage } from "@/components/console/live-stage/live-stage";
 
 export default async function ConsoleHome({ params }: PageProps<"/console/[eventId]">) {
   const { eventId } = await params;
-  redirect(`/console/${eventId}/approvals`);
+  return <LiveStage eventId={eventId} />;
 }
