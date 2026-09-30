@@ -10,7 +10,8 @@ const { runAgent } = await import("@/agents/runtime/run");
 const { memoryTrace } = await import("@/agents/runtime/memory-trace");
 const { worldServices } = await import("@/agents/runtime/services");
 const { commander } = await import("@/agents/commander/config");
-const { withoutConflicts } = await import("@/agents/commander/compose");
+const { withoutConflicts, movedText, releasedText, composeBundle } =
+  await import("@/agents/commander/compose");
 const { _resetCircuits } = await import("@/ai/router/router");
 const { _resetBudget } = await import("@/ai/router/budget");
 import { fixtures, type EventWorld } from "@/contracts/fixtures";
@@ -207,5 +208,47 @@ describe("commander on speaker_cancel", () => {
     const { children, dropped } = withoutConflicts([move("a"), move("a"), move("b")]);
     expect(children).toHaveLength(1);
     expect(dropped.map((d) => d.summary)).toEqual(["b"]);
+  });
+});
+
+describe("crew notes", () => {
+  it("names the room once when the role already carries it", () => {
+    expect(movedText("Hall support, Main Auditorium", "Main Auditorium", "Sat, 24 Oct, 3:45 PM")).toBe(
+      "Your shift moved: Hall support, Main Auditorium, now Sat, 24 Oct, 3:45 PM. Reply OK to confirm.",
+    );
+    expect(movedText("Registration desk", "Foyer", "Sat, 24 Oct, 9:00 AM")).toBe(
+      "Your shift moved: Registration desk is now at Foyer, Sat, 24 Oct, 9:00 AM. Reply OK to confirm.",
+    );
+  });
+
+  it("tells a released volunteer what they were released from", () => {
+    expect(releasedText("Hall support, Main Auditorium", "Sat, 24 Oct, 3:45 PM")).toBe(
+      "You're released from Hall support, Main Auditorium at Sat, 24 Oct, 3:45 PM. Crew Chief may reassign you soon.",
+    );
+  });
+});
+
+describe("released crew", () => {
+  it("tells crew on a cancelled session's empty slot that they are released", async () => {
+    const s = scenario();
+    const asg = s.w.shiftAssignments.find((x) => x.shiftId === s.evalsShift.id)!;
+    asg.shiftId = s.keynoteShift.id; // someone was on the keynote's hall shift
+    const b = (await composeBundle(
+      worldServices(s.w),
+      {
+        change: { type: "cancel", sessionId: s.keynote.id, reason: "Speaker cancelled" },
+        state: { sessions: s.w.sessions, rooms: s.w.rooms },
+        options: [{ id: "opt-gap", label: "Leave the slot empty", actions: [], metrics: {} as never }],
+      },
+      "opt-gap",
+      "Leave it.",
+    )) as unknown as Bundle;
+    const note = b.payload.children.find(
+      (c) => c.kind === "comms.send_direct" && (c.payload.recipient as { id: string }).id === asg.volunteerId,
+    );
+    expect(note?.payload.channels).toContain("in_app");
+    expect(Object.values(note!.payload.bodyByChannel as Record<string, string>)[0]).toMatch(
+      /^You're released from .+ at Sat, 24 Oct, .+\. Crew Chief may reassign you soon\.$/,
+    );
   });
 });
