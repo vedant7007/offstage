@@ -4,6 +4,7 @@ import { Alert } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
 import { formatTime } from "@/lib/time";
+import { AnnouncementLabel } from "@/components/public/announcement-label";
 
 // Left edge colour by category; emergencies are rendered separately as an emergency alert.
 const CATEGORY_EDGE: Record<Exclude<AnnouncementCategory, "emergency">, string> = {
@@ -37,6 +38,7 @@ export async function LiveUpdates({ data }: Props) {
       {emergencies.map((a) => (
         <Alert key={a.id} variant="emergency" title={a.title}>
           {a.body}
+          <AnnouncementLabel announcement={a} onColour />
         </Alert>
       ))}
       {empty ? <p className="text-fg-muted">{t("event.noUpdates")}</p> : null}
@@ -72,6 +74,7 @@ export async function LiveUpdates({ data }: Props) {
               ) : null}
             </div>
             <p className="text-sm">{a.body}</p>
+            <AnnouncementLabel announcement={a} />
           </li>
         ))}
       </ul>

@@ -10,6 +10,7 @@ import { LiveRefresh } from "@/components/public/status/live-refresh";
 import { getT } from "@/lib/i18n/server";
 import { formatTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { AnnouncementLabel } from "@/components/public/announcement-label";
 
 type Slot = NonNullable<PublicStatusResponse["rooms"][number]["current"]>;
 
@@ -129,6 +130,7 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
         {emergencies.map((a) => (
           <Alert key={a.id} variant="emergency" title={a.title} className={kiosk ? "text-xl" : undefined}>
             {a.body}
+            <AnnouncementLabel announcement={a} onColour />
           </Alert>
         ))}
 
@@ -166,6 +168,7 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
                 <li key={a.id} className="rounded-card border border-border bg-surface p-4">
                   <p className={cn("font-semibold", kiosk ? "text-2xl" : "text-lg")}>{a.title}</p>
                   <p className={kiosk ? "text-xl" : "text-base"}>{a.body}</p>
+                  <AnnouncementLabel announcement={a} className={kiosk ? "text-base" : undefined} />
                   {a.sentAt ? (
                     <time dateTime={a.sentAt} className="text-sm text-fg-muted">
                       {formatTime(a.sentAt)} {t("time.ist")}

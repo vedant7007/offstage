@@ -32,16 +32,27 @@ test("shows capacity honestly and offers the waitlist when full", async ({ page 
   await expect(page.getByText("This is the seeded demo event.", { exact: false })).toBeVisible();
 });
 
+test("drafted announcements carry the drafted-by label", async ({ page }) => {
+  await page.goto(EVENT);
+  const updates = page.getByRole("region", { name: "Live updates" });
+  await expect(
+    updates.getByText("Drafted by Sutradhar, approved by", { exact: false }).first(),
+  ).toBeVisible();
+});
+
 test("day and track filters narrow the schedule", async ({ page }) => {
   await page.goto(EVENT);
   const schedule = page.locator("#schedule");
   await expect(schedule.getByRole("heading", { name: "Opening keynote: Building for Bharat" })).toBeVisible();
 
+  // Filters are real navigations; wait for each new URL before checking the result.
   await schedule.getByRole("link", { name: "Sun, 25 Oct" }).click();
+  await page.waitForURL(/day=2026-10-25/, { timeout: 15_000 });
   await expect(schedule.getByRole("heading", { name: "Voice AI in Indian languages" })).toBeVisible();
   await expect(schedule.getByRole("link", { name: "Sun, 25 Oct" })).toHaveAttribute("aria-current", "true");
 
   await schedule.getByRole("link", { name: "Hardware and IoT" }).click();
+  await page.waitForURL(/track=/, { timeout: 15_000 });
   const cards = schedule.locator("article");
   await expect(cards).toHaveCount(1);
   await expect(cards.first()).toContainText("Workshop: Sensors and TinyML");
