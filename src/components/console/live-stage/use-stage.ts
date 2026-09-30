@@ -32,7 +32,13 @@ export const DATA_OF: Record<string, string> = {
   marketing: "data:registrations",
   post_event: "data:kb",
 };
-const CHANNEL_NODES = ["channel:in_app", "channel:email", "channel:whatsapp", "channel:telegram"];
+const CHANNEL_NODES = [
+  "channel:in_app",
+  "channel:email",
+  "channel:whatsapp",
+  "channel:telegram",
+  "channel:sms",
+];
 const PULSE_MS = 4000;
 const DONE_MS = 45_000;
 const label = (a: string) => a.replace("_", " ").replace(/^\w/, (c) => c.toUpperCase());
@@ -166,7 +172,10 @@ export function useStage(eventId: string) {
       if (m.kind === "guard") addLog(`${label(m.agent)} screened untrusted input`, "system");
       if (m.kind === "fallback") addLog(`${label(m.agent)} used its rules fallback`, "warn");
     });
-    on("outbox", () => setFeedTick((n) => n + 1));
+    on("outbox", () => {
+      setFeedTick((n) => n + 1);
+      void loadDelivery();
+    });
     on("metrics", ({ metrics }) => {
       offset.current = Date.parse(metrics.at) - Date.now();
     });
@@ -203,8 +212,20 @@ export function useStage(eventId: string) {
           p.riskTier === "T0" || p.riskTier === "T1" ? `agent:${agent ?? "commander"}` : "gate:head",
           DATA_OF[p.domain] ?? "data:kb",
         );
-        if (p.kind.startsWith("comms.") || p.kind === "plan.bundle")
-          for (const c of CHANNEL_NODES) pulse(DATA_OF[p.domain] ?? "data:kb", c);
+        if (p.kind.startsWith("comms.") || p.kind === "plan.bundle") {
+          // Only the channels this proposal actually used, from its payload (a plan: its children's).
+          const d = await api
+            .call("getProposal", { params: { eventId, proposalId: p.id } })
+            .catch(() => null);
+          type WithChannels = { channels?: string[]; children?: { payload?: { channels?: string[] } }[] };
+          const pl = (d?.proposal.payload ?? {}) as WithChannels;
+          const used = new Set([
+            ...(pl.channels ?? []),
+            ...(pl.children ?? []).flatMap((c) => c.payload?.channels ?? []),
+          ]);
+          for (const c of CHANNEL_NODES)
+            if (used.has(c.slice("channel:".length))) pulse(DATA_OF[p.domain] ?? "data:kb", c);
+        }
         void loadDelivery();
       } else if (p.status === "approved") addLog(`Approved: ${p.summary}`, "human");
       else if (p.status === "rejected") addLog(`Rejected: ${p.summary}`, "human");

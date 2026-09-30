@@ -15,29 +15,13 @@ import {
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import type { AgentName } from "@/contracts";
-import { AgentAvatar, Badge, type Tone } from "@/components/ui";
+import { AgentAvatar, Badge } from "@/components/ui";
+import { NODE_STATE as STATE, STAGE } from "./theme";
 import type { NodeState, Pulse } from "./use-stage";
 
-const STATE: Record<NodeState, { label: string; tone: Tone; ring: string }> = {
-  idle: { label: "Idle", tone: "neutral", ring: "border-border" },
-  thinking: {
-    label: "Thinking",
-    tone: "info",
-    ring: "border-info shadow-[0_0_0_4px_var(--color-info-soft)]",
-  },
-  proposing: {
-    label: "Proposing",
-    tone: "agent",
-    ring: "border-agent shadow-[0_0_0_4px_var(--color-agent-soft)]",
-  },
-  waiting: { label: "Waiting for approval", tone: "pending", ring: "border-pending" },
-  done: { label: "Done", tone: "approved", ring: "border-approved" },
-  failed: { label: "Failed", tone: "danger", ring: "border-danger" },
-  paused: { label: "Paused", tone: "neutral", ring: "border-dashed border-border opacity-60" },
-};
-
 type AgentData = { agent: AgentName; state: NodeState; waiting: number; centre?: boolean };
-type BoxData = { title: string; detail: string; tone?: Tone; kind: "gate" | "data" | "channel" };
+type BoxData = { title: string; detail: string; kind: "gate" | "data" | "channel" };
+type EdgeData = { active: boolean; pulseId?: string; still: boolean };
 
 const hidden = "!h-1 !w-1 !min-h-0 !min-w-0 !border-0 !bg-transparent";
 const handles = (
@@ -50,13 +34,11 @@ const handles = (
 function AgentNode({ data }: NodeProps<Node<AgentData>>) {
   const s = STATE[data.state];
   return (
-    <div
-      className={`flex w-44 flex-col items-start gap-1.5 rounded-card border-2 bg-surface p-2.5 text-fg ${s.ring} ${data.centre ? "w-52 border-curtain" : ""}`}
-    >
+    <div className={`${STAGE.agent} ${s.ring} ${data.centre ? STAGE.centre : ""}`}>
       {handles}
       <AgentAvatar agent={data.agent} showName size={data.centre ? "md" : "sm"} />
       <div className="flex flex-wrap items-center gap-1">
-        <Badge tone={s.tone} className={data.state === "thinking" ? "animate-pulse" : undefined}>
+        <Badge tone={s.tone} className={data.state === "thinking" ? "motion-safe:animate-pulse" : undefined}>
           {s.label}
         </Badge>
         {data.waiting ? <Badge tone="pending">{data.waiting} to approve</Badge> : null}
@@ -66,12 +48,8 @@ function AgentNode({ data }: NodeProps<Node<AgentData>>) {
 }
 
 function BoxNode({ data }: NodeProps<Node<BoxData>>) {
-  const shape =
-    data.kind === "gate" ? "rounded-full px-4" : data.kind === "channel" ? "rounded-control" : "rounded-card";
   return (
-    <div
-      className={`flex w-40 flex-col gap-0.5 border-2 border-border bg-surface-raised p-2 text-fg ${shape}`}
-    >
+    <div className={`${STAGE.box} ${STAGE.boxShape[data.kind]}`}>
       {handles}
       <span className="text-sm font-semibold">{data.title}</span>
       <span className="text-xs text-fg-muted">{data.detail}</span>
@@ -79,8 +57,28 @@ function BoxNode({ data }: NodeProps<Node<BoxData>>) {
   );
 }
 
-/** A straight edge that carries moving dots while a handoff is live. */
-function PulseEdge({ sourceX, sourceY, targetX, targetY, data }: EdgeProps<Edge<{ active: boolean }>>) {
+/** One dot, once, along the edge. SMIL starts on mount (begin="indefinite" + beginElement), not at page load. */
+function Dot({ path }: { path: string }) {
+  const ref = React.useRef<SVGAnimateMotionElement>(null);
+  const [done, setDone] = React.useState(false);
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const end = () => setDone(true);
+    el.addEventListener("endEvent", end);
+    el.beginElement();
+    return () => el.removeEventListener("endEvent", end);
+  }, []);
+  if (done) return null;
+  return (
+    <circle r={4} fill={STAGE.dot}>
+      <animateMotion ref={ref} dur="1.2s" begin="indefinite" fill="freeze" path={path} />
+    </circle>
+  );
+}
+
+/** A straight edge that lights up during a handoff and sends one dot (none with reduced motion). */
+function PulseEdge({ sourceX, sourceY, targetX, targetY, data }: EdgeProps<Edge<EdgeData>>) {
   const [path] = getStraightPath({ sourceX, sourceY, targetX, targetY });
   const active = Boolean(data?.active);
   return (
@@ -88,18 +86,12 @@ function PulseEdge({ sourceX, sourceY, targetX, targetY, data }: EdgeProps<Edge<
       <BaseEdge
         path={path}
         style={{
-          stroke: active ? "var(--color-agent)" : "var(--color-border)",
+          stroke: active ? STAGE.edgeActive : STAGE.edge,
           strokeWidth: active ? 2.5 : 1,
-          transition: "stroke 300ms",
+          transition: data?.still ? undefined : "stroke 300ms",
         }}
       />
-      {active
-        ? [0, 0.4, 0.8].map((begin) => (
-            <circle key={begin} r={4} fill="var(--color-agent)">
-              <animateMotion dur="1.2s" begin={`${begin}s`} repeatCount="indefinite" path={path} />
-            </circle>
-          ))
-        : null}
+      {active && data?.pulseId && !data.still ? <Dot key={data.pulseId} path={path} /> : null}
     </>
   );
 }
@@ -113,6 +105,41 @@ export type StageBoxes = {
   channels: { id: string; title: string; detail: string }[];
 };
 
+type Item = { id: string; data?: Record<string, unknown>; ariaLabel?: string };
+const sameData = (a: Record<string, unknown>, b: Record<string, unknown>) => {
+  const ka = Object.keys(a);
+  return ka.length === Object.keys(b).length && ka.every((k) => a[k] === b[k]);
+};
+/**
+ * Keeps the previous object for anything whose data did not change. React Flow reuses a node whose object
+ * is the same, so only the node that changed re-renders. The cache writes are idempotent.
+ */
+function useStable<T extends Item>(items: T[]): T[] {
+  const [cache] = React.useState(() => new Map<string, T>());
+  return items.map((n) => {
+    const old = cache.get(n.id);
+    if (old && old.ariaLabel === n.ariaLabel && sameData(old.data ?? {}, n.data ?? {})) return old;
+    cache.set(n.id, n);
+    return n;
+  });
+}
+
+/** Whether the viewer asked for less motion. */
+export function useReducedMotion() {
+  return React.useSyncExternalStore(
+    (cb) => {
+      const m = window.matchMedia("(prefers-reduced-motion: reduce)");
+      m.addEventListener("change", cb);
+      return () => m.removeEventListener("change", cb);
+    },
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+    () => false,
+  );
+}
+
+const R = 330;
+const at = (x: number, y: number) => ({ x: Math.round(x), y: Math.round(y) });
+
 export function StageCanvas(props: {
   agents: AgentName[];
   stateOf: (a: AgentName) => NodeState;
@@ -121,13 +148,14 @@ export function StageCanvas(props: {
   boxes: StageBoxes;
   onOpen: (id: string) => void;
 }) {
+  const still = useReducedMotion();
   const ring = props.agents.filter((a) => a !== "commander");
-  const R = 330;
-  const nodes: Node[] = [
+  // Fixed positions, rounded so the server and the browser agree.
+  const nodes = useStable<Node>([
     {
       id: "agent:commander",
       type: "agent",
-      position: { x: -104, y: -40 },
+      position: at(-104, -40),
       data: {
         agent: "commander",
         state: props.stateOf("commander"),
@@ -141,7 +169,7 @@ export function StageCanvas(props: {
       return {
         id: `agent:${a}`,
         type: "agent",
-        position: { x: Math.cos(angle) * R * 1.45 - 88, y: Math.sin(angle) * R - 30 },
+        position: at(Math.cos(angle) * R * 1.45 - 88, Math.sin(angle) * R - 30),
         data: { agent: a, state: props.stateOf(a), waiting: props.waitingOf(a) },
         ariaLabel: `${a.replace("_", " ")}, ${STATE[props.stateOf(a)].label}`,
       };
@@ -149,43 +177,55 @@ export function StageCanvas(props: {
     ...props.boxes.gates.map((g, i) => ({
       id: g.id,
       type: "box",
-      position: { x: -200 + i * 240, y: R + 110 },
-      data: { ...g, kind: "gate" as const },
+      position: at(-200 + i * 240, R + 110),
+      data: { title: g.title, detail: g.detail, kind: "gate" as const },
       ariaLabel: `${g.title}: ${g.detail}`,
     })),
     ...props.boxes.data.map((d, i) => ({
       id: d.id,
       type: "box",
-      position: { x: -R * 1.45 - 380, y: -220 + i * 110 },
-      data: { ...d, kind: "data" as const },
+      position: at(-R * 1.45 - 380, -220 + i * 110),
+      data: { title: d.title, detail: d.detail, kind: "data" as const },
       ariaLabel: `${d.title}: ${d.detail}`,
     })),
     ...props.boxes.channels.map((c, i) => ({
       id: c.id,
       type: "box",
-      position: { x: R * 1.45 + 220, y: -170 + i * 110 },
-      data: { ...c, kind: "channel" as const },
+      position: at(R * 1.45 + 220, -250 + i * 105),
+      data: { title: c.title, detail: c.detail, kind: "channel" as const },
       ariaLabel: `${c.title}: ${c.detail}`,
     })),
-  ];
+  ]);
 
-  const active = new Set(props.pulses.map((p) => `${p.from}>${p.to}`));
-  const base: Edge[] = ring.map((a) => ({
-    id: `e:commander>${a}`,
-    source: "agent:commander",
-    target: `agent:${a}`,
-    type: "pulse",
-    data: { active: active.has(`agent:commander>agent:${a}`) },
-  }));
-  const extra: Edge[] = props.pulses
-    .filter((p) => !(p.from === "agent:commander" && p.to.startsWith("agent:")))
-    .map((p) => ({ id: p.id, source: p.from, target: p.to, type: "pulse", data: { active: true } }));
+  // The newest pulse per edge; a new pulse id remounts that edge's dot, so each handoff sends one.
+  const latest = new Map(props.pulses.map((p) => [`${p.from}>${p.to}`, p.id]));
+  const edges = useStable<Edge>([
+    ...ring.map((a) => {
+      const pulseId = latest.get(`agent:commander>agent:${a}`);
+      return {
+        id: `e:commander>${a}`,
+        source: "agent:commander",
+        target: `agent:${a}`,
+        type: "pulse",
+        data: { active: Boolean(pulseId), pulseId, still },
+      };
+    }),
+    ...[...latest]
+      .filter(([k]) => !/^agent:commander>agent:/.test(k))
+      .map(([k, pulseId]) => {
+        const [source, target] = k.split(">") as [string, string];
+        return { id: `x:${k}`, source, target, type: "pulse", data: { active: true, pulseId, still } };
+      }),
+  ]);
+
+  const { onOpen } = props;
+  const onNodeClick = React.useCallback((_: unknown, n: Node) => onOpen(n.id), [onOpen]);
 
   return (
-    <div className="h-[34rem] w-full overflow-hidden rounded-card border border-border bg-surface-sunken md:h-[40rem]">
+    <div className={STAGE.canvas}>
       <ReactFlow
         nodes={nodes}
-        edges={[...base, ...extra]}
+        edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
         fitView
@@ -193,10 +233,10 @@ export function StageCanvas(props: {
         minZoom={0.2}
         nodesDraggable={false}
         nodesConnectable={false}
-        onNodeClick={(_, n) => props.onOpen(n.id)}
+        onNodeClick={onNodeClick}
         proOptions={{ hideAttribution: true }}
       >
-        <Background gap={24} color="var(--color-border)" />
+        <Background gap={24} color={STAGE.grid} />
       </ReactFlow>
     </div>
   );
