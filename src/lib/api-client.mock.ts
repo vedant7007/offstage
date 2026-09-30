@@ -142,6 +142,9 @@ export async function mockCall(name: EndpointName, args: Args): Promise<unknown>
       };
     case "verifyKey":
       return responses.verifyKey(w);
+    case "demoInbox":
+      // Mock mode has no mail server behind it.
+      return { available: false };
     case "revocations":
       return { eventId: w.event.id, revokedTicketIds: [], updatedAt: w.now };
     case "speakerForm":

@@ -509,6 +509,16 @@ export const PublicRegisterResponse = z.object({
 });
 export type PublicRegisterResponse = z.infer<typeof PublicRegisterResponse>;
 
+export const DemoInboxQuery = z.object({ email: z.email().max(254) });
+export type DemoInboxQuery = z.infer<typeof DemoInboxQuery>;
+
+/** DEMO_MODE only: whether the OTP screen may link to this person's latest OTP email in the demo inbox. */
+export const DemoInboxResponse = z.object({
+  available: z.boolean(),
+  url: z.string().optional().describe("Page with the latest OTP email; present when available"),
+});
+export type DemoInboxResponse = z.infer<typeof DemoInboxResponse>;
+
 export const VerifyKeyResponse = z.object({
   eventId: Id,
   algorithm: z.literal("Ed25519"),
@@ -1005,6 +1015,13 @@ export const ENDPOINTS = {
     auth: "public",
     body: PublicRegisterRequest,
     response: PublicRegisterResponse,
+  },
+  demoInbox: {
+    method: "GET",
+    path: "/api/public/events/:slug/demo-inbox",
+    auth: "public",
+    query: DemoInboxQuery,
+    response: DemoInboxResponse,
   },
   verifyKey: {
     method: "GET",
