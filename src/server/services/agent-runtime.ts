@@ -2,6 +2,7 @@
  * The platform side of the agent runtime (issue #17): where traces go, whether an agent may
  * run, and the dependencies the runtime needs, all bound to one event.
  */
+import { memoryTrace } from "@/agents/runtime/memory-trace";
 import { and, eq } from "drizzle-orm";
 import type { Gate } from "@/agents/runtime/registry";
 import type { ReadServices } from "@/agents/runtime/services";
@@ -121,6 +122,27 @@ export function runtimeDepsFor(eventId: string, client: Db = defaultDb): Runtime
     },
     trace: dbTraceStore(client),
     services: createReadServices(readActor, { client }),
+    eventContext,
+  };
+}
+
+/**
+ * What-if: agents run over a snapshot, proposals come back "simulated" (propose never writes for a
+ * simulation actor), and traces stay in memory so nothing reaches the real timeline.
+ */
+export function simulationDeps(
+  eventId: string,
+  services: ReadServices,
+  client: Db = defaultDb,
+): RuntimeDeps<ReadServices> {
+  return {
+    propose: (actor: AgentActor, input: ProposeInputRaw) => {
+      if (actor.eventId !== eventId || !actor.simulation)
+        throw new Error("Simulation deps need a simulation actor");
+      return propose(actor, input, client);
+    },
+    trace: memoryTrace().store,
+    services,
     eventContext,
   };
 }

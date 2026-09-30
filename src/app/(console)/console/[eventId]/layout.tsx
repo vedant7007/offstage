@@ -1,6 +1,6 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import { History, Inbox } from "lucide-react";
+import { FlaskConical, History, Inbox, Newspaper } from "lucide-react";
 import { AppShell, Button, EmptyState, ThemeToggle } from "@/components/ui";
 import { PersonaSwitcher } from "@/components/console/persona-switcher";
 import { getSessionInfo, membershipFor } from "@/server/authz";
@@ -38,6 +38,8 @@ export default async function ConsoleLayout({ children, params }: LayoutProps<"/
       homeHref={`${base}/approvals`}
       nav={[
         { href: `${base}/approvals`, label: "Approvals", icon: <Inbox aria-hidden /> },
+        { href: `${base}/briefing`, label: "Briefing", icon: <Newspaper aria-hidden /> },
+        { href: `${base}/whatif`, label: "What if", icon: <FlaskConical aria-hidden /> },
         { href: `${base}/timeline`, label: "Timeline", icon: <History aria-hidden /> },
       ]}
       actions={
