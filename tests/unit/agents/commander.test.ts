@@ -17,14 +17,22 @@ import { fixtures, type EventWorld } from "@/contracts/fixtures";
 import { istToUtc } from "@/lib/time";
 import type { ProposeResult } from "@/agents/runtime/contracts";
 
-const usage = { inputTokens: { total: 80, noCache: 80, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 30, text: 30, reasoning: 0 } };
+const usage = {
+  inputTokens: { total: 80, noCache: 80, cacheRead: 0, cacheWrite: 0 },
+  outputTokens: { total: 30, text: 30, reasoning: 0 },
+};
 const call = (id: string, toolName: string, input: object) => ({
   content: [{ type: "tool-call" as const, toolCallId: id, toolName, input: JSON.stringify(input) }],
   finishReason: { unified: "tool-calls" as const, raw: "tool_calls" },
   usage,
   warnings: [],
 });
-const text = (t: string) => ({ content: [{ type: "text" as const, text: t }], finishReason: { unified: "stop" as const, raw: "stop" }, usage, warnings: [] });
+const text = (t: string) => ({
+  content: [{ type: "text" as const, text: t }],
+  finishReason: { unified: "stop" as const, raw: "stop" },
+  usage,
+  warnings: [],
+});
 const scripted = (...steps: object[]) => {
   let i = 0;
   return new MockLanguageModelV4({ doGenerate: async () => steps[Math.min(i++, steps.length - 1)] as never });
@@ -41,31 +49,78 @@ function scenario() {
   const sem = w.rooms.find((r) => r.id === evals.roomId)!;
   const base = { eventId: w.event.id, skills: [] as string[], version: 1 };
   w.shifts.push(
-    { ...base, id: "shift-keynote", role: "Hall support, Main Auditorium", roomId: aud.id, sessionId: keynote.id, startsAt: t("15:45"), endsAt: t("17:15"), requiredCount: 2 },
-    { ...base, id: "shift-evals", role: "Hall support, Seminar Hall 3", roomId: sem.id, sessionId: evals.id, startsAt: t("16:45"), endsAt: t("18:15"), requiredCount: 2 },
+    {
+      ...base,
+      id: "shift-keynote",
+      role: "Hall support, Main Auditorium",
+      roomId: aud.id,
+      sessionId: keynote.id,
+      startsAt: t("15:45"),
+      endsAt: t("17:15"),
+      requiredCount: 2,
+    },
+    {
+      ...base,
+      id: "shift-evals",
+      role: "Hall support, Seminar Hall 3",
+      roomId: sem.id,
+      sessionId: evals.id,
+      startsAt: t("16:45"),
+      endsAt: t("18:15"),
+      requiredCount: 2,
+    },
   );
   // Two volunteers with light loads cover the Evaluating LLM apps hall.
   const busy = new Set(w.shiftAssignments.map((a) => a.volunteerId));
   const free = w.volunteers.filter((v) => v.active && !busy.has(v.id)).slice(0, 2);
   expect(free).toHaveLength(2);
   for (const [i, v] of free.entries())
-    w.shiftAssignments.push({ id: `asg-evals-${i}`, shiftId: "shift-evals", volunteerId: v.id, status: "assigned", version: 1 });
+    w.shiftAssignments.push({
+      id: `asg-evals-${i}`,
+      shiftId: "shift-evals",
+      volunteerId: v.id,
+      status: "assigned",
+      version: 1,
+    });
   const propose = vi.fn(
     async (_a: unknown, input: { kind: string }) =>
-      ({ status: "created", proposal: { id: "p-bundle", status: "pending", riskTier: "T3", kind: input.kind } }) as unknown as ProposeResult,
+      ({
+        status: "created",
+        proposal: { id: "p-bundle", status: "pending", riskTier: "T3", kind: input.kind },
+      }) as unknown as ProposeResult,
   );
   const trace = memoryTrace();
-  const deps = { propose: propose as never, trace: trace.store, services: worldServices(w), eventContext: async () => "HackNova 2026" };
-  const payload = { sessionId: keynote.id, reason: "Speaker cancelled: flight cancelled", speakerIds: keynote.speakerIds, registeredCount: 240 };
+  const deps = {
+    propose: propose as never,
+    trace: trace.store,
+    services: worldServices(w),
+    eventContext: async () => "HackNova 2026",
+  };
+  const payload = {
+    sessionId: keynote.id,
+    reason: "Speaker cancelled: flight cancelled",
+    speakerIds: keynote.speakerIds,
+    registeredCount: 240,
+  };
   return { w, keynote, evals, aud, free, propose, trace, deps, payload };
 }
-const trigger = { type: "domain_event" as const, eventType: "session.cancelled" as const, ref: "de-speaker-cancel" };
+const trigger = {
+  type: "domain_event" as const,
+  eventType: "session.cancelled" as const,
+  ref: "de-speaker-cancel",
+};
 type Bundle = {
   kind: string;
   payload: {
     title: string;
     children: { kind: string; payload: Record<string, unknown>; proposedBy: string; summary: string }[];
-    ripple: { sessions: unknown[]; volunteers: unknown[]; announcements: { recipients: number }[]; attendees: { count: number }; kbAnswers: unknown[] };
+    ripple: {
+      sessions: unknown[];
+      volunteers: unknown[];
+      announcements: { recipients: number }[];
+      attendees: { count: number };
+      kbAnswers: unknown[];
+    };
     options: { id: string; chosen: boolean }[];
   };
 };
@@ -80,7 +135,10 @@ describe("commander on speaker_cancel", () => {
     const s = scenario();
     model = scripted(
       call("t1", "get_options", {}),
-      call("t2", "choose_option", { optionId: "opt-1", rationale: "Keeps the prime auditorium slot busy; one move, no shortfall." }),
+      call("t2", "choose_option", {
+        optionId: "opt-1",
+        rationale: "Keeps the prime auditorium slot busy; one move, no shortfall.",
+      }),
       text("Proposed the plan."),
     );
     const res = await runAgent(commander, trigger, { eventId: s.w.event.id, payload: s.payload }, s.deps);
@@ -97,8 +155,18 @@ describe("commander on speaker_cancel", () => {
     expect(kinds).not.toContain("schedule.cancel_session");
     // Crew: both hall volunteers follow the session to the keynote's hall shift.
     for (const v of s.free) {
-      expect(b.payload.children).toContainEqual(expect.objectContaining({ kind: "crew.unassign_shift", payload: expect.objectContaining({ shiftId: "shift-evals", volunteerId: v.id }) }));
-      expect(b.payload.children).toContainEqual(expect.objectContaining({ kind: "crew.assign_shift", payload: { shiftId: "shift-keynote", volunteerId: v.id } }));
+      expect(b.payload.children).toContainEqual(
+        expect.objectContaining({
+          kind: "crew.unassign_shift",
+          payload: expect.objectContaining({ shiftId: "shift-evals", volunteerId: v.id }),
+        }),
+      );
+      expect(b.payload.children).toContainEqual(
+        expect.objectContaining({
+          kind: "crew.assign_shift",
+          payload: { shiftId: "shift-keynote", volunteerId: v.id },
+        }),
+      );
     }
     // Comms: the keynote audience hears what replaces it; the moved session's audience hears the new time and room.
     const notes = b.payload.children.filter((c) => c.kind === "comms.send_announcement");
@@ -112,10 +180,16 @@ describe("commander on speaker_cancel", () => {
       ["in_app", "email", "telegram", "whatsapp"],
     ]);
     // Helpdesk: a schedule note it will cite.
-    expect(b.payload.children.at(-1)).toMatchObject({ kind: "kb.publish_update", payload: { title: "Schedule changes", public: true } });
+    expect(b.payload.children.at(-1)).toMatchObject({
+      kind: "kb.publish_update",
+      payload: { title: "Schedule changes", public: true },
+    });
     // Ripple for the console.
     expect(b.payload.ripple.volunteers).toHaveLength(2);
-    expect(b.payload.ripple.announcements.map((a) => a.recipients)).toEqual([s.keynote.registeredCount, s.evals.registeredCount]);
+    expect(b.payload.ripple.announcements.map((a) => a.recipients)).toEqual([
+      s.keynote.registeredCount,
+      s.evals.registeredCount,
+    ]);
     expect(b.payload.ripple.attendees.count).toBe(s.keynote.registeredCount + s.evals.registeredCount);
     expect(b.payload.options.filter((o) => o.chosen)).toHaveLength(1);
   });
@@ -124,7 +198,13 @@ describe("commander on speaker_cancel", () => {
     const s = scenario();
     model = new MockLanguageModelV4({
       doGenerate: async () => {
-        throw new APICallError({ message: "down", url: "x", requestBodyValues: {}, statusCode: 503, isRetryable: true });
+        throw new APICallError({
+          message: "down",
+          url: "x",
+          requestBodyValues: {},
+          statusCode: 503,
+          isRetryable: true,
+        });
       },
     });
     const res = await runAgent(commander, trigger, { eventId: s.w.event.id, payload: s.payload }, s.deps);
@@ -135,7 +215,13 @@ describe("commander on speaker_cancel", () => {
   });
 
   it("drops a later child that would set the same thing differently", () => {
-    const move = (at: string) => ({ kind: "schedule.move_session" as const, payload: { sessionId: "s1", newStartsAt: at }, summary: at, rationale: "", proposedBy: "scheduler" as const });
+    const move = (at: string) => ({
+      kind: "schedule.move_session" as const,
+      payload: { sessionId: "s1", newStartsAt: at },
+      summary: at,
+      rationale: "",
+      proposedBy: "scheduler" as const,
+    });
     const { children, dropped } = withoutConflicts([move("a"), move("a"), move("b")]);
     expect(children).toHaveLength(1);
     expect(dropped.map((d) => d.summary)).toEqual(["b"]);
