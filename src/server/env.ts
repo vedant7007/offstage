@@ -18,6 +18,7 @@ const optionalString = z
 export const EnvSchema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
   DATABASE_URL: z.url(),
+  DATABASE_APP_ROLE: optionalString,
   APP_URL: z.url().default("http://localhost:3000"),
   LOG_LEVEL: z.enum(["fatal", "error", "warn", "info", "debug", "trace", "silent"]).default("info"),
   DEMO_MODE: bool,

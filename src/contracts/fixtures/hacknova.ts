@@ -2,6 +2,7 @@ import type { Faker } from "@faker-js/faker";
 import type { AgentConfigSummary, AgentRun, AgentStep } from "../agents";
 import type {
   Announcement,
+  Availability,
   Briefing,
   BudgetCategory,
   Checkin,
@@ -767,6 +768,12 @@ export function buildHackNova(): EventWorld {
   ensureSkill("crowd", 8);
   ensureSkill("helpdesk", 3);
   ensureSkill("runner", 3);
+  // Two AV-capable volunteers stay on standby on day 1 (no shift), so a no-show on any AV or
+  // lab support shift always has a legal replacement (demo trigger volunteer_noshow, issue #40).
+  const standby = new Set(volunteers.slice(-2).map((v) => v.id));
+  for (const v of volunteers.slice(-2)) {
+    for (const skill of ["av_tech", "crowd"]) if (!v.skills.includes(skill)) v.skills.push(skill);
+  }
 
   type ShiftDef = {
     key: string;
@@ -940,7 +947,9 @@ export function buildHackNova(): EventWorld {
     const start = new Date(s.startsAt).getTime();
     const end = new Date(s.endsAt).getTime();
     const hours = (end - start) / 3_600_000;
+    const isDay1 = s.startsAt < ist(DAY2, "00:00");
     const candidates = volunteers.filter((v) => {
+      if (isDay1 && standby.has(v.id)) return false;
       if (!v.skills.includes(d.skill)) return false;
       if ((hoursPlanned.get(v.id) ?? 0) + hours > v.maxHours) return false;
       return !(busy.get(v.id) ?? []).some(([a, b]) => a < end && start < b);
@@ -962,6 +971,45 @@ export function buildHackNova(): EventWorld {
       });
       if (started) v.hoursServed += Math.round(((Math.min(end, nowMs) - start) / 3_600_000) * 10) / 10;
     }
+  });
+
+  // Availability windows. Most volunteers are around both days; every 7th is only free on day 1,
+  // around the shifts they already hold, so the crew solver has a real constraint to respect.
+  const availability: Availability[] = [];
+  volunteers.forEach((v, i) => {
+    const mine = shiftAssignments
+      .filter((a) => a.volunteerId === v.id)
+      .map((a) => shifts.find((s) => s.id === a.shiftId)!);
+    const allDay1 = mine.every((s) => s.startsAt < ist(DAY2, "00:00"));
+    if (i > 0 && i % 7 === 0 && mine.length > 0 && allDay1) {
+      const start = mine.map((s) => s.startsAt).sort()[0]!;
+      const end = mine
+        .map((s) => s.endsAt)
+        .sort()
+        .at(-1)!;
+      availability.push({
+        id: id("availability", `${v.id}:d1`),
+        eventId,
+        volunteerId: v.id,
+        start: addMinutesIso(start, -30),
+        end: addMinutesIso(end, 30),
+      });
+      return;
+    }
+    availability.push({
+      id: id("availability", `${v.id}:d1`),
+      eventId,
+      volunteerId: v.id,
+      start: ist(DAY1, "07:30"),
+      end: ist(DAY1, "23:59"),
+    });
+    availability.push({
+      id: id("availability", `${v.id}:d2`),
+      eventId,
+      volunteerId: v.id,
+      start: ist(DAY2, "07:30"),
+      end: ist(DAY2, "18:00"),
+    });
   });
 
   // ---------------------------------------------------------------- check-ins so far (day 1, until 10:30)
@@ -2355,6 +2403,7 @@ export function buildHackNova(): EventWorld {
     tickets,
     checkins,
     volunteers,
+    availability,
     shifts,
     shiftAssignments,
     tasks,

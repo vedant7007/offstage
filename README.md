@@ -32,12 +32,14 @@ Run the background worker in a second terminal with `pnpm worker`.
 |---|---|
 | `pnpm dev` | Web app with hot reload |
 | `pnpm worker` | Background worker (pg-boss jobs) with reload |
-| `pnpm typecheck` / `pnpm lint` / `pnpm test` | What CI runs, plus `pnpm format:check` and `pnpm build` |
+| `pnpm typecheck` / `pnpm lint` / `pnpm test` | What CI runs, plus `pnpm format:check`, `pnpm test:db` and `pnpm build` |
+| `pnpm test:db` | Database tests: migrations, seed, append-only rules, demo triggers (uses a separate `_test` database) |
 | `pnpm format` | Prettier over the repo |
 | `pnpm db:generate` | Create a migration from schema changes (Abhinav only) |
 | `pnpm db:migrate` | Apply migrations |
 | `pnpm db:seed` | Seed the demo world |
-| `pnpm demo:reset` | Truncate and reseed (target under 30 seconds) |
+| `pnpm db:counts` | Row counts per table and per event |
+| `pnpm demo:reset` | Truncate and reseed both demo events (about 5 seconds); sets the demo clock to 10:30 IST on HackNova day 1. `--real-time` keeps real time |
 | `pnpm demo:trigger <scenario>` | `speaker_cancel`, `lunch_confusion`, `volunteer_noshow`, `queue_spike`, `budget_breach`, `projector_voice_note` |
 | `pnpm keys` | Print fresh `AUTH_SECRET`, ticket signing keys and PII key |
 

@@ -1,6 +1,7 @@
 import "@/server/load-env";
 import { PgBoss } from "pg-boss";
 import { createLogger } from "@/lib/logger";
+import { startDemoClockSync } from "@/server/clock";
 
 process.env.SUTRADHAR_SERVICE ??= "worker";
 const log = createLogger({ base: { service: "worker" } });
@@ -16,6 +17,7 @@ async function main() {
   const boss = new PgBoss({ connectionString: url, application_name: "sutradhar-worker" });
   boss.on("error", (err: unknown) => log.error({ err }, "pg-boss error"));
   await boss.start();
+  startDemoClockSync();
   log.info("worker started");
 
   let stopping = false;

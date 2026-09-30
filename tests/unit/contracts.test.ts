@@ -26,6 +26,7 @@ function worldTables(w: EventWorld): [string, z.ZodType, unknown[]][] {
     ["tickets", C.Ticket, w.tickets],
     ["checkins", C.Checkin, w.checkins],
     ["volunteers", C.Volunteer, w.volunteers],
+    ["availability", C.Availability, w.availability],
     ["shifts", C.Shift, w.shifts],
     ["shiftAssignments", C.ShiftAssignment, w.shiftAssignments],
     ["tasks", C.Task, w.tasks],
@@ -86,6 +87,15 @@ describe("fixture worlds match the contracts", () => {
           if (e.type in C.DomainEventPayloads) {
             expect(C.parseEventPayload(e.type as C.TypedEventType, e.payload), e.type).not.toBeNull();
           }
+        }
+      });
+
+      it("every shift assignment sits inside the volunteer availability", () => {
+        for (const a of w.shiftAssignments) {
+          const shift = w.shifts.find((s) => s.id === a.shiftId)!;
+          const windows = w.availability.filter((x) => x.volunteerId === a.volunteerId);
+          const fits = windows.some((x) => x.start <= shift.startsAt && shift.endsAt <= x.end);
+          expect(fits, `${a.volunteerId} on ${shift.role}`).toBe(true);
         }
       });
 

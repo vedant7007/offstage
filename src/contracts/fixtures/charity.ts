@@ -1,6 +1,7 @@
 import type { AgentConfigSummary } from "../agents";
 import type {
   Announcement,
+  Availability,
   BudgetCategory,
   Event,
   EventMembership,
@@ -280,6 +281,14 @@ export function buildCharityDrive(hacknova: Pick<EventWorld, "org" | "personas">
     })),
   ];
 
+  const availability: Availability[] = volunteers.map((v) => ({
+    id: id("availability", v.id),
+    eventId,
+    volunteerId: v.id,
+    start: ist(DAY, "08:30"),
+    end: ist(DAY, "16:30"),
+  }));
+
   const kbDocuments: KbDocument[] = [
     {
       id: "kb-raktdaan-faq",
@@ -435,6 +444,7 @@ export function buildCharityDrive(hacknova: Pick<EventWorld, "org" | "personas">
     tickets: [],
     checkins: [],
     volunteers,
+    availability,
     shifts,
     shiftAssignments,
     tasks: [],

@@ -289,13 +289,26 @@ export const Volunteer = z.object({
   name: z.string().max(120),
   phoneMasked: z.string().optional(),
   skills: z.array(z.string().max(40)),
-  maxHours: z.number().positive(),
+  maxHours: z
+    .number()
+    .positive()
+    .describe("Total hours this volunteer can work across the whole event, not per day"),
   hoursServed: z.number().nonnegative(),
   telegramLinked: z.boolean(),
   active: z.boolean(),
   version: Version,
 });
 export type Volunteer = z.infer<typeof Volunteer>;
+
+/** When a volunteer said they can work. A volunteer with no windows is treated as always available. */
+export const Availability = z.object({
+  id: Id,
+  eventId: Id,
+  volunteerId: Id,
+  start: IsoDateTime,
+  end: IsoDateTime,
+});
+export type Availability = z.infer<typeof Availability>;
 
 export const Shift = z.object({
   id: Id,
