@@ -405,6 +405,102 @@
     "error": "We could not send your details. Nothing is lost; please try again.",
     "badLink": "This link has expired or is not valid. Please ask the program team for a new one."
   },
+  "login": {
+    "title": "Sign in",
+    "intro": "We email you a 6-digit code. No password needed.",
+    "email": "Email",
+    "sendCode": "Send code",
+    "codeSent": "We sent a 6-digit code to {email}. It works for 10 minutes.",
+    "code": "6-digit code",
+    "signIn": "Sign in",
+    "resend": "Send a new code",
+    "changeEmail": "Use a different email",
+    "botCheck": "Quick check that you are a person",
+    "invalidEmail": "Enter an email like name@college.edu",
+    "codeError": "Enter the 6 digits from the email.",
+    "wrongCode": "That code did not work. Check the email or ask for a new code.",
+    "error": "Something went wrong. Please try again.",
+    "rateLimited": "Too many tries. Wait a few minutes and try again.",
+    "demoTitle": "Demo personas",
+    "demoIntro": "This is a demo. Jump straight in as one of the seeded people.",
+    "personas": {
+      "attendee": "Sneha, attendee",
+      "volunteer": "Ravi, volunteer",
+      "owner": "Event head",
+      "program_lead": "Program lead",
+      "comms_lead": "Comms lead",
+      "faculty": "Faculty approver",
+      "sponsor": "Sponsor",
+      "viewer": "Judge, read only"
+    }
+  },
+  "me": {
+    "tabs": {
+      "ticket": "Ticket",
+      "schedule": "Schedule",
+      "chat": "Chat",
+      "more": "More"
+    },
+    "demoData": "Part of this page shows demo data until the live service is connected.",
+    "signOut": "Sign out",
+    "noEvent": "You are not registered for an event yet.",
+    "findEvent": "See the demo event",
+    "ticket": {
+      "title": "Your ticket",
+      "for": "Ticket for {name}",
+      "checkedIn": "Checked in at {time}",
+      "notCheckedIn": "Not checked in yet",
+      "showToVolunteer": "Show to volunteer",
+      "showHint": "Opens the code full screen on a white background so it scans easily.",
+      "close": "Close",
+      "brightness": "Turn your screen brightness up if the scan fails.",
+      "offlineNote": "Your ticket works offline once you have opened it here.",
+      "revoked": "This ticket was cancelled. Ask the registration desk for help.",
+      "none": "No ticket yet. It appears here once your registration is confirmed.",
+      "waitlisted": "You are on the waitlist. Your ticket appears here if a seat opens."
+    },
+    "schedule": {
+      "title": "Schedule",
+      "mine": "My sessions",
+      "all": "All sessions",
+      "empty": "You have not picked any sessions yet.",
+      "changed": "Changed",
+      "change": {
+        "moved": "Moved",
+        "room_changed": "Room changed",
+        "cancelled": "Cancelled",
+        "delayed": "Running late"
+      },
+      "reminders": "Remind me 15 minutes before each of my sessions",
+      "remindersSoon": "Reminders on this screen are not connected yet. Your choice is saved on this phone.",
+      "add": "Add",
+      "added": "In my schedule",
+      "addSoon": "Adding sessions from here is coming soon. Ask the helpdesk to add one for you.",
+      "room": "Room"
+    }
+  },
+  "citationExtra": {
+    "noSnippet": "The passage preview is not available yet. Ask the helpdesk team if you need the full text.",
+    "openDoc": "Source: {document}. Open snippet"
+  },
+  "chat": {
+    "title": "Helpdesk",
+    "honest": "This assistant answers from the event's own documents and shows where each answer came from. When it is not sure, it passes your question to a person.",
+    "label": "Your question",
+    "placeholder": "Ask about the event",
+    "send": "Send",
+    "suggestions": "Common questions",
+    "you": "You",
+    "assistant": "Helpdesk",
+    "thinking": "Looking through the event documents",
+    "sources": "Sources",
+    "escalated": "I'm not sure, so I passed this to the team. They will reply here and by email.",
+    "escalationRef": "Reference {ref}",
+    "blockedHint": "I can help with anything about the event: the schedule, venue, food, rules or your ticket.",
+    "error": "Could not reach the helpdesk. Check your connection and try again.",
+    "demo": "Showing demo answers until the live helpdesk is connected.",
+    "answeredBy": "Answered by the event assistant from event documents"
+  },
   "design": {
     "title": "Design system",
     "intro": "Every primitive and shared component in every state. Use the controls to check both themes and a 360 px phone width.",
