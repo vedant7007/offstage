@@ -157,6 +157,54 @@
   "time": {
     "ist": "IST"
   },
+  "site": {
+    "home": "Sutradhar home",
+    "aboutAi": "About our AI",
+    "law": "Agents propose. Policy decides. Humans approve. Code executes."
+  },
+  "landing": {
+    "eyebrow": "An event operations team in a box",
+    "title": "Tell Sutradhar about your event.",
+    "subtitle": "It builds the team, runs the show, and asks you only when it matters.",
+    "line1": "Describe your event in a few lines. The Commander asks what it needs, then lays out a plan, a budget and a team of agents.",
+    "line2": "Each agent owns one part of the event and works with a human lead, who approves anything that touches people, money or reputation.",
+    "line3": "On the day, agents handle changes, check-ins and questions. Emergencies go straight to people.",
+    "demoCta": "See the demo event",
+    "demoNote": "HackNova 2026 is a sample tech fest with made-up people.",
+    "startCta": "Start your event",
+    "lawTitle": "The law of the system",
+    "law": {
+      "propose": "Agents propose",
+      "decide": "Policy decides",
+      "approve": "Humans approve",
+      "execute": "Code executes"
+    },
+    "lawDetail": {
+      "propose": "Every change starts as a proposal, with its reasons and evidence.",
+      "decide": "Rules in code set how much approval each change needs.",
+      "approve": "Anything that affects people waits for the right person.",
+      "execute": "Only approved changes run, and most can be undone."
+    }
+  },
+  "aboutAi": {
+    "title": "About our AI",
+    "intro": "Sutradhar uses AI to help run events. Here is, in plain words, what it does, what it never does, and what happens to your data.",
+    "decideTitle": "AI suggests, people decide",
+    "decideBody": "Agents draft plans, messages and changes. Anything that affects people, money or the event's reputation waits for a named person to approve it. Small internal records run on their own, and those can be undone for 10 minutes.",
+    "tiersTitle": "How much approval a change needs",
+    "labelledTitle": "Every automated message says so",
+    "labelledBody": "Messages written by the assistant carry a line saying it drafted them and which role approved them, like this:",
+    "honestTitle": "It says “I don't know”",
+    "honestBody": "The helpdesk answers only from the event's own documents and shows where each answer came from. When it is not sure, it passes your question to a person instead of guessing.",
+    "emergencyTitle": "Emergencies go to people",
+    "emergencyBody": "Medical, safety, fire and harassment reports skip the agents and alert the organisers at once. Agents only help draft updates.",
+    "dataTitle": "Minimum data, deleted after the event",
+    "dataBody": "We collect only what the event needs and say why when we ask. Personal details are deleted 90 days after the event unless you asked for a certificate. Phone numbers and emails are encrypted, and the AI works with IDs and masked details, not your contact information.",
+    "rightsTitle": "Your data, your choice",
+    "rightsBody": "From your attendee portal you can see what we store, download a copy, or ask us to delete it.",
+    "limitsTitle": "What we do not claim",
+    "limitsBody": "Sutradhar is designed against the OWASP Top 10 for LLM applications and aligned with the principles of India's Digital Personal Data Protection Act. It is not certified by anyone. It works in English, Hindi and Hinglish; other languages are not supported yet."
+  },
   "design": {
     "title": "Design system",
     "intro": "Every primitive and shared component in every state. Use the controls to check both themes and a 360 px phone width.",
