@@ -109,6 +109,7 @@ export async function runAgent<S>(
     untrusted: input.untrusted ?? false,
     services: deps.services,
     simulation,
+    propose: (p) => proposeAndTrace(p),
   };
 
   let index = 0;
@@ -223,19 +224,21 @@ export async function runAgent<S>(
         },
       });
     }
-    tools.propose = tool({
-      description: `Propose one action for human or policy approval. Allowed kinds: ${config.actions.join(", ")}.`,
-      inputSchema: proposeSchema(config.actions),
-      execute: async ({ action, ...meta }: z.infer<ReturnType<typeof proposeSchema>>) => {
-        const res = await proposeAndTrace({
-          ...meta,
-          ...(action as { kind: string; payload: unknown }),
-        } as never);
-        if (res.status === "invalid") return { status: "invalid", issues: res.issues };
-        if (res.status === "simulated") return { status: "simulated", riskTier: res.riskTier };
-        return { status: res.status, proposalId: res.proposal.id, riskTier: res.proposal.riskTier };
-      },
-    });
+    // Agents that only act through their own deterministic tools (the Scheduler) get no free-form propose.
+    if (config.actions.length)
+      tools.propose = tool({
+        description: `Propose one action for human or policy approval. Allowed kinds: ${config.actions.join(", ")}.`,
+        inputSchema: proposeSchema(config.actions),
+        execute: async ({ action, ...meta }: z.infer<ReturnType<typeof proposeSchema>>) => {
+          const res = await proposeAndTrace({
+            ...meta,
+            ...(action as { kind: string; payload: unknown }),
+          } as never);
+          if (res.status === "invalid") return { status: "invalid", issues: res.issues };
+          if (res.status === "simulated") return { status: "simulated", riskTier: res.riskTier };
+          return { status: res.status, proposalId: res.proposal.id, riskTier: res.proposal.riskTier };
+        },
+      });
 
     const instructions = [
       config.systemPrompt(ctx),
