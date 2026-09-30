@@ -80,6 +80,12 @@ export function configuredChain(tier: Tier): Link[] {
   });
 }
 
-export function chain(tier: Tier): Link[] {
-  return configuredChain(tier).filter((l) => available(l.provider));
+/** Available chain for a tier. With `only`, that provider alone, even if the profile's order leaves it out. */
+export function chain(tier: Tier, only?: Provider): Link[] {
+  const links = only
+    ? MODELS[only][tier]
+      ? [{ provider: only, model: MODELS[only][tier]! }]
+      : []
+    : configuredChain(tier);
+  return links.filter((l) => available(l.provider));
 }
