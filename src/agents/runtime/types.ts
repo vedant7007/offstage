@@ -15,6 +15,10 @@ import type {
   Role,
 } from "./contracts";
 
+type DistributiveOmit<T, K extends PropertyKey> = T extends unknown ? Omit<T, K> : never;
+/** A proposal as an agent writes it. The runtime adds the idempotency key. */
+export type AgentProposal = DistributiveOmit<ProposeInputRaw, "idempotencyKey">;
+
 /** What an agent run can see. `S` is the read-service surface: real services, a what-if snapshot, or a fake. */
 export type RunContext<S> = {
   eventId: string;
@@ -54,7 +58,7 @@ export type AgentConfig<S = unknown> = {
   maxSteps: number;
   criticality: "critical" | "normal";
   /** Rules-only path when models fail or the budget pauses the agent. */
-  fallback: (ctx: RunContext<S>) => Promise<ProposeInputRaw[]>;
+  fallback: (ctx: RunContext<S>) => Promise<AgentProposal[]>;
 };
 
 type NewStep = AgentStep extends infer T

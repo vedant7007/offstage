@@ -16,7 +16,7 @@ import {
   type ProposeResult,
 } from "./contracts";
 import { redact } from "./redact";
-import type { AgentConfig, NewStep, RunContext, RuntimeDeps } from "./types";
+import type { AgentConfig, AgentProposal, NewStep, RunContext, RuntimeDeps } from "./types";
 
 export type RunInput = { eventId: string; payload: unknown; untrusted?: boolean };
 
@@ -118,7 +118,7 @@ export async function runAgent<S>(
   const simulated: RunResult["simulated"] = [];
   let tokens = { inputTokens: 0, outputTokens: 0, costUsd: 0 };
 
-  const proposeAndTrace = async (raw: Omit<ProposeInputRaw, "idempotencyKey">) => {
+  const proposeAndTrace = async (raw: AgentProposal) => {
     const action = raw as { kind: string; payload: unknown };
     const inputWithKey = {
       ...raw,
