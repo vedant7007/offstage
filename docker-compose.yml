@@ -1,0 +1,105 @@
+# Local: docker compose up -d db mailpit   (then pnpm dev and pnpm worker on the host)
+# Cloud: docker compose --profile cloud up -d --build
+name: sutradhar
+
+services:
+  db:
+    image: pgvector/pgvector:pg17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sutradhar}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sutradhar}
+      POSTGRES_DB: ${POSTGRES_DB:-sutradhar}
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mailpit:
+    image: axllent/mailpit:v1.31
+    restart: unless-stopped
+    ports:
+      - "${MAILPIT_SMTP_PORT:-1025}:1025"
+      - "${MAILPIT_WEB_PORT:-8025}:8025"
+    environment:
+      MP_SMTP_AUTH_ACCEPT_ANY: 1
+      MP_SMTP_AUTH_ALLOW_INSECURE: 1
+
+  app:
+    profiles: ["cloud"]
+    build: .
+    image: sutradhar-app:latest
+    restart: unless-stopped
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://${POSTGRES_USER:-sutradhar}:${POSTGRES_PASSWORD:-sutradhar}@db:5432/${POSTGRES_DB:-sutradhar}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/app/uploads
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  worker:
+    profiles: ["cloud"]
+    image: sutradhar-app:latest
+    restart: unless-stopped
+    command: ["pnpm", "worker:prod"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      SUTRADHAR_SERVICE: worker
+      DATABASE_URL: postgres://${POSTGRES_USER:-sutradhar}:${POSTGRES_PASSWORD:-sutradhar}@db:5432/${POSTGRES_DB:-sutradhar}
+      SMTP_HOST: ${SMTP_HOST:-mailpit}
+    depends_on:
+      db:
+        condition: service_healthy
+      app:
+        condition: service_started
+    volumes:
+      - uploads:/app/uploads
+
+  caddy:
+    profiles: ["cloud"]
+    image: caddy:2.11
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      DOMAIN: ${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  db-data:
+  uploads:
+  caddy-data:
+  caddy-config:
