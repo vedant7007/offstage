@@ -104,6 +104,8 @@ export async function mockCall(name: EndpointName, args: Args): Promise<unknown>
     case "me":
     case "setActiveEvent":
       return responses.me(w, "attendee");
+    case "demoTrigger":
+      return { message: "Mock mode: scenarios do not run." };
     case "switchPersona":
       return responses.me(w, (args.body as { persona?: never } | undefined)?.persona ?? "attendee");
     case "myRegistration":

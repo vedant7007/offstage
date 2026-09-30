@@ -27,3 +27,17 @@ export async function sendTwilio(
   if (!res.ok || !data.sid) throw new Error(`twilio ${res.status} code ${data.code ?? "unknown"}`);
   return { providerId: data.sid };
 }
+
+/** Final or current delivery state of an accepted message. Error codes are Twilio's, such as 63015. */
+export async function twilioStatus(sid: string): Promise<{ status: string; errorCode: number | null }> {
+  const account = process.env.TWILIO_ACCOUNT_SID;
+  const token = process.env.TWILIO_AUTH_TOKEN;
+  if (!account || !token) throw new Error("Twilio is not configured");
+  const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${account}/Messages/${sid}.json`, {
+    headers: { authorization: `Basic ${Buffer.from(`${account}:${token}`).toString("base64")}` },
+    signal: AbortSignal.timeout(15_000),
+  });
+  const data = (await res.json().catch(() => ({}))) as { status?: string; error_code?: number | null };
+  if (!res.ok || !data.status) throw new Error(`twilio status ${res.status}`);
+  return { status: data.status, errorCode: data.error_code ?? null };
+}

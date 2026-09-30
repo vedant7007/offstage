@@ -12,7 +12,7 @@ const LABEL: Record<string, string> = {
   whatsapp: "WhatsApp",
   sms: "SMS",
 };
-const num = (key: keyof Omit<Row, "channel">, header: string): Column<Row> => ({
+const num = (key: "real" | "mock" | "pending" | "failed" | "skipped", header: string): Column<Row> => ({
   key,
   header,
   align: "end",
@@ -23,7 +23,24 @@ const COLUMNS: Column<Row>[] = [
   num("real", "Real"),
   num("mock", "Mock"),
   num("pending", "Queued"),
-  num("failed", "Failed"),
+  {
+    key: "failed",
+    header: "Failed",
+    align: "end",
+    cell: (r) => {
+      const codes = Object.entries(r.failureCodes ?? {});
+      return (
+        <>
+          {r.failed.toLocaleString("en-IN")}
+          {codes.length ? (
+            <span className="block text-xs text-fg-muted">
+              {codes.map(([code, n]) => `error ${code}: ${n}`).join(", ")}
+            </span>
+          ) : null}
+        </>
+      );
+    },
+  },
   num("skipped", "Skipped"),
 ];
 

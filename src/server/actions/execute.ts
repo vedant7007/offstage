@@ -133,7 +133,7 @@ export async function executeProposal(
             .update(t.proposals)
             .set({
               status: "executed",
-              executedAt: new Date(),
+              executedAt: nowUtc(),
               undoData: (childUndo[c.id] as Record<string, unknown>) ?? null,
             })
             .where(eq(t.proposals.id, c.id));
@@ -148,8 +148,8 @@ export async function executeProposal(
         .update(t.proposals)
         .set({
           status: "executed",
-          executedAt: new Date(),
-          undoUntil: undoable ? new Date(Date.now() + UNDO_WINDOW_MS) : null,
+          executedAt: nowUtc(),
+          undoUntil: undoable ? new Date(nowUtc().getTime() + UNDO_WINDOW_MS) : null,
           undoData: undoData ?? null,
           error: null,
         })
@@ -200,7 +200,7 @@ export async function undoProposal(
     if (!row) throw new ExecutionError("Proposal not found");
     if (row.status !== "executed")
       throw new ExecutionError(`Only executed proposals can be undone (this one is ${row.status})`);
-    if (!row.undoUntil || row.undoUntil.getTime() < Date.now())
+    if (!row.undoUntil || row.undoUntil.getTime() < nowUtc().getTime())
       throw new ExecutionError("The undo window has closed");
     const kind = row.kind as ActionKind;
     const ex = executorFor(kind);

@@ -699,6 +699,19 @@ export const SwitchPersonaRequest = z.object({
 });
 export type SwitchPersonaRequest = z.infer<typeof SwitchPersonaRequest>;
 
+/** Scripted demo disruptions (blueprint Section 11). POST /api/demo/trigger, DEMO_MODE only. */
+export const DemoScenario = z.enum([
+  "speaker_cancel",
+  "lunch_confusion",
+  "volunteer_noshow",
+  "queue_spike",
+  "budget_breach",
+  "projector_voice_note",
+]);
+export type DemoScenario = z.infer<typeof DemoScenario>;
+export const DemoTriggerRequest = z.object({ scenario: DemoScenario });
+export const DemoTriggerResponse = z.object({ message: z.string() });
+
 // ---------------------------------------------------------------------------
 // Endpoint registry, shared by src/lib/api-client.ts and the route handlers
 // ---------------------------------------------------------------------------
@@ -723,6 +736,8 @@ export const DeliveryStatsResponse = z.object({
       pending: z.number().int(),
       failed: z.number().int(),
       skipped: z.number().int(),
+      /** Failed rows by provider error code, such as { "63015": 4 }. */
+      failureCodes: z.record(z.string(), z.number().int()).default({}),
     }),
   ),
 });
@@ -1038,6 +1053,13 @@ export const ENDPOINTS = {
     response: z.object({ task: Task }),
   },
 
+  demoTrigger: {
+    method: "POST",
+    path: "/api/demo/trigger",
+    auth: "user",
+    body: DemoTriggerRequest,
+    response: DemoTriggerResponse,
+  },
   switchPersona: {
     method: "POST",
     path: "/api/demo/switch-persona",

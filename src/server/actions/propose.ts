@@ -234,6 +234,7 @@ export async function propose(actor: Actor, raw: unknown, client: Db = defaultDb
       .insert(t.proposals)
       .values({
         eventId,
+        createdAt: nowUtc(),
         kind: input.kind,
         payload: input.payload,
         proposedBy: actor,
@@ -254,13 +255,14 @@ export async function propose(actor: Actor, raw: unknown, client: Db = defaultDb
         status: autoRun ? "approved" : "pending",
         idempotencyKey: input.idempotencyKey,
         preconditions: d.preconditions,
-        expiresAt: new Date(Date.now() + ttl * 60_000),
+        expiresAt: new Date(nowUtc().getTime() + ttl * 60_000),
       })
       .returning({ id: t.proposals.id });
     const proposalId = row!.id;
     for (const [i, c] of (d.children ?? []).entries()) {
       await tx.insert(t.proposals).values({
         eventId,
+        createdAt: nowUtc(),
         kind: c.kind,
         payload: c.payload,
         proposedBy:
@@ -284,7 +286,7 @@ export async function propose(actor: Actor, raw: unknown, client: Db = defaultDb
         status: autoRun ? "approved" : "pending",
         idempotencyKey: `${input.idempotencyKey}#${i}`,
         preconditions: c.d.preconditions,
-        expiresAt: new Date(Date.now() + ttl * 60_000),
+        expiresAt: new Date(nowUtc().getTime() + ttl * 60_000),
       });
     }
     await publish(tx, {

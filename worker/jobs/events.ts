@@ -11,6 +11,7 @@ import type { Logger } from "pino";
 import { DomainEvent } from "@/contracts";
 import { db, sql } from "@/db/client";
 import * as t from "@/db/schema";
+import { syncDemoClock } from "@/server/clock";
 import { EVENTS_CHANNEL } from "@/server/events/bus";
 import { dbGate, runtimeDepsFor } from "@/server/services/agent-runtime";
 import { dispatch } from "../jobs/agents/dispatcher";
@@ -82,6 +83,8 @@ export async function handleDomainEvent(id: string, log: Logger): Promise<void> 
 export async function registerDomainEventFanOut(boss: PgBoss, log: Logger): Promise<() => Promise<void>> {
   await boss.createQueue(DOMAIN_EVENT_QUEUE);
   await boss.work<{ id: string }>(DOMAIN_EVENT_QUEUE, async (jobs) => {
+    // The periodic sync can lag a demo reset by up to 15 s; agents must stamp proposals with the current clock.
+    await syncDemoClock().catch((err: unknown) => log.warn({ err }, "demo clock sync failed"));
     for (const job of jobs) await handleDomainEvent(job.data.id, log);
   });
 

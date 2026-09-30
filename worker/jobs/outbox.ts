@@ -3,7 +3,7 @@
  * dedupe were applied when the rows were written), then sends each one for real only when its address
  * is on the allowlist and the channel has credentials. Everything else is marked delivered_mock.
  */
-import { and, asc, eq, inArray, lte } from "drizzle-orm";
+import { and, asc, eq, gt, inArray, isNotNull, like, lte, sql } from "drizzle-orm";
 import type { Logger } from "pino";
 import { db } from "@/db/client";
 import * as t from "@/db/schema";
@@ -12,7 +12,7 @@ import { isAllowed, parseAllowlist } from "@/server/channels/allowlist";
 import { sendEmail } from "@/server/channels/email";
 import { driverFor } from "@/server/channels/registry";
 import { linkedChatIds, sendTelegram } from "@/server/channels/telegram";
-import { sendTwilio } from "@/server/channels/twilio";
+import { sendTwilio, twilioStatus } from "@/server/channels/twilio";
 import { decrypt } from "@/server/pii";
 
 const BATCH = 200;
@@ -102,17 +102,61 @@ export async function deliverDue(log: Logger): Promise<{ real: number; mock: num
   return counts;
 }
 
+/**
+ * Twilio accepts a message and only later says whether it arrived (a sandbox number that never joined fails
+ * with 63015). Polls accepted messages from the last two hours until their status is final, and marks a late
+ * failure as failed with Twilio's error code. Polling, not status callbacks, because a local demo has no public URL.
+ */
+export async function checkTwilioStatus(log: Logger): Promise<number> {
+  const rows = await db
+    .select({ id: t.outbox.id, providerId: t.outbox.providerId, meta: t.outbox.meta })
+    .from(t.outbox)
+    .where(
+      and(
+        eq(t.outbox.status, "sent"),
+        like(t.outbox.driver, "twilio-%"),
+        isNotNull(t.outbox.providerId),
+        gt(t.outbox.createdAt, sql`now() - interval '2 hours'`),
+        sql`coalesce(${t.outbox.meta}->>'providerStatus', '') not in ('delivered', 'read')`,
+      ),
+    )
+    .limit(50);
+  let failed = 0;
+  for (const row of rows) {
+    const s = await twilioStatus(row.providerId!).catch(() => null);
+    if (!s || s.status === row.meta.providerStatus) continue;
+    const late = s.status === "failed" || s.status === "undelivered";
+    await db
+      .update(t.outbox)
+      .set({
+        meta: { ...row.meta, providerStatus: s.status },
+        ...(late
+          ? { status: "failed" as const, error: `twilio ${s.status} code ${s.errorCode ?? "unknown"}` }
+          : {}),
+      })
+      .where(eq(t.outbox.id, row.id));
+    if (late) {
+      failed++;
+      log.warn({ outboxId: row.id, code: s.errorCode }, "twilio reported a delivery failure");
+    }
+  }
+  return failed;
+}
+
 /** Runs delivery every few seconds until stopped. Rows left in "sending" by a crash go back to pending. */
 export async function startOutboxDelivery(log: Logger, everyMs = 3_000): Promise<() => void> {
   await db.update(t.outbox).set({ status: "pending" }).where(eq(t.outbox.status, "sending"));
   let stopped = false;
   let running = false;
+  let tick = 0;
   const timer = setInterval(() => {
     if (running || stopped) return;
     running = true;
+    const checkStatus = tick++ % 5 === 0 && Boolean(process.env.TWILIO_ACCOUNT_SID);
     deliverDue(log)
-      .then((c) => {
+      .then(async (c) => {
         if (c.real || c.mock || c.failed) log.info(c, "outbox delivery pass");
+        if (checkStatus) await checkTwilioStatus(log);
       })
       .catch((err: unknown) => log.error({ err }, "outbox delivery failed"))
       .finally(() => (running = false));

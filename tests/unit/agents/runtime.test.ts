@@ -231,6 +231,20 @@ describe("runAgent", () => {
     expect(trace.stepsOf(res.runId).map((s) => s.kind)).toEqual(["guard"]);
   });
 
+  it("runs the fallback when a must-propose agent's model proposes nothing", async () => {
+    model = scripted(text("Looked at the options, nothing to do."));
+    const { trace, propose, deps } = setup();
+    const res = await runAgent(
+      { ...dummy, mustPropose: true },
+      trigger,
+      { eventId: "e1", payload: {} },
+      deps,
+    );
+    expect(res.status).toBe("fallback");
+    expect(propose).toHaveBeenCalledOnce();
+    expect(trace.stepsOf(res.runId).map((s) => s.kind)).toEqual(["llm", "fallback", "propose"]);
+  });
+
   it("falls back to rules when every provider fails", async () => {
     model = new MockLanguageModelV4({
       doGenerate: async () => {

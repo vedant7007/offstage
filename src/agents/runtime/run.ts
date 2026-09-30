@@ -291,6 +291,10 @@ export async function runAgent<S>(
       const paused = res.failure.reason === "budget_paused";
       return runFallback(res.failure.reason, res.failure.message, paused ? "budget_paused" : "fallback");
     }
+    // Small models sometimes stop without calling the tool that proposes. Where a run must end in a plan,
+    // the rules-only fallback makes it.
+    if (config.mustPropose && proposalIds.length === 0 && simulated.length === 0)
+      return runFallback("bad_output", "The model finished without proposing a plan.", "fallback");
     return finish("succeeded", { text: res.text });
   } catch (e) {
     return runFallback("error", (e as Error).message, "fallback");
