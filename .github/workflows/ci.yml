@@ -80,3 +80,69 @@ jobs:
         run: pnpm build
         env:
           DATABASE_URL: postgres://build:build@localhost:5432/build
+
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      db:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_USER: sutradhar
+          POSTGRES_PASSWORD: sutradhar
+          POSTGRES_DB: sutradhar
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sutradhar -d sutradhar"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+      mailpit:
+        image: axllent/mailpit:v1.31
+        ports:
+          - 1025:1025
+          - 8025:8025
+    env:
+      DATABASE_URL: postgres://sutradhar:sutradhar@localhost:5432/sutradhar
+      DATABASE_APP_ROLE: sutradhar_app
+      APP_URL: http://localhost:3000
+      DEMO_MODE: "true"
+      EMAIL_DRIVER: mailpit
+      SMTP_HOST: localhost
+      SMTP_PORT: "1025"
+      LOG_LEVEL: warn
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate throwaway keys
+        run: pnpm -s keys >> "$GITHUB_ENV"
+
+      - name: Migrate and seed
+        run: pnpm db:migrate && pnpm demo:reset
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: End to end tests
+        run: pnpm test:e2e
+
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: playwright-report
+          path: |
+            playwright-report
+            test-results
+          retention-days: 5

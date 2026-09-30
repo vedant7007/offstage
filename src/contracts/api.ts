@@ -283,6 +283,12 @@ export const MeResponse = z.object({
   memberships: z.array(Membership),
   activeEventId: Id.nullable(),
   demoMode: z.boolean(),
+  clockOffsetMs: z
+    .number()
+    .optional()
+    .describe(
+      "Demo clock offset. Browser code shows now as Date.now() + clockOffsetMs (see src/lib/time.ts)",
+    ),
   telegramLinkCode: z
     .string()
     .max(20)
