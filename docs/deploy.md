@@ -1,4 +1,4 @@
-# Deploying Sutradhar to one EC2 instance
+# Deploying OFFSTAGE (Sutradhar) to one EC2 instance
 
 One Ubuntu instance runs everything with Docker Compose: Postgres with pgvector, the web app, the
 worker, Mailpit and Caddy (HTTPS). The same `docker-compose.yml` runs on a laptop.
@@ -9,55 +9,83 @@ browser ── https ──> Caddy :443 ──> app :3000 (Next.js)
                          Postgres :5432 (localhost only) <── worker (agents, outbox, Telegram polling)
 ```
 
+## Current deployment
+
+| | |
+|---|---|
+| URL | https://65-0-183-192.sslip.io |
+| Instance | `i-0123456789abcdef0`, `t3.medium`, Ubuntu 24.04, ap-south-1, 30 GB gp3 (encrypted) |
+| Security group | `sg-0123456789abcdef0` (`offstage-web`): 22 from one laptop IP, 80 and 443 open |
+| Key pair | `offstage-deploy` (ed25519), private key at `~/.ssh/offstage-deploy.pem` on Vedant's laptop |
+| Tags | Every resource has `Project=offstage` |
+| AWS profile | `offstage-deploy` (EC2 only). The app's own key (`offstage-app`, in `.env`) is for Bedrock and SES and cannot touch EC2. |
+
 ## What you need
 
 | Item | Notes |
 |---|---|
-| AWS credentials that can launch EC2 | The app's own IAM user (`offstage-app`) cannot. Use an admin or a deploy user with EC2 rights, only on your machine, never in `.env`. |
+| AWS credentials that can launch EC2 | The CLI profile `offstage-deploy`, used only with `--profile offstage-deploy`. Never copy its keys into `.env` or any file. |
 | One instance | Ubuntu 24.04, `t3.medium` (2 vCPU, 4 GB), 30 GB gp3, region `ap-south-1`. The deploy script adds 4 GB of swap for the Next.js build. |
 | Security group | Inbound 22 from your IP only, 80 and 443 from anywhere. Nothing else: Postgres and Mailpit bind to localhost. |
 | Key pair | For SSH. Keep the `.pem` outside the repo. |
-| A host name | Let's Encrypt does not issue certificates for `*.compute.amazonaws.com`. Use the free `sslip.io` name for the instance's IP: `13-233-10-20.sslip.io` for `13.233.10.20`. An Elastic IP keeps the name stable across stops; AWS bills every public IPv4 address, Elastic or not, at about USD 0.005 an hour. |
-| Turnstile | Add the host name to the Turnstile widget's allowed hostnames in the Cloudflare dashboard, or registration fails the human check. |
-| Email | `EMAIL_DRIVER=smtp` through Amazon SES (the account has production access). `EMAIL_FROM` must be an SES-verified identity. |
+| A host name | Let's Encrypt does not issue certificates for `*.compute.amazonaws.com`, so use the free `sslip.io` name for the instance's IP: `65-0-183-192.sslip.io` for `65.0.183.192`. |
+| Turnstile | Cloudflare's official test keys (site `1x00000000000000000000AA`, secret `1x0000000000000000000000000000000AA`) pass on any host name. Real keys need the host name on the widget. |
+| Email | `EMAIL_DRIVER=smtp` through Amazon SES. The account is out of the SES sandbox (50,000 a day) and `example.org` is verified with DKIM, so any recipient works with `EMAIL_FROM=OFFSTAGE <offstage@example.org>`. |
 
 ## 1. Launch the instance
 
-With your deploy credentials (not the app's):
+Run from Git Bash or any shell with the AWS CLI. `MSYS_NO_PATHCONV=1` on the one command that
+passes `/dev/sda1` stops Git Bash on Windows from rewriting it into a Windows path.
 
 ```bash
-export AWS_REGION=ap-south-1
-AMI=$(aws ssm get-parameter --name /aws/service/canonical/ubuntu/server/24.04/stable/current/amd64/hvm/ebs-gp3/ami-id --query Parameter.Value --output text)
-aws ec2 create-key-pair --key-name sutradhar --query KeyMaterial --output text > ~/.ssh/sutradhar.pem && chmod 600 ~/.ssh/sutradhar.pem
-SG=$(aws ec2 create-security-group --group-name sutradhar-web --description "Sutradhar web" --query GroupId --output text)
-aws ec2 authorize-security-group-ingress --group-id $SG --protocol tcp --port 22 --cidr "$(curl -s https://checkip.amazonaws.com)/32"
-aws ec2 authorize-security-group-ingress --group-id $SG --protocol tcp --port 80 --cidr 0.0.0.0/0
-aws ec2 authorize-security-group-ingress --group-id $SG --protocol tcp --port 443 --cidr 0.0.0.0/0
-aws ec2 run-instances --image-id $AMI --instance-type t3.medium --key-name sutradhar \
-  --security-group-ids $SG --block-device-mappings 'DeviceName=/dev/sda1,Ebs={VolumeSize=30,VolumeType=gp3}' \
-  --tag-specifications 'ResourceType=instance,Tags=[{Key=Name,Value=sutradhar}]' \
+P="--profile offstage-deploy --region ap-south-1"
+TAG='{Key=Project,Value=offstage}'
+# The profile has no SSM access, so find the newest Ubuntu 24.04 image from Canonical directly.
+AMI=$(aws ec2 describe-images $P --owners 099720109477 \
+  --filters "Name=name,Values=ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*" "Name=state,Values=available" \
+  --query "sort_by(Images,&CreationDate)[-1].ImageId" --output text)
+aws ec2 create-key-pair $P --key-name offstage-deploy --key-type ed25519 \
+  --tag-specifications "ResourceType=key-pair,Tags=[$TAG]" --query KeyMaterial --output text > ~/.ssh/offstage-deploy.pem
+sed -i 's/\r$//' ~/.ssh/offstage-deploy.pem && chmod 600 ~/.ssh/offstage-deploy.pem   # Windows adds CRLF; ssh rejects it
+VPC=$(aws ec2 describe-vpcs $P --filters Name=isDefault,Values=true --query "Vpcs[0].VpcId" --output text)
+SG=$(aws ec2 create-security-group $P --group-name offstage-web --description "OFFSTAGE web and SSH" --vpc-id $VPC \
+  --tag-specifications "ResourceType=security-group,Tags=[$TAG,{Key=Name,Value=offstage-web}]" --query GroupId --output text)
+aws ec2 authorize-security-group-ingress $P --group-id $SG --ip-permissions \
+  "IpProtocol=tcp,FromPort=22,ToPort=22,IpRanges=[{CidrIp=$(curl -s https://checkip.amazonaws.com)/32}]" \
+  "IpProtocol=tcp,FromPort=80,ToPort=80,IpRanges=[{CidrIp=0.0.0.0/0}]" \
+  "IpProtocol=tcp,FromPort=443,ToPort=443,IpRanges=[{CidrIp=0.0.0.0/0}]"
+MSYS_NO_PATHCONV=1 aws ec2 run-instances $P --image-id $AMI --instance-type t3.medium --key-name offstage-deploy \
+  --security-group-ids $SG --metadata-options HttpTokens=required,HttpEndpoint=enabled \
+  --block-device-mappings 'DeviceName=/dev/sda1,Ebs={VolumeSize=30,VolumeType=gp3,DeleteOnTermination=true,Encrypted=true}' \
+  --tag-specifications "ResourceType=instance,Tags=[$TAG,{Key=Name,Value=offstage}]" "ResourceType=volume,Tags=[$TAG,{Key=Name,Value=offstage}]" \
   --query 'Instances[0].InstanceId' --output text
 ```
 
-Note the public IP (`aws ec2 describe-instances --filters Name=tag:Name,Values=sutradhar --query 'Reservations[].Instances[].PublicIpAddress'`).
+Public IP: `aws ec2 describe-instances $P --filters Name=tag:Project,Values=offstage --query 'Reservations[].Instances[].PublicIpAddress' --output text`.
 
 ## 2. Write the cloud `.env`
 
 Copy `.env` to `.env.cloud` (ignored by git) and change:
 
 ```bash
-DOMAIN=13-233-10-20.sslip.io
-APP_URL=https://13-233-10-20.sslip.io
+DOMAIN=65-0-183-192.sslip.io
+APP_URL=https://65-0-183-192.sslip.io
 TRUST_PROXY=true
-POSTGRES_PASSWORD=<long random string>        # pnpm keys prints some
+POSTGRES_PASSWORD=<long random string>
 DB_PORT=127.0.0.1:5432                          # Postgres only on the host's loopback
 MAILPIT_SMTP_PORT=127.0.0.1:1025
 MAILPIT_WEB_PORT=127.0.0.1:8025
 AI_PROFILE=demo                                 # Groq and Bedrock; there is no Ollama on the server
 DEMO_MODE=true                                  # persona switcher for the judges; false for a real event
 EMAIL_DRIVER=smtp
-EMAIL_FROM=Sutradhar <no-reply@<verified domain>>
-# SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS: paste the output of `pnpm ses:smtp-password`
+EMAIL_FROM=OFFSTAGE <offstage@example.org>
+# SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS: the output of `pnpm ses:smtp-password`
+TURNSTILE_SITE_KEY=1x00000000000000000000AA
+TURNSTILE_SECRET_KEY=1x0000000000000000000000000000000AA
+# First boot: leave these empty so the server neither polls the Telegram bot (the laptop worker
+# may still be polling it) nor sends real WhatsApp, SMS or Telegram messages.
+TELEGRAM_BOT_TOKEN=
+DEMO_REAL_RECIPIENTS=
 ```
 
 Keep the same `AUTH_SECRET`, `PII_ENCRYPTION_KEY` and ticket keys as the database you seed, or
@@ -66,19 +94,18 @@ generate new ones with `pnpm keys` before the first `--seed` (the seed encrypts 
 ## 3. Deploy
 
 ```bash
-HOST=ubuntu@<public ip> KEY=~/.ssh/sutradhar.pem ENV_FILE=.env.cloud scripts/deploy/deploy.sh --seed
+HOST=ubuntu@65.0.183.192 KEY=~/.ssh/offstage-deploy.pem ENV_FILE=.env.cloud scripts/deploy/deploy.sh --seed
 ```
 
 The script ships the current commit (the repo is private, so the host never clones it), installs
-Docker on first run, builds the image, runs migrations, with `--seed` resets the demo world and
-indexes the KB, then starts the app, the worker and Caddy and waits for
-`https://<DOMAIN>/api/health`. Later deploys: the same command without `--seed` keeps the data.
+Docker on first run, builds the image, runs migrations, with `--seed` resets the demo world (which
+also indexes the KB and sets the demo clock), then starts the app, the worker and Caddy and waits
+for `https://<DOMAIN>/api/health`. Later deploys: the same command without `--seed` keeps the data.
 
 ## 4. Channels
 
-- **Telegram**: nothing to point anywhere. The worker long-polls the bot, so it works as soon as
-  the worker runs. Do not run a second worker (for example on a laptop) with the same bot token,
-  or the two will share updates.
+- **Telegram**: nothing to point anywhere; the worker long-polls the bot. Only one worker may poll a
+  bot token: stop the laptop worker first, then set `TELEGRAM_BOT_TOKEN` in `.env.cloud` and redeploy.
 - **WhatsApp**: in the Twilio console, Messaging, Try it out, WhatsApp sandbox settings, set "When a
   message comes in" to `https://<DOMAIN>/api/channels/twilio/whatsapp` (POST). The route checks
   Twilio's signature against `APP_URL`, so `APP_URL` must be exactly the public https address.
@@ -87,7 +114,7 @@ indexes the KB, then starts the app, the worker and Caddy and waits for
 ## 5. Operate
 
 ```bash
-ssh -i ~/.ssh/sutradhar.pem ubuntu@<ip>
+ssh -i ~/.ssh/offstage-deploy.pem ubuntu@65.0.183.192
 cd /opt/sutradhar
 sudo docker compose --profile cloud ps
 sudo docker compose --profile cloud logs -f --tail 100 app worker
@@ -96,9 +123,64 @@ sudo docker compose --profile cloud run --rm --no-deps app pnpm demo:trigger spe
 sudo docker compose exec db pg_dump -U sutradhar sutradhar | gzip > backup.sql.gz
 ```
 
-## Cost and teardown
+## 6. Stop and start to save credits
 
-`t3.medium` in ap-south-1 is about USD 0.045 an hour (about USD 1.10 a day), plus the public IPv4
-address (about USD 0.005 an hour) and 30 GB of gp3 (about USD 2.70 a month), on the AWS credits.
-Check current prices in the AWS pricing calculator before launching. Stop the instance when not demoing; terminate it and
-delete the security group and key pair after the event.
+A stopped instance costs nothing for compute; the 30 GB disk (about USD 0.09 a day) is still billed
+and the data survives. Compose restarts every container when the instance boots.
+
+```bash
+P="--profile offstage-deploy --region ap-south-1"
+ID=$(aws ec2 describe-instances $P --filters Name=tag:Project,Values=offstage Name=instance-state-name,Values=running,stopped \
+  --query 'Reservations[].Instances[].InstanceId' --output text)
+aws ec2 stop-instances $P --instance-ids $ID      # after a demo
+aws ec2 start-instances $P --instance-ids $ID     # before the next one
+aws ec2 wait instance-running $P --instance-ids $ID
+aws ec2 describe-instances $P --instance-ids $ID --query 'Reservations[0].Instances[0].PublicIpAddress' --output text
+```
+
+**The public IP changes on every start**, and with it the sslip.io name. After a start: put the
+new name in `DOMAIN` and `APP_URL` in `.env.cloud`, allow SSH from your current IP if it changed,
+run `scripts/deploy/deploy.sh` (no `--seed`), and update the Twilio webhook URL. To keep one URL for
+the whole event instead, attach an Elastic IP (it is billed about USD 0.12 a day, also while the
+instance is stopped):
+
+```bash
+EIP=$(aws ec2 allocate-address $P --tag-specifications "ResourceType=elastic-ip,Tags=[{Key=Project,Value=offstage}]" --query AllocationId --output text)
+aws ec2 associate-address $P --instance-id $ID --allocation-id $EIP
+```
+
+## 7. Tear down
+
+Everything was created with `Project=offstage`. After the event:
+
+```bash
+P="--profile offstage-deploy --region ap-south-1"
+ID=$(aws ec2 describe-instances $P --filters Name=tag:Project,Values=offstage \
+  --query 'Reservations[].Instances[?State.Name!=`terminated`].InstanceId' --output text)
+aws ec2 terminate-instances $P --instance-ids $ID            # the disk is deleted with it
+aws ec2 wait instance-terminated $P --instance-ids $ID
+aws ec2 delete-security-group $P --group-name offstage-web
+aws ec2 delete-key-pair $P --key-name offstage-deploy && rm -f ~/.ssh/offstage-deploy.pem
+# Only if you allocated one:
+aws ec2 describe-addresses $P --filters Name=tag:Project,Values=offstage --query 'Addresses[].AllocationId' --output text \
+  | xargs -r -n1 aws ec2 release-address $P --allocation-id
+```
+
+Then point the Twilio sandbox webhook back (or clear it), and restart the laptop worker if you
+still need Telegram. Check nothing is left: `aws resourcegroupstaggingapi get-resources $P
+--tag-filters Key=Project,Values=offstage` (needs tagging permissions) or the EC2 console filtered
+by the tag.
+
+## Cost
+
+On-demand prices in ap-south-1; check the AWS pricing calculator for current numbers.
+
+| While running | Per hour | Per day |
+|---|---|---|
+| `t3.medium` | USD 0.0448 | USD 1.08 |
+| Public IPv4 address | USD 0.005 | USD 0.12 |
+| 30 GB gp3 | | USD 0.09 |
+| **Total** | | **about USD 1.29** |
+
+Stopped: about USD 0.09 a day (the disk), plus USD 0.12 a day if an Elastic IP is attached. Model,
+SES and Twilio usage are billed separately and are small for a demo.
