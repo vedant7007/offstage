@@ -651,8 +651,9 @@ async function seedWorld(db: Db, w: EventWorld, opts: { insertOrg: boolean }) {
  */
 /**
  * Gate 2 demo: each phone and email in DEMO_REAL_RECIPIENTS becomes the contact of one confirmed
- * attendee of "Evaluating LLM apps" (the session the speaker_cancel plan moves), so the team's own
- * phones are among the people told about the change. Everyone else stays fake and gets mock delivery.
+ * attendee of "Evaluating LLM apps" (the session the speaker_cancel plan moves), preferring people
+ * also registered for "Keynote: Open source careers" (the session speaker_cancel cancels), so every
+ * team phone gets both announcements. Everyone else stays fake and gets mock delivery.
  */
 async function seedRealRecipients(db: Db): Promise<void> {
   const { phones, emails } = parseAllowlist();
@@ -665,8 +666,11 @@ async function seedRealRecipients(db: Db): Promise<void> {
     select r.id, r.event_id from registrations r
     join session_choices c on c.registration_id = r.id
     join sessions s on s.id = c.session_id
-    where s.title = 'Evaluating LLM apps' and r.status = 'confirmed'
-    order by r.id limit ${contacts.length}`);
+    where s.title in ('Evaluating LLM apps', 'Keynote: Open source careers') and r.status = 'confirmed'
+    group by r.id, r.event_id
+    having bool_or(s.title = 'Evaluating LLM apps')
+    order by bool_or(s.title = 'Keynote: Open source careers') desc, r.id
+    limit ${contacts.length}`);
   for (const [i, r] of [...regs].entries()) {
     const c = contacts[i]!;
     await db

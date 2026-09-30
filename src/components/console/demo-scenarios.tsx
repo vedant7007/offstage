@@ -4,6 +4,7 @@ import * as React from "react";
 import type { DemoScenario } from "@/contracts";
 import { api } from "@/lib/api-client";
 import { Button, toast } from "@/components/ui";
+import { RealSendsToggle } from "./real-sends";
 
 const SCENARIOS: { scenario: DemoScenario; label: string }[] = [
   { scenario: "speaker_cancel", label: "Keynote speaker cancels" },
@@ -49,6 +50,7 @@ export function DemoScenarios() {
           </Button>
         ))}
       </div>
+      <RealSendsToggle />
     </section>
   );
 }

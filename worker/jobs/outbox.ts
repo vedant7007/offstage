@@ -1,7 +1,8 @@
 /**
  * Outbox delivery. Claims due rows (scheduled_for is already past quiet hours, and the hourly cap and
  * dedupe were applied when the rows were written), then sends each one for real only when its address
- * is on the allowlist and the channel has credentials. Everything else is marked delivered_mock.
+ * is on the allowlist, the channel has credentials and real sends are on (REAL_SENDS, or the console
+ * switch). Everything else is marked delivered_mock.
  */
 import { and, asc, eq, gt, inArray, isNotNull, like, lte, sql } from "drizzle-orm";
 import type { Logger } from "pino";
@@ -15,6 +16,7 @@ import { linkedChatIds, sendTelegram } from "@/server/channels/telegram";
 import { sendTwilio, twilioStatus } from "@/server/channels/twilio";
 import { notifyOutbox } from "@/server/events/bus";
 import { decrypt } from "@/server/pii";
+import { getRealSends } from "@/server/real-sends";
 
 const BATCH = 200;
 const MAX_ATTEMPTS = 3;
@@ -54,11 +56,18 @@ export async function deliverDue(log: Logger): Promise<{ real: number; mock: num
 
   const allow = parseAllowlist();
   const linked = await linkedChatIds(db);
+  const { on: realOn } = await getRealSends();
   const mockIds: string[] = [];
+  let heldBack = 0;
   for (const row of rows) {
     const to = decrypt(row.toEnc);
     const driver = driverFor(row.channel as never);
     if (driver === "mock" || !isAllowed(allow, row.channel, to, linked)) {
+      mockIds.push(row.id);
+      continue;
+    }
+    if (!realOn) {
+      heldBack++;
       mockIds.push(row.id);
       continue;
     }
@@ -79,7 +88,9 @@ export async function deliverDue(log: Logger): Promise<{ real: number; mock: num
       log.info({ outboxId: row.id, channel: row.channel, driver }, "outbox sent (real)");
     } catch (err) {
       const attempts = row.attempts + 1;
-      const retry = attempts < MAX_ATTEMPTS;
+      // Twilio's daily cap (63038) lasts a rolling 24 hours: retrying only spends attempts.
+      const capped = /code 63038\b/.test(String(err));
+      const retry = attempts < MAX_ATTEMPTS && !capped;
       await db
         .update(t.outbox)
         .set({
@@ -93,6 +104,7 @@ export async function deliverDue(log: Logger): Promise<{ real: number; mock: num
       log.warn({ outboxId: row.id, channel: row.channel, attempts, err: String(err) }, "outbox send failed");
     }
   }
+  if (heldBack) log.info({ heldBack }, "real sends off: allowlisted messages delivered to the mock driver");
   if (mockIds.length) {
     await db
       .update(t.outbox)

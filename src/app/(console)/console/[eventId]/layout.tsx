@@ -3,6 +3,7 @@ import Link from "next/link";
 import { FlaskConical, History, Inbox, Network, Newspaper, Sparkles } from "lucide-react";
 import { AppShell, Button, EmptyState, ThemeToggle } from "@/components/ui";
 import { PersonaSwitcher } from "@/components/console/persona-switcher";
+import { RealSendsBadge } from "@/components/console/real-sends";
 import { getSessionInfo, membershipFor } from "@/server/authz";
 
 const demoMode = process.env.DEMO_MODE === "true" || process.env.DEMO_MODE === "1";
@@ -46,6 +47,7 @@ export default async function ConsoleLayout({ children, params }: LayoutProps<"/
       ]}
       actions={
         <div className="flex items-center gap-2">
+          {demoMode ? <RealSendsBadge eventId={eventId} /> : null}
           {demoMode && role ? <PersonaSwitcher role={role} /> : null}
           <ThemeToggle />
         </div>

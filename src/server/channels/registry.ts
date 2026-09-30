@@ -6,7 +6,7 @@
 import type { Channel } from "@/contracts";
 
 export type DriverName =
-  "in_app" | "mailpit" | "ses" | "resend" | "telegram" | "twilio-whatsapp" | "twilio-sms" | "mock";
+  "in_app" | "mailpit" | "smtp" | "ses" | "resend" | "telegram" | "twilio-whatsapp" | "twilio-sms" | "mock";
 
 export function driverFor(channel: Channel): DriverName {
   switch (channel) {
@@ -14,7 +14,7 @@ export function driverFor(channel: Channel): DriverName {
       return "in_app";
     case "email": {
       const d = process.env.EMAIL_DRIVER;
-      return d === "ses" || d === "resend" || d === "mailpit" ? d : "mock";
+      return d === "ses" || d === "resend" || d === "mailpit" || d === "smtp" ? d : "mock";
     }
     case "telegram":
       return process.env.TELEGRAM_BOT_TOKEN ? "telegram" : "mock";
