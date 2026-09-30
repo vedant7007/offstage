@@ -2,7 +2,8 @@ import type { ReadServices } from "@/agents/runtime/services";
 import type { AgentConfig } from "@/agents/runtime/types";
 import { schedulerTools, planFor, bundleFor } from "./tools";
 
-const PROMPT = `You are the Scheduler for this event. When a session is cancelled, moved or running late, you fix the schedule.
+// session.cancelled belongs to the Commander, which composes the whole response.
+const PROMPT = `You are the Scheduler for this event. When a session is moved or running late, you fix the schedule.
 1. Call get_options once. It runs a deterministic solver that only returns options with no new clashes.
 2. If it returns no options, reply with its note and stop.
 3. Otherwise pick the option that disturbs attendees least: fewer moved sessions, fewer attendees affected, no capacity shortfall, no track breaks. Prefer keeping sessions over cancelling when the metrics are close.
@@ -19,7 +20,6 @@ export const scheduler: AgentConfig<ReadServices> = {
   actions: [], // proposes only through choose_option
   systemPrompt: () => PROMPT,
   triggers: [
-    { type: "domain_event", eventType: "session.cancelled" },
     { type: "domain_event", eventType: "session.updated" },
     { type: "domain_event", eventType: "session.running_late" },
     { type: "command" },

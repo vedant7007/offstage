@@ -30,7 +30,8 @@ export type Clash =
 export type ScheduleState = { sessions: SolverSession[]; rooms: SolverRoom[]; choices?: SessionChoice[] };
 
 export type Change =
-  | { type: "cancel"; sessionId: string; reason: string }
+  /** `alreadyCancelled`: the session is off already (a speaker dropped out); plan only how to use the gap. */
+  | { type: "cancel"; sessionId: string; reason: string; alreadyCancelled?: boolean }
   | { type: "move"; sessionId: string; notBefore?: string }
   | { type: "delay"; sessionId: string; minutes: number }
   | { type: "room_loss"; roomId: string };
@@ -245,18 +246,26 @@ export function replanOptions(state: ScheduleState, change: Change, k: Constrain
       kind: "schedule.cancel_session",
       payload: { sessionId: s.id, reason: change.reason, notifyAttendees: true },
     };
-    candidates.push({ label: `Cancel "${s.title}" and leave the slot free`, actions: [cancel] });
-    // Pull the next session of the same track (or room) forward into the freed slot.
-    const next = state.sessions
+    if (!change.alreadyCancelled)
+      candidates.push({ label: `Cancel "${s.title}" and leave the slot free`, actions: [cancel] });
+    const lead: ScheduleAction[] = change.alreadyCancelled ? [] : [cancel];
+    // Fill the freed slot: the next session of the same track (or room), and the best-attended later
+    // session that day that fits the freed room. Each becomes its own option.
+    const cap = state.rooms.find((r) => r.id === s.roomId)?.capacity ?? 0;
+    const later = state.sessions
       .filter(live)
       .filter(
         (x) =>
           x.id !== s.id &&
+          !EXEMPT.has(x.kind) &&
           ms(x.startsAt) >= ms(s.endsAt) &&
-          (s.trackId ? x.trackId === s.trackId : x.roomId === s.roomId),
+          ms(x.endsAt) <= ms(k.dayEnd) &&
+          x.registeredCount <= cap,
       )
-      .sort((a, b) => ms(a.startsAt) - ms(b.startsAt))[0];
-    if (next) {
+      .sort((a, b) => ms(a.startsAt) - ms(b.startsAt));
+    const sameLine = later.find((x) => (s.trackId ? x.trackId === s.trackId : x.roomId === s.roomId));
+    const busiest = [...later].sort((a, b) => b.registeredCount - a.registeredCount)[0];
+    for (const next of [...new Set([sameLine, busiest].filter((x): x is SolverSession => Boolean(x)))]) {
       const dur = ms(next.endsAt) - ms(next.startsAt);
       const pull: ScheduleAction = {
         kind: "schedule.move_session",
@@ -267,12 +276,15 @@ export function replanOptions(state: ScheduleState, change: Change, k: Constrain
           ...(next.roomId !== s.roomId ? { newRoomId: s.roomId } : {}),
         },
       };
-      candidates.push({ label: `Cancel "${s.title}" and ${moveLabel(pull)}`, actions: [cancel, pull] });
+      const verb = change.alreadyCancelled ? "Fill the slot" : `Cancel "${s.title}"`;
+      candidates.push({ label: `${verb} and ${moveLabel(pull)}`, actions: [...lead, pull] });
     }
-    // Keep the session: its best later slot the same day, in case the speaker can still come.
-    // One slot only, so the menu shows three different strategies rather than two variants of one.
-    const [slot] = findSlots(state, s, k, ms(s.endsAt));
-    if (slot) candidates.push({ label: `Keep the session: ${moveLabel(slot)}`, actions: [slot] });
+    if (!change.alreadyCancelled) {
+      // Keep the session: its best later slot the same day, in case the speaker can still come.
+      // One slot only, so the menu shows three different strategies rather than two variants of one.
+      const [slot] = findSlots(state, s, k, ms(s.endsAt));
+      if (slot) candidates.push({ label: `Keep the session: ${moveLabel(slot)}`, actions: [slot] });
+    }
   } else if (change.type === "move" || change.type === "delay") {
     const s = byId.get(change.sessionId);
     if (!s) return [];

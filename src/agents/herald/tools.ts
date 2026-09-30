@@ -69,6 +69,8 @@ export async function plannedChange(
 
 export async function changeFor(ctx: Ctx): Promise<Change | { none: string }> {
   const p = (ctx.payload ?? {}) as Record<string, unknown>;
+  // Changes made by an approved plan carry their announcements inside that plan.
+  if (typeof p.proposalId === "string") return { none: "This change came from a plan that already announces it." };
   const found = await lookup(ctx.services, p.sessionId);
   if (!found) return { none: "The trigger names no known session." };
   const { s, room, base } = found;

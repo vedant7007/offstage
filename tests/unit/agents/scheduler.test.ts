@@ -104,8 +104,14 @@ describe("scheduler agent", () => {
     const plan = await planFor({ services: deps.services, payload, trigger } as never);
     const chosen = plan.options.find((o) => o.id === "opt-1")!;
     expect(input.kind).toBe("plan.bundle");
-    expect(input.payload.children.map((c) => ({ kind: c.kind, payload: c.payload }))).toEqual(chosen.actions);
-    expect(input.payload.children.every((c) => c.proposedBy === "scheduler")).toBe(true);
+    const scheduleChildren = input.payload.children.filter((c) => c.kind.startsWith("schedule."));
+    expect(scheduleChildren.map((c) => ({ kind: c.kind, payload: c.payload }))).toEqual(chosen.actions);
+    expect(scheduleChildren.every((c) => c.proposedBy === "scheduler")).toBe(true);
+    // Composed consequences: the cancelled workshop's crew is released and its attendees are told.
+    expect(
+      input.payload.children.some((c) => c.kind === "comms.send_announcement" && c.proposedBy === "herald"),
+    ).toBe(true);
+    expect(input.payload.children.at(-1)!.kind).toBe("kb.publish_update");
     expect(input.payload.options.filter((o) => o.chosen).map((o) => o.id)).toEqual(["opt-1"]);
     expect(input.payload.ripple.attendees.count).toBe(chosen.metrics.attendeesAffected);
     for (const s of input.payload.ripple.attendees.sample) expect(s.displayName).toMatch(/^\S+( \S\.)?$/); // short names only
