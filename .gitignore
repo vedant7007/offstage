@@ -14,3 +14,7 @@ test-results/
 Thumbs.db
 .vscode/*
 !.vscode/extensions.json
+*.tsbuildinfo
+next-env.d.ts
+.pnpm-debug.log*
+*.pem

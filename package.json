@@ -1,0 +1,61 @@
+{
+  "name": "sutradhar",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "packageManager": "pnpm@11.10.0",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "worker": "tsx watch worker/index.ts",
+    "worker:prod": "tsx worker/index.ts",
+    "typecheck": "next typegen && tsc --noEmit",
+    "lint": "eslint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "tsx src/db/migrate.ts",
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx src/db/seed/run.ts",
+    "demo:reset": "tsx src/db/demo/reset.ts",
+    "demo:trigger": "tsx src/db/demo/trigger.ts",
+    "keys": "tsx scripts/gen-keys.ts"
+  },
+  "dependencies": {
+    "class-variance-authority": "^0.7.1",
+    "cn": "^0.4.0",
+    "drizzle-orm": "0.45.3",
+    "lucide-react": "^1.48.0",
+    "next": "16.3.7",
+    "pg-boss": "12.35.0",
+    "pino": "10.3.1",
+    "postgres": "3.4.9",
+    "radix-ui": "^1.6.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "shadcn": "^4.21.0",
+    "tsx": "4.23.15",
+    "tw-animate-css": "^1.4.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "24.19.0",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "drizzle-kit": "0.31.11",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.3.7",
+    "eslint-config-prettier": "10.1.8",
+    "prettier": "3.9.9",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vitest": "5.0.2"
+  }
+}

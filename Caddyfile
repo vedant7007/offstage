@@ -1,0 +1,23 @@
+# HTTPS in front of the app. Set DOMAIN in the environment; Caddy obtains the certificate itself.
+
+{$DOMAIN:localhost} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		-Server
+	}
+
+	# Request bodies above 10 MB are rejected (upload cap, blueprint loophole 22).
+	request_body {
+		max_size 10MB
+	}
+
+	reverse_proxy app:3000 {
+		# Stream SSE responses immediately.
+		flush_interval -1
+	}
+}
