@@ -160,7 +160,6 @@ export function buildHackNova(): EventWorld {
   const owner = personas.owner!;
   const programLead = personas.program_lead!;
   const commsLead = personas.comms_lead!;
-  const faculty = personas.faculty!;
 
   // ---------------------------------------------------------------- event
   const event: Event = {
