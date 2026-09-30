@@ -12,12 +12,13 @@ import { formatTime } from "@/lib/time";
 type Ctx = RunContext<ReadServices>;
 
 async function crewState(ctx: Ctx): Promise<CrewState> {
-  const [volunteers, shifts, assignments] = await Promise.all([
+  const [volunteers, shifts, assignments, availability] = await Promise.all([
     ctx.services.volunteers(),
     ctx.services.shifts(),
     ctx.services.shiftAssignments(),
+    ctx.services.availability(),
   ]);
-  return { volunteers, shifts, assignments };
+  return { volunteers, shifts, assignments, availability };
 }
 
 function missed(ctx: Ctx) {

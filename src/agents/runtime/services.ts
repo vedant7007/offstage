@@ -4,6 +4,7 @@
 
 import type {
   Announcement,
+  Availability,
   Event,
   KbChunkRef,
   KbDocument,
@@ -34,6 +35,8 @@ export interface ReadServices {
   volunteers(): Promise<Volunteer[]>;
   shifts(): Promise<Shift[]>;
   shiftAssignments(): Promise<ShiftAssignment[]>;
+  /** Volunteer availability windows. A volunteer with none is treated as always available. */
+  availability(): Promise<Availability[]>;
   /** With `sinceIso`, only announcements sent at or after it. */
   announcements(sinceIso?: string): Promise<Announcement[]>;
   kbDocuments(): Promise<KbDocument[]>;
@@ -91,6 +94,7 @@ export function worldServices(
     volunteers: async () => world.volunteers,
     shifts: async () => world.shifts,
     shiftAssignments: async () => world.shiftAssignments,
+    availability: async () => world.availability,
     announcements: async (since) =>
       world.announcements.filter((a) => !since || (a.sentAt !== undefined && a.sentAt >= since)),
     kbDocuments: async () => world.kbDocuments,

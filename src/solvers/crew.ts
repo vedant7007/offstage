@@ -1,13 +1,13 @@
 // Crew solver. Pure and deterministic: fills shifts fairly, finds no-show replacements, and refuses any
 // assignment that breaks a rule (skills, availability, overlap, max hours, a 30 minute break after 4 hours).
 
-import type { Shift, ShiftAssignment, Volunteer } from "@/agents/runtime/contracts";
+import type { Availability, Shift, ShiftAssignment, Volunteer } from "@/agents/runtime/contracts";
 
 export type CrewVolunteer = Pick<Volunteer, "id" | "name" | "skills" | "maxHours" | "active">;
 export type CrewShift = Pick<Shift, "id" | "role" | "startsAt" | "endsAt" | "requiredCount" | "skills">;
 export type CrewAssignment = Pick<ShiftAssignment, "shiftId" | "volunteerId" | "status">;
 /** When a volunteer said they can work. A volunteer with no windows is treated as always available. */
-export type AvailabilityWindow = { volunteerId: string; start: string; end: string };
+export type AvailabilityWindow = Pick<Availability, "volunteerId" | "start" | "end">;
 
 export type CrewState = {
   volunteers: CrewVolunteer[];
