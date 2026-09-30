@@ -33,7 +33,9 @@ export function toDate(input: DateInput): Date {
   return d;
 }
 
-let clockOffsetMs = 0;
+// On globalThis, not in a module variable: a production Next.js build bundles this module more
+// than once (instrumentation, each route), and all copies must read the offset the clock sync sets.
+const clock = globalThis as typeof globalThis & { __sutradharClockOffsetMs?: number };
 
 /**
  * Current instant. Use this instead of `new Date()` everywhere in app, worker and agent code.
@@ -41,16 +43,16 @@ let clockOffsetMs = 0;
  * event (24 Oct 2026) is "live" during a demo. See src/server/clock.ts.
  */
 export function nowUtc(): Date {
-  return new Date(Date.now() + clockOffsetMs);
+  return new Date(Date.now() + (clock.__sutradharClockOffsetMs ?? 0));
 }
 
 /** Shift nowUtc() by a fixed offset. Only src/server/clock.ts and tests call this. */
 export function setClockOffsetMs(ms: number): void {
-  clockOffsetMs = Number.isFinite(ms) ? ms : 0;
+  clock.__sutradharClockOffsetMs = Number.isFinite(ms) ? ms : 0;
 }
 
 export function getClockOffsetMs(): number {
-  return clockOffsetMs;
+  return clock.__sutradharClockOffsetMs ?? 0;
 }
 
 /** ISO 8601 string in UTC, the only format we store and send over the wire. */
