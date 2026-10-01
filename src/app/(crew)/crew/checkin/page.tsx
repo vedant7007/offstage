@@ -9,7 +9,7 @@ export default async function CheckinPage() {
   const me = await getMe();
   if (!me) redirect("/login?next=/crew/checkin");
   const event = me.memberships.find((m) => m.eventId === me.activeEventId) ?? me.memberships[0];
-  if (!event) return <Alert variant="info" title="You are not part of an event yet." />;
+  if (!event) return <Alert variant="info" title="You are not on an event crew yet." />;
   return (
     <CheckinScanner
       slug={event.eventSlug}
