@@ -17,6 +17,8 @@ export function mapLink(venue: PublicEventResponse["event"]["venue"]) {
 /**
  * The stage band: an ink panel in both themes (nested `.dark` flips the tokens) with the event
  * name large, a mono meta row, and the register card with honest capacity.
+ * On phones the register card comes right after when and where, before the long description,
+ * so the main action is on the first screen. From md it sits in its own column.
  */
 export async function EventHero({ data, isDemo }: Props) {
   const t = await getT();
@@ -28,14 +30,14 @@ export async function EventHero({ data, isDemo }: Props) {
   return (
     <section
       aria-labelledby="event-title"
-      className="dark relative isolate overflow-hidden rounded-card bg-bg text-fg shadow-(--shadow-card)"
+      className="dark relative isolate overflow-hidden rounded-card border border-border bg-bg text-fg shadow-(--shadow-card)"
     >
       {/* A soft stage light from above. Decorative. */}
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(70%_90%_at_25%_-10%,rgb(255_255_255/0.12),transparent_65%)]"
       />
-      <div className="grid gap-8 p-6 md:grid-cols-[1fr_20rem] md:p-10 lg:p-12">
+      <div className="grid gap-6 p-6 md:grid-cols-[1fr_20rem] md:gap-x-10 md:gap-y-6 md:p-10 lg:p-12">
         <div className="flex min-w-0 flex-col gap-6">
           <div className="flex flex-col gap-4">
             {event.status === "live" ? (
@@ -46,12 +48,12 @@ export async function EventHero({ data, isDemo }: Props) {
             ) : null}
             <h1
               id="event-title"
-              className="text-[clamp(2.25rem,10vw,5.5rem)] leading-[0.95] font-medium tracking-[-0.045em] break-words"
+              className="text-[clamp(2.5rem,10vw,5.5rem)] leading-[0.95] font-medium tracking-[-0.045em] break-words"
             >
               {event.name}
             </h1>
             {event.tagline ? (
-              <p className="max-w-2xl text-lg text-fg-muted md:text-xl">{event.tagline}</p>
+              <p className="max-w-2xl text-lg text-pretty text-fg-muted md:text-xl">{event.tagline}</p>
             ) : null}
           </div>
 
@@ -71,24 +73,16 @@ export async function EventHero({ data, isDemo }: Props) {
                 </span>
                 <a
                   href={mapLink(event.venue)}
-                  className="w-fit font-medium text-curtain-text underline underline-offset-4 hover:no-underline"
+                  className="inline-flex min-h-11 w-fit items-center font-medium text-curtain-text underline underline-offset-4 hover:no-underline md:min-h-6"
                 >
                   {t("event.openMap")}
                 </a>
               </span>
             </li>
           </ul>
-
-          <p className="max-w-prose text-base leading-relaxed text-fg">{event.description}</p>
-          {isDemo ? (
-            <p className="flex items-start gap-2 text-sm text-fg-muted">
-              <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
-              {t("event.demoData")}
-            </p>
-          ) : null}
         </div>
 
-        <div className="flex flex-col gap-4 self-start rounded-card border border-border bg-surface p-5">
+        <div className="flex flex-col gap-4 self-start rounded-card border border-border bg-surface p-5 shadow-card md:col-start-2 md:row-span-2 md:row-start-1">
           <Progress
             label={t("event.seatsTaken", { registered: capacity.registered, total: capacity.total })}
             value={Math.min(capacity.registered, capacity.total)}
@@ -97,7 +91,7 @@ export async function EventHero({ data, isDemo }: Props) {
             tone={full ? "pending" : "curtain"}
             className="font-mono"
           />
-          <p className={cn("text-sm", full ? "text-pending-text" : "text-fg-muted")}>
+          <p className={cn("text-sm text-pretty", full ? "text-pending-text" : "text-fg-muted")}>
             {closed
               ? t("event.registrationClosed")
               : full
@@ -126,6 +120,16 @@ export async function EventHero({ data, isDemo }: Props) {
               {t("event.statusBoard")}
             </Link>
           </Button>
+        </div>
+
+        <div className="flex min-w-0 flex-col gap-4">
+          <p className="max-w-prose text-base leading-relaxed text-pretty text-fg">{event.description}</p>
+          {isDemo ? (
+            <p className="flex items-start gap-2 text-sm text-fg-muted">
+              <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
+              {t("event.demoData")}
+            </p>
+          ) : null}
         </div>
       </div>
     </section>

@@ -43,6 +43,12 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
   const others = data.announcements
     .filter((a) => a.category !== "emergency")
     .sort((a, b) => (b.sentAt ?? "").localeCompare(a.sentAt ?? ""));
+  // Rooms with something on come first, then by what starts soonest, so the eye lands on now.
+  const soonest = (r: PublicStatusResponse["rooms"][number]) =>
+    r.current ? `0${r.current.startsAt}` : r.next ? `1${r.next.startsAt}` : "2";
+  const rooms = [...data.rooms].sort((a, b) => soonest(a).localeCompare(soonest(b)));
+  // TimeRange prints "IST" at a fixed small size; scale it with the time on the projector.
+  const zone = kiosk ? "[&>span]:text-[0.6em]" : undefined;
 
   const slot = (label: string, s: Slot | undefined, empty: string, big: boolean) => (
     <div className="flex flex-col gap-1">
@@ -68,7 +74,7 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
           <TimeRange
             start={s.startsAt}
             end={s.endsAt}
-            className={cn("font-mono", kiosk ? "text-2xl" : "text-base")}
+            className={cn("font-mono", kiosk ? "text-2xl" : "text-base", zone)}
           />
           {s.status === "cancelled" ? (
             <p className={cn("font-medium text-danger-text", kiosk ? "text-2xl" : "text-base")}>
@@ -99,7 +105,7 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
               {t("board.backToEvent")}
             </Link>
             <div className="flex items-center gap-1">
-              <Button asChild size="sm" variant="secondary" className="rounded-full">
+              <Button asChild size="sm" variant="secondary" className="hidden rounded-full sm:inline-flex">
                 <Link href={`/e/${slug}/status?kiosk=1`}>
                   <Presentation aria-hidden />
                   {t("board.projector")}
@@ -132,8 +138,8 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
             </p>
             <h1
               className={cn(
-                "leading-none font-medium tracking-[-0.04em]",
-                kiosk ? "text-6xl" : "text-4xl md:text-5xl",
+                "font-medium tracking-[-0.04em]",
+                kiosk ? "text-[4.5rem]/[1.05]" : "text-4xl/[1.05] md:text-[3.5rem]/[1.05]",
               )}
             >
               {t("board.title")}
@@ -154,69 +160,85 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
           </Alert>
         ))}
 
-        <section aria-labelledby="rooms-title" className="flex flex-col gap-4">
-          <h2 id="rooms-title" className="sr-only">
-            {t("board.rooms")}
-          </h2>
-          <ul className="grid gap-4 md:grid-cols-2">
-            {data.rooms.map((r) => (
-              <li key={r.roomId}>
-                <article
-                  aria-labelledby={`room-${r.roomId}`}
-                  className={cn(
-                    "flex h-full flex-col gap-5 rounded-card bg-surface p-6 shadow-card",
-                    kiosk ? "border-2 border-border-strong" : "border border-border",
-                  )}
-                >
-                  <h3
-                    id={`room-${r.roomId}`}
-                    className={cn("flex items-center gap-2.5", kiosk ? "text-3xl" : "text-xl")}
-                  >
-                    <span
-                      aria-hidden
-                      className={cn(
-                        "size-2.5 shrink-0 rounded-full",
-                        r.current ? "bg-approved" : "bg-border-strong",
-                      )}
-                    />
-                    {r.roomName}
-                  </h3>
-                  {slot(t("board.now"), r.current, t("board.nothingNow"), true)}
-                  <div className="border-t border-border pt-4">
-                    {slot(t("board.next"), r.next, t("board.nothingNext"), false)}
-                  </div>
-                </article>
-              </li>
-            ))}
-          </ul>
-        </section>
-
-        {others.length ? (
-          <section aria-labelledby="board-announcements" className="flex flex-col gap-4">
-            <h2 id="board-announcements" className={kiosk ? "text-3xl" : "text-2xl"}>
-              {t("board.announcements")}
+        <div
+          className={cn(
+            "flex flex-col gap-10",
+            kiosk && "xl:grid xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)] xl:items-start xl:gap-8",
+          )}
+        >
+          <section aria-labelledby="rooms-title" className="flex flex-col gap-4">
+            <h2 id="rooms-title" className="sr-only">
+              {t("board.rooms")}
             </h2>
-            <ul className="flex flex-col gap-3">
-              {others.map((a) => (
-                <li
-                  key={a.id}
-                  className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-5 shadow-card"
-                >
-                  <p className={cn("font-medium tracking-[-0.015em]", kiosk ? "text-2xl" : "text-lg")}>
-                    {a.title}
-                  </p>
-                  <p className={kiosk ? "text-xl" : "text-base"}>{a.body}</p>
-                  <AnnouncementLabel announcement={a} className={kiosk ? "text-base" : undefined} />
-                  {a.sentAt ? (
-                    <time dateTime={a.sentAt} className="font-mono text-xs text-fg-muted">
-                      {formatTime(a.sentAt)} {t("time.ist")}
-                    </time>
-                  ) : null}
+            <ul className="grid gap-4 md:grid-cols-2">
+              {rooms.map((r) => (
+                <li key={r.roomId}>
+                  <article
+                    aria-labelledby={`room-${r.roomId}`}
+                    className={cn(
+                      "flex h-full flex-col gap-5 rounded-card bg-surface p-6 shadow-card",
+                      kiosk ? "border-2 border-border-strong" : "border border-border",
+                    )}
+                  >
+                    <h3
+                      id={`room-${r.roomId}`}
+                      className={cn("flex items-center gap-2.5", kiosk ? "text-3xl" : "text-xl")}
+                    >
+                      <span aria-hidden className="relative flex size-2.5 shrink-0">
+                        {r.current ? (
+                          <span className="absolute inset-0 animate-ping rounded-full bg-approved opacity-60 motion-reduce:hidden" />
+                        ) : null}
+                        <span
+                          className={cn(
+                            "relative size-2.5 rounded-full",
+                            r.current ? "bg-approved" : "bg-border-strong",
+                          )}
+                        />
+                      </span>
+                      {r.roomName}
+                    </h3>
+                    {slot(t("board.now"), r.current, t("board.nothingNow"), true)}
+                    <div className="border-t border-border pt-4">
+                      {slot(t("board.next"), r.next, t("board.nothingNext"), false)}
+                    </div>
+                  </article>
                 </li>
               ))}
             </ul>
           </section>
-        ) : null}
+
+          {others.length ? (
+            <section aria-labelledby="board-announcements" className="flex flex-col gap-4">
+              <h2 id="board-announcements" className={kiosk ? "text-3xl" : "text-2xl"}>
+                {t("board.announcements")}
+              </h2>
+              <ul className="flex flex-col gap-3">
+                {others.map((a) => (
+                  <li
+                    key={a.id}
+                    className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-5 shadow-card"
+                  >
+                    <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                      <p className={cn("font-medium tracking-[-0.015em]", kiosk ? "text-2xl" : "text-lg")}>
+                        {a.title}
+                      </p>
+                      {a.sentAt ? (
+                        <time
+                          dateTime={a.sentAt}
+                          className={cn("font-mono text-fg-muted", kiosk ? "text-base" : "text-xs")}
+                        >
+                          {formatTime(a.sentAt)} {t("time.ist")}
+                        </time>
+                      ) : null}
+                    </div>
+                    <p className={kiosk ? "text-xl" : "text-base"}>{a.body}</p>
+                    <AnnouncementLabel announcement={a} className={kiosk ? "text-base" : undefined} />
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </div>
 
         <footer className="flex flex-wrap items-center gap-3 border-t border-border pt-6">
           <MessageCircleQuestionMark

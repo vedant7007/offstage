@@ -69,7 +69,7 @@ export default async function AboutAiPage() {
       <h2 id={`${b.id}-title`} className="text-xl md:text-2xl">
         {t(b.title)}
       </h2>
-      <p className="text-base leading-relaxed text-fg-muted">{t(b.body)}</p>
+      <p className="max-w-3xl text-base leading-relaxed text-pretty text-fg-muted">{t(b.body)}</p>
       {extra}
     </section>
   );
@@ -132,7 +132,8 @@ export default async function AboutAiPage() {
           true,
         )}
 
-        {rest.map((b, i) => block(b, i + 3))}
+        {/* An odd count would leave the last card alone in its row, so it spans both columns. */}
+        {rest.map((b, i) => block(b, i + 3, undefined, rest.length % 2 === 1 && i === rest.length - 1))}
       </div>
     </div>
   );
