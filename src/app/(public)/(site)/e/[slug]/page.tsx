@@ -44,7 +44,7 @@ export default async function EventPage({ params, searchParams }: PageProps<"/e/
   const cue = (id: string) => `Cue ${String(shown.indexOf(id) + 1).padStart(2, "0")}`;
 
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-16 px-4 pt-6 md:px-8 md:pt-8">
+    <div className="mx-auto flex max-w-6xl flex-col gap-16 px-4 pt-6 pb-8 md:gap-24 md:px-8 md:pt-8 md:pb-16">
       <EventHero data={data} isDemo={res.source === "fixture"} />
       <LiveUpdates data={data} cue={cue("updates")} />
       <Schedule data={data} day={day} track={track} cue={cue("schedule")} />

@@ -14,8 +14,9 @@ function DialogOverlay({ className, ...props }: React.ComponentProps<typeof Dial
   return (
     <DialogPrimitive.Overlay
       className={cn(
-        "fixed inset-0 z-(--z-overlay) bg-overlay backdrop-blur-[2px]",
-        "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+        // No backdrop blur: one backdrop-filter per screen (the site header), for a smooth iGPU.
+        "fixed inset-0 z-(--z-overlay) bg-overlay",
+        "data-open:animate-in data-open:fade-in-0 data-open:duration-(--duration-slow) data-closed:animate-out data-closed:fade-out-0 data-closed:duration-(--duration-fast)",
         className,
       )}
       {...props}
@@ -51,19 +52,18 @@ function DialogContent({ title, description, footer, className, children, ...pro
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
           "fixed top-1/2 left-1/2 z-(--z-modal) flex max-h-[85dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col",
-          "rounded-card border border-border bg-surface-raised text-fg shadow-2xl",
-          "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
-          "duration-(--duration-base)",
+          "rounded-sheet border border-border bg-surface-raised text-fg depth-3",
+          // Arrives on expo-out, leaves faster on ease-in
+          "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-[0.97] data-open:duration-(--duration-slow) data-open:ease-(--ease-out-expo)",
+          "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-[0.98] data-closed:duration-(--duration-fast) data-closed:ease-(--ease-in)",
           className,
         )}
         {...props}
       >
         <div className="flex flex-col gap-1 p-6 pr-14">
-          <DialogPrimitive.Title className="text-xl font-medium tracking-[-0.02em]">
-            {title}
-          </DialogPrimitive.Title>
+          <DialogPrimitive.Title className="text-2xl font-medium">{title}</DialogPrimitive.Title>
           {description ? (
-            <DialogPrimitive.Description className="text-sm text-fg-muted">
+            <DialogPrimitive.Description className="measure-lede text-sm text-fg-muted">
               {description}
             </DialogPrimitive.Description>
           ) : null}

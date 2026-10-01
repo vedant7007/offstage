@@ -82,6 +82,14 @@
   --ambient-1: rgb(7 27 223 / 0.09);
   --ambient-2: rgb(136 50 247 / 0.06);
   --ambient-grid: rgb(7 27 223 / 0.05);
+
+  /* Depth: a 1px inner top highlight plus a shadow ink, composed by the depth-* utilities */
+  --highlight: rgb(255 255 255 / 0.75);
+  --shadow-ink: 11 20 26;
+
+  /* Static film grain for the app backdrop: dark specks on paper */
+  --grain-opacity: 0.05;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .dark {
@@ -145,32 +153,54 @@
   --ambient-1: rgb(26 47 251 / 0.2);
   --ambient-2: rgb(136 50 247 / 0.1);
   --ambient-grid: rgb(228 230 239 / 0.04);
+
+  --highlight: rgb(255 255 255 / 0.06);
+  --shadow-ink: 0 0 0;
+
+  /* Light specks on ink */
+  --grain-opacity: 0.035;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Non-colour scales. Tailwind reads these as theme values and also emits them as CSS variables. */
 @theme static {
-  /* Type scale (px): 12 14 16 18 22 28 36 48 56 72, with line heights that leave room for Devanagari */
+  /* Type scale (px): 12 14 16 18 22 28 36 48 56 72 96. Each size carries its own tracking, tightening
+     optically as it grows (Inter Tight has no opsz axis). Display line heights are tight; theme.css
+     restores room for Devanagari matras under :lang(hi). */
   --text-*: initial;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.125rem;
+  --text-xs--letter-spacing: 0.01em;
   --text-sm: 0.875rem;
   --text-sm--line-height: 1.375rem;
+  --text-sm--letter-spacing: 0em;
   --text-base: 1rem;
   --text-base--line-height: 1.5rem;
+  --text-base--letter-spacing: -0.006em;
   --text-lg: 1.125rem;
   --text-lg--line-height: 1.75rem;
+  --text-lg--letter-spacing: -0.011em;
   --text-xl: 1.375rem;
-  --text-xl--line-height: 1.875rem;
+  --text-xl--line-height: 1.75rem;
+  --text-xl--letter-spacing: -0.015em;
   --text-2xl: 1.75rem;
-  --text-2xl--line-height: 2.25rem;
+  --text-2xl--line-height: 2.125rem;
+  --text-2xl--letter-spacing: -0.02em;
   --text-3xl: 2.25rem;
-  --text-3xl--line-height: 2.75rem;
+  --text-3xl--line-height: 2.625rem;
+  --text-3xl--letter-spacing: -0.025em;
   --text-4xl: 3rem;
-  --text-4xl--line-height: 3.5rem;
+  --text-4xl--line-height: 3.25rem;
+  --text-4xl--letter-spacing: -0.03em;
   --text-5xl: 3.5rem;
-  --text-5xl--line-height: 3.875rem;
+  --text-5xl--line-height: 3.75rem;
+  --text-5xl--letter-spacing: -0.035em;
   --text-6xl: 4.5rem;
-  --text-6xl--line-height: 4.75rem;
+  --text-6xl--line-height: 4.625rem;
+  --text-6xl--letter-spacing: -0.04em;
+  --text-7xl: 6rem;
+  --text-7xl--line-height: 5.75rem;
+  --text-7xl--letter-spacing: -0.045em;
 
   /* Spacing: 4px base. p-1 is 4px, p-4 is 16px. */
   --spacing: 0.25rem;
@@ -179,16 +209,31 @@
   --radius-control: 0.1875rem;
   --radius-card: 1.125rem;
   --radius-pill: 999px;
+  /* Tiles nested in a card (card 18 minus a 6 gap) and dialogs, sheets, the voice panel */
+  --radius-inner: 0.75rem;
+  --radius-sheet: 1.5rem;
 
   /* Soft long shadow for cards on paper (shadow-card) */
   --shadow-card: 0 1px 0.5px rgb(11 20 26 / 0.08), 0 16px 32px -16px rgb(11 20 26 / 0.18);
 
-  /* Motion: 150 to 400 ms on one curve. Reduced motion turns it all off (theme.css). */
+  /* Motion. App surfaces stay inside 150 to 400 ms. Arrivals use expo-out, things travelling on screen
+     use in-out, exits use in and run faster than enters. Reduced motion turns it all off (theme.css). */
   --ease-out: cubic-bezier(0.4, 0, 0.1, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+  /* Springs (linear() curves, defined in :root below) as Tailwind eases: ease-spring, ease-spring-soft */
+  --ease-spring: var(--spring-snappy);
+  --ease-spring-soft: var(--spring-soft);
+  --duration-instant: 100ms;
   --duration-fast: 150ms;
   --duration-base: 200ms;
   --duration-slow: 250ms;
   --duration-slower: 400ms;
+  /* Signature moments only: landing, the public hero, voice */
+  --duration-reveal: 600ms;
+  /* Delay between items in a list cascade. Cap the cascade at 8 items. */
+  --stagger: 40ms;
   --animate-spin: spin 1s linear infinite;
 
   /* Touch target minimum on mobile */
@@ -210,4 +255,106 @@
     transparent 0 8px,
     color-mix(in srgb, var(--emergency) 18%, transparent) 8px 16px
   );
+
+  /* Springs fall back to expo-out where linear() is not supported */
+  --spring-snappy: var(--ease-out-expo);
+  --spring-soft: var(--ease-out-expo);
+  --spring-bouncy: var(--ease-out-expo);
+}
+
+/* Springs from a damped oscillator. snappy (k400 c30, 400 ms, 2.8% overshoot): presses, magnet return.
+   soft (k170 c22, 600 ms): panels, toasts, tilt return. bouncy (k300 c18, 720 ms): the voice orb and
+   the approve check only. */
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring-snappy: linear(
+      0,
+      0.047,
+      0.157,
+      0.297,
+      0.443,
+      0.579,
+      0.698,
+      0.797,
+      0.874,
+      0.932,
+      0.973,
+      1,
+      1.017,
+      1.025,
+      1.028,
+      1.028,
+      1.025,
+      1.021,
+      1.017,
+      1.013,
+      1.009,
+      1.007,
+      1.004,
+      1.002,
+      1
+    );
+    --spring-soft: linear(
+      0,
+      0.054,
+      0.176,
+      0.322,
+      0.468,
+      0.599,
+      0.709,
+      0.797,
+      0.865,
+      0.914,
+      0.95,
+      0.974,
+      0.989,
+      0.999,
+      1.004,
+      1.006,
+      1.007,
+      1.007,
+      1.006,
+      1.005,
+      1.004,
+      1.003,
+      1.002,
+      1.001,
+      1
+    );
+    --spring-bouncy: linear(
+      0,
+      0.068,
+      0.232,
+      0.438,
+      0.646,
+      0.829,
+      0.972,
+      1.07,
+      1.126,
+      1.147,
+      1.142,
+      1.121,
+      1.092,
+      1.06,
+      1.032,
+      1.009,
+      0.993,
+      0.983,
+      0.979,
+      0.978,
+      0.981,
+      0.985,
+      0.99,
+      0.994,
+      0.998,
+      1.001,
+      1.002,
+      1.003,
+      1.003,
+      1.003,
+      1.002,
+      1.002,
+      1
+    );
+  }
 }

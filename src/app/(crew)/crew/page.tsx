@@ -2,11 +2,21 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { ChevronRight, ClipboardList, Clock, MapPin, ScanLine } from "lucide-react";
+import {
+  CalendarClock,
+  ChevronRight,
+  ClipboardList,
+  Clock,
+  ListChecks,
+  MapPin,
+  ScanLine,
+  Smartphone,
+} from "lucide-react";
 import type { CrewShiftsResponse, CrewTasksResponse } from "@/contracts";
 import { createApiClient } from "@/lib/api-client";
 import { formatRange, formatTime } from "@/lib/time";
 import { Alert, Badge, type Tone } from "@/components/ui";
+import { Kicker, Reveal } from "@/components/ui/motion";
 import { getMe } from "@/components/attendee/server";
 import { DeviceSyncSummary } from "@/components/crew/sync-status";
 
@@ -40,20 +50,45 @@ async function crewData(clockOffsetMs: number) {
 function Panel({
   title,
   icon,
+  index,
   children,
 }: {
   title: string;
   icon: ReactNode;
+  /** Place in the entrance cascade. */
+  index: number;
   children: ReactNode;
 }) {
   return (
-    <section className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 shadow-card sm:p-5">
+    <Reveal
+      as="section"
+      index={index}
+      className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5 depth-2 md:p-6"
+    >
       <h2 className="kicker flex items-center gap-2 text-fg-muted [&_svg]:size-4">
         {icon}
         {title}
       </h2>
       {children}
-    </section>
+    </Reveal>
+  );
+}
+
+/** Nothing to show yet: an icon tile, one line on what will appear, and where it comes from. */
+function Empty({ icon, title, children }: { icon: ReactNode; title: string; children: ReactNode }) {
+  return (
+    <div className="flex items-start gap-4">
+      <span
+        aria-hidden
+        className="flex size-10 shrink-0 items-center justify-center rounded-inner bg-curtain-soft text-curtain-soft-fg depth-1 [&_svg]:size-5"
+      >
+        {icon}
+      </span>
+      <div className="flex min-w-0 flex-col gap-1">
+        <p className="text-lg font-medium">{title}</p>
+        <p className="measure-tight text-sm text-fg-muted">{children}</p>
+      </div>
+    </div>
   );
 }
 
@@ -77,46 +112,50 @@ export default async function CrewHome() {
     .sort((a, b) => RANK[a.priority] - RANK[b.priority] || (a.dueAt ?? "~").localeCompare(b.dueAt ?? "~"));
 
   return (
-    <div className="flex flex-col gap-5">
-      <header className="flex flex-col gap-1">
-        <p className="kicker text-curtain-text">{event.eventName}</p>
-        <h1 className="text-3xl">Hi, {firstName}</h1>
-        <p className="text-fg-muted">Thanks for crewing today. Here is where you are needed.</p>
+    <div className="flex flex-col gap-6">
+      <header className="flex flex-col">
+        <Kicker>{event.eventName}</Kicker>
+        <h1 className="mt-3 text-3xl">Hi, {firstName}</h1>
+        <p className="measure-lede mt-2 text-fg-muted">
+          Thanks for crewing today. Everything for your shift is here.
+        </p>
       </header>
 
-      <Link
-        href="/crew/checkin"
-        className="group flex min-h-28 items-center gap-4 rounded-card bg-curtain p-5 text-on-curtain shadow-card transition-[transform,box-shadow,background-color] duration-(--duration-slow) ease-(--ease-out) hover:bg-curtain-hover motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0"
-      >
-        <span
-          aria-hidden
-          className="flex size-14 shrink-0 items-center justify-center rounded-full bg-on-curtain/10 [&_svg]:size-7"
+      <Reveal>
+        <Link
+          href="/crew/checkin"
+          className="press group flex min-h-28 items-center gap-4 rounded-card bg-curtain p-5 text-on-curtain depth-2 hover:bg-curtain-hover md:p-6"
         >
-          <ScanLine />
-        </span>
-        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-          <span className="text-2xl leading-tight font-medium tracking-tight">Scan tickets</span>
-          <span className="text-sm opacity-85">Works offline, syncs on its own</span>
-        </span>
-        <ChevronRight
-          aria-hidden
-          className="size-6 shrink-0 transition-transform duration-(--duration-slow) ease-(--ease-out) motion-safe:group-hover:translate-x-1"
-        />
-      </Link>
+          <span
+            aria-hidden
+            className="flex size-14 shrink-0 items-center justify-center rounded-full bg-on-curtain/10 [&_svg]:size-7"
+          >
+            <ScanLine />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col gap-1">
+            <span className="text-2xl font-medium">Scan tickets</span>
+            <span className="text-sm opacity-85">Works offline and syncs on its own</span>
+          </span>
+          <ChevronRight
+            aria-hidden
+            className="size-6 shrink-0 transition-transform duration-(--duration-slow) ease-(--ease-out) motion-safe:group-hover:translate-x-1"
+          />
+        </Link>
+      </Reveal>
 
       {shifts === null && tasks === null ? (
-        <Panel title="Shift and tasks" icon={<Clock aria-hidden />}>
-          <p className="text-sm text-fg-muted">
-            Your event head briefs you on your shift and tasks. Once the roster is online, they show here.
-          </p>
+        <Panel title="Shift and tasks" icon={<Clock aria-hidden />} index={1}>
+          <Empty icon={<CalendarClock />} title="Your shift shows here">
+            Your event head shares shift times and tasks. Once the roster is live, they appear here.
+          </Empty>
         </Panel>
       ) : (
         <>
-          <Panel title={onNow ? "On shift now" : "Your next shift"} icon={<Clock aria-hidden />}>
+          <Panel title={onNow ? "On shift now" : "Your next shift"} icon={<Clock aria-hidden />} index={1}>
             {shift ? (
               <div className="flex flex-col gap-2">
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xl font-medium tracking-tight">{shift.shift.role}</p>
+                  <p className="text-xl font-medium">{shift.shift.role}</p>
                   <Badge tone={ASSIGNMENT[shift.assignment.status].tone}>
                     {ASSIGNMENT[shift.assignment.status].label}
                   </Badge>
@@ -125,7 +164,7 @@ export default async function CrewHome() {
                   {formatRange(shift.shift.startsAt, shift.shift.endsAt)}
                 </p>
                 {shift.roomName ? (
-                  <p className="flex items-center gap-1.5 text-sm">
+                  <p className="flex items-center gap-2 text-sm">
                     <MapPin aria-hidden className="size-4 text-fg-muted" />
                     {shift.roomName}
                   </p>
@@ -136,22 +175,24 @@ export default async function CrewHome() {
                   </p>
                 ) : null}
               </div>
+            ) : shifts === null ? (
+              <Empty icon={<CalendarClock />} title="Shift times with your event head">
+                Your event head has your shift times. They appear here once the roster is live.
+              </Empty>
             ) : (
-              <p className="text-sm text-fg-muted">
-                {shifts === null
-                  ? "Your event head has your shift times."
-                  : "No more shifts today. Thank you for your time."}
-              </p>
+              <Empty icon={<CalendarClock />} title="No more shifts today">
+                That is your last one. Thank you for your time.
+              </Empty>
             )}
           </Panel>
 
-          <Panel title="Your tasks" icon={<ClipboardList aria-hidden />}>
+          <Panel title="Your tasks" icon={<ClipboardList aria-hidden />} index={2}>
             {open.length ? (
               <ul className="flex flex-col divide-y divide-border">
                 {open.slice(0, 5).map((t) => (
                   <li
                     key={t.id}
-                    className="flex flex-wrap items-center gap-x-3 gap-y-1 py-3 first:pt-0 last:pb-0"
+                    className="flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 py-3 first:pt-0 last:pb-0"
                   >
                     <span className="min-w-0 flex-1 font-medium">{t.title}</span>
                     {t.priority === "urgent" || t.priority === "high" ? (
@@ -168,17 +209,20 @@ export default async function CrewHome() {
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-fg-muted">
+              <Empty
+                icon={<ListChecks />}
+                title={tasks === null ? "Tasks come from your event head" : "All clear"}
+              >
                 {tasks === null
-                  ? "Your event head will tell you what is next."
-                  : "Nothing on your list. Your event head will send the next one here."}
-              </p>
+                  ? "Your event head tells you what is next."
+                  : "Nothing on your list. Your event head sends the next one here."}
+              </Empty>
             )}
           </Panel>
         </>
       )}
 
-      <Panel title="This device" icon={<ScanLine aria-hidden />}>
+      <Panel title="This device" icon={<Smartphone aria-hidden />} index={3}>
         <DeviceSyncSummary />
       </Panel>
     </div>

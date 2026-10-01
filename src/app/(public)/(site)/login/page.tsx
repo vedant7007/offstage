@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { LoginForm } from "@/components/attendee/login-form";
 import { safeNext } from "@/components/attendee/next-path";
 import { DEMO_EVENT_SLUG } from "@/components/public/links";
+import { TextReveal } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import styles from "./login.module.css";
 
@@ -9,12 +10,6 @@ export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
   return { title: t("login.title"), robots: { index: false } };
 }
-
-const ROLES = [
-  "Event head: run the console and approve what agents propose",
-  "Volunteer: check people in at the gate from your phone",
-  "Attendee: your ticket, schedule and answers with sources",
-];
 
 /** Shared sign-in for attendees, crew and organisers. Other areas redirect here with ?next=. */
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
@@ -28,29 +23,23 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <div aria-hidden className={styles.valance} />
         <div aria-hidden className={styles.curtain} />
         <div lang="en" className={styles.copy}>
-          <p className={`kicker ${styles.kicker} ${styles.reveal}`}>Backstage pass</p>
-          <p className={`${styles.line} ${styles.reveal}`}>
-            The show is on. <span className={styles.accent}>Take your place.</span>
+          <p className={`kicker ${styles.kicker}`}>Backstage pass</p>
+          <p className={styles.line}>
+            <TextReveal as="span" text="The show is on." className="block" />{" "}
+            <TextReveal as="span" text="Take your place." className={`block ${styles.accent}`} />
           </p>
-          <ul className={`${styles.bullets} ${styles.reveal} font-mono text-sm`}>
-            {ROLES.map((role, i) => (
-              <li key={role}>
-                <span aria-hidden className={styles.num}>
-                  0{i + 1}
-                </span>
-                <span>{role}</span>
-              </li>
-            ))}
-          </ul>
+          <p className={styles.lede}>
+            One sign-in for the whole crew: event heads, volunteers and attendees.
+          </p>
         </div>
       </div>
 
-      <div className={`${styles.side} bg-bg`}>
+      <div className={styles.side}>
         <div
-          className={`${styles.card} rounded-card border border-border bg-surface-raised p-6 text-fg sm:p-10`}
+          className={`${styles.card} edge rounded-card border border-border bg-surface-raised p-5 text-fg depth-3 sm:p-10`}
         >
-          <header className="flex flex-col gap-2 pb-8">
-            <h1 className={`${styles.title} text-3xl md:text-4xl`}>{t("login.title")}</h1>
+          <header className="flex flex-col gap-3 pb-8">
+            <h1 className="text-3xl font-medium md:text-4xl">{t("login.title")}</h1>
             {/* In demo mode the form repeats this line beside the email field, where it belongs. */}
             {demoMode ? null : <p className="text-base text-fg-muted">{t("login.intro")}</p>}
           </header>

@@ -6,6 +6,7 @@ import { I18nProvider } from "@/lib/i18n/provider";
 import type { Locale, Messages } from "@/lib/i18n/translate";
 import { Toaster } from "./toast";
 import { TooltipProvider } from "./tooltip";
+import { PointerFx } from "./motion/pointer-fx";
 
 /** Everything client-side the whole app needs. Mounted once in the root layout. */
 function Providers({
@@ -23,6 +24,7 @@ function Providers({
         <TooltipProvider delayDuration={300}>
           {children}
           <Toaster />
+          <PointerFx />
         </TooltipProvider>
       </I18nProvider>
     </ThemeProvider>

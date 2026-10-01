@@ -44,8 +44,9 @@ function Select({ options, placeholder, id, className, "aria-label": ariaLabel, 
           sideOffset={4}
           className={cn(
             "z-(--z-overlay) max-h-(--radix-select-content-available-height) min-w-(--radix-select-trigger-width) overflow-hidden",
-            "rounded-[0.75rem] border border-border bg-surface-raised text-fg shadow-card",
-            "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
+            "rounded-inner border border-border bg-surface-raised text-fg depth-3",
+            "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-[0.98] data-open:duration-(--duration-base) data-open:ease-(--ease-out-expo)",
+            "data-closed:animate-out data-closed:fade-out-0 data-closed:duration-(--duration-fast)",
           )}
         >
           <SelectPrimitive.Viewport className="p-1">

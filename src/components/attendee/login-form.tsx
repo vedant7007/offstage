@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { DemoPersona } from "@/contracts";
-import { Alert, Button, Field, Input } from "@/components/ui";
+import { Alert, Button, Field, Input, Reveal } from "@/components/ui";
 import { ArrowRight, LayoutDashboard, LoaderCircle, ScanLine, Ticket, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DemoInboxLink } from "@/components/public/register/demo-inbox-link";
@@ -157,7 +157,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
       </Field>
       {sent ? (
         <>
-          <p aria-live="polite" className="rounded-control bg-surface-sunken px-4 py-3 text-sm">
+          <p aria-live="polite" className="rounded-inner bg-surface-sunken px-4 py-3 text-sm">
             {t("login.codeSent", { email: email.trim() })}
           </p>
           {demoMode ? <DemoInboxLink slug={demoEventSlug} email={email.trim()} sent={sent} /> : null}
@@ -223,64 +223,70 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
   if (!demoMode) return form;
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-8">
       <section aria-labelledby="demo-title" className="flex flex-col gap-4">
-        <div className="flex flex-col gap-1">
+        <Reveal className="flex flex-col gap-1">
           <h2 id="demo-title" className="kicker text-fg-muted">
             {t("login.demoTitle")}
           </h2>
           <p className="text-sm text-fg-muted">{t("login.demoIntro")}</p>
-        </div>
-        <div className="grid gap-2">
-          {DOORS.map(({ p, icon: Icon }) => {
+        </Reveal>
+        <div className="grid gap-3">
+          {DOORS.map(({ p, icon: Icon }, i) => {
             const lead = p === "owner";
             const label = t(`login.personas.${p}`);
             return (
-              <Button
-                key={p}
-                type="button"
-                variant={lead ? "primary" : "secondary"}
-                aria-label={label}
-                aria-describedby={`persona-${p}-hint`}
-                aria-busy={busy === p || undefined}
-                disabled={busy !== null}
-                onClick={() => void persona(p)}
-                className={cn(
-                  "group h-auto justify-start gap-3 rounded-card! px-4 py-3 text-left whitespace-normal",
-                  lead && "py-4",
-                )}
-              >
-                <span
-                  aria-hidden
+              <Reveal key={p} index={i + 1}>
+                <button
+                  type="button"
+                  aria-label={label}
+                  aria-describedby={`persona-${p}-hint`}
+                  aria-busy={busy === p || undefined}
+                  disabled={busy !== null}
+                  onClick={() => void persona(p)}
                   className={cn(
-                    "grid size-10 shrink-0 place-items-center rounded-full",
-                    lead ? "bg-on-curtain/15" : "bg-fg/8 group-hover:bg-bg/15",
+                    "group spot spot-edge lift press flex w-full items-center gap-4 rounded-card border bg-surface p-4 text-left text-fg depth-1",
+                    "disabled:cursor-not-allowed disabled:not-aria-busy:opacity-55 aria-busy:cursor-progress",
+                    lead ? "border-curtain-text/50" : "border-border",
                   )}
                 >
-                  {busy === p ? <LoaderCircle className="animate-spin" /> : <Icon />}
-                </span>
-                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium">
-                    {label}
-                    {lead ? (
-                      <span className="rounded-full border border-current/40 px-2 py-0.5 font-mono text-[0.6875rem] tracking-[0.12em] uppercase">
-                        {t("login.startHere")}
-                      </span>
-                    ) : null}
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "grid size-10 shrink-0 place-items-center rounded-inner [&_svg]:size-5",
+                      lead ? "bg-curtain text-on-curtain" : "bg-surface-sunken text-fg",
+                    )}
+                  >
+                    {busy === p ? <LoaderCircle className="animate-spin" /> : <Icon />}
                   </span>
-                  <span id={`persona-${p}-hint`} className="text-sm font-normal opacity-80">
-                    {t(`login.personaHints.${p}`)}
+                  <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium">
+                      {label}
+                      {lead ? (
+                        <span className="rounded-full bg-curtain-soft px-2 py-0.5 font-mono text-xs tracking-[0.12em] text-curtain-soft-fg uppercase">
+                          {t("login.startHere")}
+                        </span>
+                      ) : null}
+                    </span>
+                    <span id={`persona-${p}-hint`} className="text-sm text-fg-muted">
+                      {t(`login.personaHints.${p}`)}
+                    </span>
                   </span>
-                </span>
-                <ArrowRight
-                  aria-hidden
-                  className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:translate-x-0.5"
-                />
-              </Button>
+                  <span
+                    aria-hidden
+                    className={cn(
+                      "grid size-8 shrink-0 place-items-center rounded-full [&_svg]:size-4",
+                      lead ? "bg-curtain text-on-curtain" : "text-fg-muted group-hover:text-fg",
+                    )}
+                  >
+                    <ArrowRight className="motion-safe:transition-transform motion-safe:duration-(--duration-slow) motion-safe:ease-(--ease-out-expo) motion-safe:group-hover:translate-x-0.5" />
+                  </span>
+                </button>
+              </Reveal>
             );
           })}
         </div>
-        <div className="flex flex-col gap-2 pt-1">
+        <Reveal index={4} className="flex flex-col gap-3 pt-2">
           <p className="text-sm text-fg-muted">{t("login.moreRoles")}</p>
           <div className="flex flex-wrap gap-2">
             {MORE.map((p) => (
@@ -292,23 +298,26 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
                 loading={busy === p}
                 disabled={busy !== null && busy !== p}
                 onClick={() => void persona(p)}
+                className="border border-border bg-surface"
               >
                 {busy === p ? null : <span aria-hidden className={cn("size-2 rounded-full", DOT[p])} />}
                 {t(`login.personas.${p}`)}
               </Button>
             ))}
           </div>
-        </div>
+        </Reveal>
       </section>
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-3">
-          <span aria-hidden className="h-px flex-1 bg-border" />
-          <p className="kicker text-fg-muted">{t("login.orEmail")}</p>
-          <span aria-hidden className="h-px flex-1 bg-border" />
+      <Reveal index={5} className="flex flex-col gap-6">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-3">
+            <span aria-hidden className="h-px flex-1 bg-border" />
+            <p className="kicker text-fg-muted">{t("login.orEmail")}</p>
+            <span aria-hidden className="h-px flex-1 bg-border" />
+          </div>
+          <p className="text-center text-sm text-fg-muted">{t("login.intro")}</p>
         </div>
-        <p className="text-center text-sm text-fg-muted">{t("login.intro")}</p>
-      </div>
-      {form}
+        {form}
+      </Reveal>
     </div>
   );
 }

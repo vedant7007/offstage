@@ -7,25 +7,26 @@ import { LoaderCircle } from "lucide-react";
 const buttonVariants = cva(
   [
     "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-transparent font-medium whitespace-nowrap select-none",
-    "transition-[background-color,border-color,color,box-shadow,transform] duration-(--duration-slow) ease-out",
     "disabled:pointer-events-none disabled:opacity-55 aria-busy:cursor-progress",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   ],
   {
     variants: {
       variant: {
-        // Filled pill: lifts a little on hover and presses back down. No motion with reduced motion.
+        // Filled pill with a lit top edge, a spring press, and a 2px lift on hover (or a magnetic pull).
         // Disabled (not loading) drops to a neutral fill: a faded curtain reads as olive on ink.
         primary:
-          "bg-curtain text-on-curtain hover:bg-curtain-hover hover:shadow-card motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 disabled:not-aria-busy:bg-surface-sunken disabled:not-aria-busy:text-fg-muted disabled:not-aria-busy:opacity-100",
+          "press bg-curtain text-on-curtain shadow-[inset_0_1px_0_rgb(255_255_255/0.22),0_1px_2px_rgb(var(--shadow-ink)/0.12)] hover:bg-curtain-hover disabled:not-aria-busy:bg-surface-sunken disabled:not-aria-busy:text-fg-muted disabled:not-aria-busy:opacity-100 disabled:not-aria-busy:shadow-none",
         // Outline pill that fills with ink on hover.
-        secondary:
-          "border-[1.5px] border-fg bg-transparent text-fg hover:bg-fg hover:text-bg motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0",
-        ghost: "bg-transparent text-fg hover:bg-surface-sunken active:bg-border",
+        secondary: "press border-[1.5px] border-fg bg-transparent text-fg hover:bg-fg hover:text-bg",
+        ghost:
+          "bg-transparent text-fg transition-colors duration-(--duration-fast) ease-out hover:bg-surface-sunken active:bg-border",
         destructive:
-          "border-[1.5px] border-danger bg-transparent text-danger-text hover:bg-danger-soft hover:text-danger-soft-fg motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0",
-        link: "rounded-none bg-transparent px-0 text-curtain-text underline decoration-1 underline-offset-4 hover:decoration-2",
+          "press border-[1.5px] border-danger bg-transparent text-danger-text hover:bg-danger-soft hover:text-danger-soft-fg",
+        link: "rounded-none bg-transparent px-0 text-curtain-text underline decoration-1 underline-offset-4 transition-[text-decoration-thickness] duration-(--duration-fast) hover:decoration-2",
       },
+      // Magnetic pull toward the cursor (PointerFx). Replaces the hover lift. One per page.
+      magnetic: { true: "", false: "" },
       // Every size meets the 44px touch target on phones; sm tightens only from md up.
       size: {
         sm: "min-h-11 px-4 text-sm md:min-h-9",
@@ -34,9 +35,17 @@ const buttonVariants = cva(
       },
       block: { true: "w-full" },
     },
-    // The link variant reads as text, so it drops the pill padding whatever the size.
-    compoundVariants: [{ variant: "link", className: "px-0" }],
-    defaultVariants: { variant: "primary", size: "md" },
+    compoundVariants: [
+      // The link variant reads as text, so it drops the pill padding whatever the size.
+      { variant: "link", className: "px-0" },
+      // Hover lift. translate, so it composes with the press scale. Off with reduced motion.
+      {
+        variant: ["primary", "secondary", "destructive"],
+        magnetic: false,
+        className: "motion-safe:hover:-translate-y-0.5",
+      },
+    ],
+    defaultVariants: { variant: "primary", size: "md", magnetic: false },
   },
 );
 
@@ -52,6 +61,7 @@ function Button({
   variant,
   size,
   block,
+  magnetic,
   asChild = false,
   loading = false,
   disabled,
@@ -62,7 +72,8 @@ function Button({
   return (
     <Comp
       data-slot="button"
-      className={cn(buttonVariants({ variant, size, block }), className)}
+      data-magnetic={magnetic ? "" : undefined}
+      className={cn(buttonVariants({ variant, size, block, magnetic }), className)}
       disabled={asChild ? undefined : disabled || loading}
       aria-busy={loading || undefined}
       {...props}

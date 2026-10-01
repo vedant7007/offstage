@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import {
   Camera as CameraIcon,
   CameraOff,
@@ -16,6 +17,7 @@ import { api } from "@/lib/api-client";
 import { formatTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { Alert, Badge, Button, Field, Textarea, type Tone } from "@/components/ui";
+import { ConfirmBurst, Kicker, useReducedMotion } from "@/components/ui/motion";
 import {
   allScans,
   loadKey,
@@ -27,6 +29,7 @@ import {
   type QueuedScan,
 } from "./offline";
 import { SyncPill, useOnline } from "./sync-status";
+import fx from "./crew.module.css";
 
 type Props = { slug: string; eventName: string; clockOffsetMs: number };
 
@@ -143,7 +146,8 @@ function Camera({ onCode }: { onCode: (code: string) => void }) {
     return (
       <p className="flex items-start gap-2 text-sm text-fg-muted [&_svg]:mt-0.5 [&_svg]:size-4 [&_svg]:shrink-0">
         <Info aria-hidden />
-        Camera scanning works in Chrome on Android. Here, scan with any QR app and paste the code below.
+        Camera scanning works in Chrome on Android. On this device, scan with any QR app and paste the code
+        below.
       </p>
     );
   return (
@@ -176,6 +180,21 @@ function Camera({ onCode }: { onCode: (code: string) => void }) {
   );
 }
 
+/**
+ * A full-screen flash in the answer's colour for a third of a second, readable from across a loud hall.
+ * Portalled to <body> so no transformed ancestor can box it in. Not rendered under reduced motion.
+ */
+function Flash({ tone, seq }: { tone: ResultTone; seq: number }) {
+  const still = useReducedMotion();
+  if (still) return null;
+  return createPortal(
+    <div key={seq} aria-hidden className={cn(fx.flash, RESULT[tone].box)}>
+      {RESULT[tone].icon}
+    </div>,
+    document.body,
+  );
+}
+
 /** The answer to the last scan. Always mounted, so screen readers announce each new answer. */
 function ResultPanel({ result, seq }: { result: Result | null; seq: number }) {
   const box = React.useRef<HTMLDivElement>(null);
@@ -188,21 +207,29 @@ function ResultPanel({ result, seq }: { result: Result | null; seq: number }) {
         <div
           key={seq}
           className={cn(
-            "flex items-start gap-4 rounded-card p-5 [&_svg]:size-9 [&_svg]:shrink-0",
-            "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-200 motion-safe:ease-(--ease-out)",
+            "flex items-start gap-4 rounded-card p-5 depth-2 [&_svg]:size-9 [&_svg]:shrink-0",
+            fx.result,
             RESULT[result.tone].box,
           )}
         >
-          {RESULT[result.tone].icon}
+          <span className="relative inline-flex">
+            {RESULT[result.tone].icon}
+            {result.tone === "approved" ? <ConfirmBurst key={seq} className="text-current" /> : null}
+          </span>
           <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-2xl leading-tight font-medium tracking-tight">{result.title}</p>
+            <p className="text-3xl font-medium">{result.title}</p>
             <p className="text-base">{result.detail}</p>
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-3 rounded-card border-[1.5px] border-dashed border-border-strong px-5 py-4 text-fg-muted [&_svg]:size-6 [&_svg]:shrink-0">
-          <ScanLine aria-hidden />
-          <p className="text-base">Ready. The answer shows here the moment you scan.</p>
+        <div className="flex items-center gap-4 rounded-card border-[1.5px] border-dashed border-border-strong px-5 py-4 text-fg-muted">
+          <span
+            aria-hidden
+            className="flex size-10 shrink-0 items-center justify-center rounded-inner bg-curtain-soft text-curtain-soft-fg depth-1 [&_svg]:size-5"
+          >
+            <ScanLine />
+          </span>
+          <p className="text-base">Ready to scan. The answer shows here.</p>
         </div>
       )}
     </div>
@@ -374,23 +401,24 @@ export function CheckinScanner({ slug, eventName, clockOffsetMs }: Props) {
 
   const queued = scans.filter((s) => s.state === "queued").length;
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       <header className="flex flex-wrap items-end justify-between gap-3">
-        <div className="flex min-w-0 flex-col gap-1">
-          <p className="kicker text-curtain-text">{eventName}</p>
+        <div className="flex min-w-0 flex-col gap-3">
+          <Kicker>{eventName}</Kicker>
           <h1 className="text-3xl">Check-in</h1>
         </div>
-        <SyncPill online={online} queued={queued} />
+        <SyncPill online={online} queued={queued} total={scans.length} />
       </header>
 
       {!online ? (
-        <Alert variant="warning" title="You are offline. Keep scanning.">
-          Tickets are checked on this device. {queued ? `${plural(queued, "scan")} will sync` : "Scans sync"}{" "}
-          when the network is back.
+        <Alert variant="warning" title="You are offline. Keep scanning." className={fx.drop}>
+          This device checks tickets on its own.{" "}
+          {queued ? `${plural(queued, "scan")} will sync` : "Scans sync"} when the network is back.
         </Alert>
       ) : queued ? (
         <Alert
           variant="info"
+          className={fx.drop}
           title={`${plural(queued, "scan")} waiting to sync`}
           action={
             <Button size="sm" variant="secondary" loading={syncBusy} onClick={() => void sync()}>
@@ -401,16 +429,17 @@ export function CheckinScanner({ slug, eventName, clockOffsetMs }: Props) {
         />
       ) : null}
       {key === null ? (
-        <Alert variant="danger" title="This device cannot verify tickets yet">
+        <Alert variant="danger" title="This device cannot verify tickets yet" className={fx.drop}>
           Connect to the internet once so it can download the event key. After that, check-in works offline.
         </Alert>
       ) : null}
 
       <ResultPanel result={result?.value ?? null} seq={result?.seq ?? 0} />
+      {result ? <Flash tone={result.value.tone} seq={result.seq} /> : null}
 
       <section
         aria-labelledby="scan-title"
-        className="flex flex-col gap-4 rounded-card border border-border bg-surface p-4 shadow-card sm:p-5"
+        className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5 depth-2 md:p-6"
       >
         <h2 id="scan-title" className="sr-only">
           Scan a ticket
@@ -423,7 +452,7 @@ export function CheckinScanner({ slug, eventName, clockOffsetMs }: Props) {
             if (code.trim()) void check(code.trim()).then(() => setCode(""));
           }}
         >
-          <Field label="Ticket code" hint="The text a QR app reads from the attendee's ticket">
+          <Field label="Ticket code" hint="Paste the text your QR app reads from the ticket">
             <Textarea
               value={code}
               onChange={(e) => setCode(e.target.value)}
@@ -457,12 +486,15 @@ export function CheckinScanner({ slug, eventName, clockOffsetMs }: Props) {
           ) : null}
         </div>
         {scans.length ? (
-          <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-card border border-border bg-surface">
+          <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-card border border-border bg-surface depth-2">
             {scans.slice(0, 50).map((s) => {
               const r = s.result && SERVER[s.result.status];
               const tone: Tone = r ? r.tone : "pending";
               return (
-                <li key={s.clientId} className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3.5">
+                <li
+                  key={s.clientId}
+                  className="flex min-h-14 flex-wrap items-center gap-x-3 gap-y-1 px-4 py-3"
+                >
                   <span className="font-mono text-sm text-fg-muted tabular-nums">
                     {formatTime(s.deviceTime)}
                   </span>
@@ -480,8 +512,8 @@ export function CheckinScanner({ slug, eventName, clockOffsetMs }: Props) {
             })}
           </ul>
         ) : (
-          <p className="rounded-card border-[1.5px] border-dashed border-border px-4 py-5 text-sm text-fg-muted">
-            No scans yet. Every ticket you scan lands here, newest first, and stays on this device until it
+          <p className="rounded-card border-[1.5px] border-dashed border-border px-5 py-5 text-sm text-fg-muted">
+            No scans yet. Each ticket you scan lands here, newest first, and stays on this device until it
             syncs.
           </p>
         )}

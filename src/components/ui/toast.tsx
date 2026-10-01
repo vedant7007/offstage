@@ -19,6 +19,8 @@ function Toaster() {
       position="top-center"
       closeButton
       containerAriaLabel={t("alert.info")}
+      visibleToasts={3}
+      gap={8}
       icons={{
         success: <CircleCheck aria-hidden className="size-5 text-approved" />,
         info: <Info aria-hidden className="size-5 text-info" />,
@@ -37,7 +39,7 @@ function Toaster() {
       }
       toastOptions={{
         closeButtonAriaLabel: t("common.close"),
-        classNames: { toast: "font-sans text-base shadow-card", description: "text-fg-muted" },
+        classNames: { toast: "font-sans text-base depth-3", description: "text-fg-muted" },
       }}
     />
   );

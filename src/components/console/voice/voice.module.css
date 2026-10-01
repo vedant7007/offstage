@@ -97,7 +97,7 @@
 }
 .orb[data-mode="speaking"] .halo,
 .orb[data-mode="hearing"] .halo {
-  opacity: 0.9;
+  opacity: calc(0.5 + var(--amp, 0) * 0.5);
 }
 
 @keyframes breathe {
@@ -136,19 +136,34 @@
   }
 }
 
-/* The floating button. */
+/* Both orb buttons: a small lift toward the cursor on hover, a press that springs back with a little bounce
+   (the one bouncy spring in the app), and a brighter halo. scale only, never the shadow. */
 .launcher {
   border-radius: 999px;
-  transition: transform 250ms cubic-bezier(0.4, 0, 0.1, 1);
+  transition: scale 720ms var(--spring-bouncy);
 }
-.launcher:hover .core {
-  box-shadow:
-    inset 0 -10px 22px rgb(0 0 0 / 0.35),
-    inset 0 2px 8px rgb(255 255 255 / 0.3),
-    0 20px 48px -10px rgb(26 47 251 / 0.95);
+@media (hover: hover) {
+  .launcher:hover {
+    scale: 1.05;
+  }
+  .launcher:hover .halo {
+    opacity: 0.9;
+  }
 }
 .launcher:active {
-  transform: scale(0.94);
+  scale: 0.92;
+  transition: scale var(--duration-instant) var(--ease-out);
+}
+
+/* The state pill beside the floating orb slides in from the orb. */
+.pill {
+  animation: pill-in 600ms var(--spring-soft) both;
+}
+@keyframes pill-in {
+  from {
+    opacity: 0;
+    translate: 12px 0;
+  }
 }
 
 /* Full-screen voice mode. It stays mounted (hidden, inert, clipped to nothing) so the transcript survives a close.
@@ -157,12 +172,12 @@
   clip-path: circle(0px at var(--ox, calc(100% - 3rem)) var(--oy, calc(100% - 3rem)));
   pointer-events: none;
   background: #000000;
-  transition: clip-path 340ms cubic-bezier(0.4, 0, 0.1, 1);
+  transition: clip-path 300ms var(--ease-in-out);
 }
 .overlay[data-open="true"] {
   clip-path: circle(var(--r, 150vmax) at var(--ox, calc(100% - 3rem)) var(--oy, calc(100% - 3rem)));
   pointer-events: auto;
-  transition-duration: 480ms;
+  transition: clip-path var(--duration-reveal) var(--ease-out-expo);
 }
 
 .backdrop {
@@ -201,9 +216,9 @@
   background: radial-gradient(
     circle,
     #ffffff 0%,
-    rgb(138 149 255 / 0.9) 28%,
-    rgb(26 47 251 / 0.45) 52%,
-    transparent 70%
+    rgb(138 149 255 / 0.7) 16%,
+    rgb(26 47 251 / 0.35) 40%,
+    transparent 66%
   );
 }
 .rays {
@@ -233,7 +248,7 @@
   }
   100% {
     opacity: 0;
-    transform: scale(44);
+    transform: scale(36);
   }
 }
 @keyframes rays {
@@ -250,20 +265,62 @@
   }
 }
 
-/* Everything inside settles in just after the beam, and leaves first on the way back. */
-.content {
+/* Everything inside settles in just after the beam, region by region (--i is its place in the cascade), and
+   leaves together, faster, on the way back. translate only, so nothing here traps a fixed layer. */
+.enter {
   opacity: 0;
-  transform: translateY(16px) scale(0.98);
+  translate: 0 12px;
   transition:
-    opacity 150ms linear,
-    transform 150ms cubic-bezier(0.4, 0, 0.1, 1);
+    opacity var(--duration-fast) var(--ease-in),
+    translate var(--duration-fast) var(--ease-in);
 }
-.overlay[data-open="true"] .content {
+.overlay[data-open="true"] .enter {
   opacity: 1;
-  transform: none;
+  translate: none;
   transition:
-    opacity 300ms linear 180ms,
-    transform 400ms cubic-bezier(0.4, 0, 0.1, 1) 160ms;
+    opacity var(--duration-slower) var(--ease-out) calc(160ms + var(--i, 0) * var(--stagger)),
+    translate var(--duration-reveal) var(--ease-out-expo) calc(160ms + var(--i, 0) * var(--stagger));
+}
+/* The big orb lands with the bouncy spring as the beam settles. */
+.rise {
+  opacity: 0;
+  scale: 0.6;
+  transition:
+    opacity var(--duration-fast) var(--ease-in),
+    scale var(--duration-fast) var(--ease-in);
+}
+.overlay[data-open="true"] .rise {
+  opacity: 1;
+  scale: 1;
+  transition:
+    opacity var(--duration-slow) var(--ease-out) 200ms,
+    scale 720ms var(--spring-bouncy) 200ms;
+}
+/* Empty state suggestions follow the cascade, one beat apart. */
+.overlay[data-open="true"] .suggest {
+  animation: rise-in var(--duration-reveal) var(--ease-out-expo) calc(320ms + var(--i, 0) * var(--stagger)) both;
+}
+
+/* Each new exchange rises in; each spoken line fades in as it arrives; a question back lands softly. */
+.turn {
+  animation: rise-in 240ms var(--ease-out-expo) both;
+}
+.chunk {
+  animation: fade-in var(--duration-fast) var(--ease-out) both;
+}
+.ask {
+  animation: rise-in 600ms var(--spring-soft) both;
+}
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
 }
 
 /* Perspective rings around the big orb, tilted into the floor and turning slowly. */
@@ -319,12 +376,12 @@
 }
 
 .panel {
-  animation: panel-in 300ms cubic-bezier(0.4, 0, 0.1, 1) both;
+  animation: panel-in var(--duration-slower) var(--ease-out-expo) both;
 }
 @keyframes panel-in {
   from {
     opacity: 0;
-    transform: translateX(24px);
+    translate: 24px 0;
   }
 }
 
@@ -333,12 +390,17 @@
   .overlay *,
   .ring,
   .pulse,
-  .panel {
+  .panel,
+  .pill {
     animation: none !important;
   }
-  .core,
-  .launcher:active {
+  .core {
     transform: none;
+  }
+  .launcher,
+  .launcher:hover,
+  .launcher:active {
+    scale: none;
   }
   .halo {
     transform: scale(1.8);
@@ -356,9 +418,13 @@
   .rays {
     display: none;
   }
-  .content,
-  .overlay[data-open="true"] .content {
-    transform: none;
-    transition: opacity 200ms linear;
+  .enter,
+  .rise,
+  .overlay[data-open="true"] .enter,
+  .overlay[data-open="true"] .rise {
+    opacity: 1;
+    translate: none;
+    scale: none;
+    transition: none;
   }
 }

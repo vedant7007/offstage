@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { createPortal } from "react-dom";
 import { CalendarDays, CircleCheck, Clock, MapPin, Maximize2, X } from "lucide-react";
 import { Button, IconButton } from "@/components/ui";
 import { useT } from "@/lib/i18n/provider";
@@ -19,6 +20,27 @@ type Props = {
 };
 
 type WakeLock = { release: () => Promise<void> };
+
+// Two round notches cut clean through the pass at the perforation, so the page shows through them.
+// --notch-y is measured on mount; until then the mask is invalid and the pass stays whole.
+const NOTCH = (x: string) => `radial-gradient(circle 12px at ${x} var(--notch-y), #0000 11.5px, #000 12px)`;
+const NOTCH_MASK = {
+  maskImage: `${NOTCH("0")}, ${NOTCH("100%")}`,
+  WebkitMaskImage: `${NOTCH("0")}, ${NOTCH("100%")}`,
+  maskComposite: "intersect",
+  WebkitMaskComposite: "source-in",
+} as React.CSSProperties;
+
+/** Keeps --notch-y on the perforation line as the pass resizes (long names, narrow phones). */
+function notch(el: HTMLElement | null) {
+  const line = el?.querySelector<HTMLElement>("[data-perforation]");
+  if (!el || !line) return;
+  const place = () => el.style.setProperty("--notch-y", `${line.offsetTop + 1}px`);
+  place();
+  const ro = new ResizeObserver(place);
+  ro.observe(el);
+  return () => ro.disconnect();
+}
 
 /**
  * The ticket QR with check-in status, and a full-screen "show to volunteer" view: white
@@ -51,46 +73,39 @@ export function TicketCard({ name, college, eventName, dates, venue, qrPngDataUr
 
   const alt = t("me.ticket.for", { name });
 
-  // Spotlight that follows the pointer across the pass. Purely decorative.
-  const spot = (e: React.PointerEvent<HTMLElement>) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
-    e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
-  };
-
   return (
     <>
-      {/* The pass is always ink: the nested .dark scope flips every token inside it. --page-bg keeps
-          the outer page colour for the perforation notches. */}
-      <div className="[--page-bg:var(--bg)]">
+      {/* The long shadow sits on a still wrapper: the pass itself is masked (real notches), and a mask
+          would clip its own shadow. */}
+      <div className="rounded-card shadow-[0_40px_80px_-40px_rgb(7_27_223/0.5)]">
+        {/* The pass is always ink: the nested .dark scope flips every token inside it. It leans toward
+            the cursor (data-tilt, driven by PointerFx) and sweeps once on touch. The 1px transparent
+            border gives the edge hairline room inside the mask. */}
         <section
+          ref={notch}
           aria-labelledby="ticket-title"
-          onPointerMove={spot}
-          className="group dark relative isolate flex flex-col overflow-hidden rounded-card border border-border bg-bg text-fg shadow-[0_32px_64px_-32px_rgb(7_27_223/0.45)]"
+          data-tilt=""
+          data-max={5}
+          style={NOTCH_MASK}
+          className="edge dark flex flex-col rounded-card border border-transparent bg-bg text-fg"
         >
           {/* Stage light from above, so the pass has depth on a black page too. */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-56 bg-[radial-gradient(120%_100%_at_50%_0%,rgb(26_47_251/0.32),transparent_70%)]"
+            className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-64 rounded-t-card bg-[radial-gradient(120%_100%_at_50%_0%,rgb(26_47_251/0.34),transparent_70%)]"
           />
-          <div
-            aria-hidden
-            className="pointer-events-none absolute inset-0 -z-10 opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100 bg-[radial-gradient(320px_circle_at_var(--mx,50%)_var(--my,30%),rgb(193_255_0/0.14),transparent_65%)]"
-          />
-          <div className="flex flex-col gap-4 p-5 pb-5 sm:p-6 sm:pb-5">
+          <div className="flex flex-col p-6">
             <p className="kicker flex items-center gap-3 text-curtain-text">
               <span className="min-w-0 truncate">{eventName}</span>
               <span aria-hidden className="h-px w-8 shrink-0 bg-current" />
             </p>
-            <div className="flex flex-col gap-1">
-              <h1 id="ticket-title" className="text-3xl">
-                {t("me.ticket.title")}
-              </h1>
-              <p className="text-lg font-medium">{name}</p>
-              {college ? <p className="text-sm text-fg-muted">{college}</p> : null}
-            </div>
+            <h1 id="ticket-title" className="mt-4 text-sm font-normal text-fg-muted">
+              {t("me.ticket.title")}
+            </h1>
+            <p className="mt-1 text-3xl font-medium text-balance">{name}</p>
+            {college ? <p className="mt-1 text-sm text-fg-muted">{college}</p> : null}
             {dates || venue ? (
-              <ul className="flex flex-col gap-1.5 text-sm text-fg-muted">
+              <ul className="mt-6 flex flex-col gap-2 text-sm text-fg-muted">
                 {dates ? (
                   <li className="flex items-start gap-2">
                     <CalendarDays aria-hidden className="mt-0.5 size-4 shrink-0" />
@@ -108,15 +123,13 @@ export function TicketCard({ name, college, eventName, dates, venue, qrPngDataUr
             ) : null}
           </div>
 
-          {/* Perforation between the stub and the code */}
-          <div aria-hidden className="relative h-0 border-t border-dashed border-border-strong">
-            <span className="absolute top-0 -left-3 size-6 -translate-y-1/2 rounded-full bg-[var(--page-bg)]" />
-            <span className="absolute top-0 -right-3 size-6 -translate-y-1/2 rounded-full bg-[var(--page-bg)]" />
-          </div>
+          {/* Perforation between the stub and the code; the notches are cut by the mask at this line. */}
+          <div data-perforation="" aria-hidden className="mx-5 border-t border-dashed border-border-strong" />
 
-          <div className="flex flex-col items-center gap-4 p-5 pt-6 text-center">
-            {/* Lime frame around a dark-on-white code, so scanners read it whatever the theme. */}
-            <div className="rounded-[22px] bg-curtain p-1.5 transition-transform duration-300 ease-out motion-safe:group-hover:-translate-y-0.5">
+          <div className="flex flex-col items-center gap-4 p-6 text-center">
+            {/* Lime frame around a dark-on-white code, so scanners read it whatever the theme. Above the
+                tilt glare (z-2), so the glare never washes over the code. */}
+            <div className="relative z-2 rounded-[22px] bg-curtain p-1.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={qrPngDataUrl}
@@ -137,7 +150,7 @@ export function TicketCard({ name, college, eventName, dates, venue, qrPngDataUr
                 {t("me.ticket.notCheckedIn")}
               </span>
             )}
-            <div className="flex w-full flex-col items-center gap-2">
+            <div className="relative z-2 mt-2 flex w-full flex-col items-center gap-3">
               <Button ref={openRef} size="lg" block className="max-w-sm" onClick={() => setFull(true)}>
                 <Maximize2 aria-hidden />
                 {t("me.ticket.showToVolunteer")}
@@ -148,7 +161,8 @@ export function TicketCard({ name, college, eventName, dates, venue, qrPngDataUr
         </section>
       </div>
 
-      {full ? (
+      {full
+        ? createPortal(
         <div
           role="dialog"
           aria-modal="true"
@@ -173,8 +187,10 @@ export function TicketCard({ name, college, eventName, dates, venue, qrPngDataUr
           <p className="text-3xl font-medium tracking-[-0.03em]">{name}</p>
           <p className="kicker">{eventName}</p>
           <p className="max-w-xs text-center text-sm text-balance">{t("me.ticket.brightness")}</p>
-        </div>
-      ) : null}
+        </div>,
+            document.body,
+          )
+        : null}
     </>
   );
 }

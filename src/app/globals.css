@@ -9,6 +9,7 @@
 @import "shadcn/tailwind.css";
 @import "../styles/tokens.css";
 @import "../styles/theme.css";
+@import "../styles/motion.css";
 
 :root,
 .light,

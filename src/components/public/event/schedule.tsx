@@ -1,11 +1,12 @@
 import Link from "next/link";
-import { Check, DoorOpen, Layers, Users } from "lucide-react";
+import { DoorOpen, Layers, Users } from "lucide-react";
 import type { PublicEventResponse, SessionStatus } from "@/contracts";
 import { Badge, Button, EmptyState, TimeRange, type Tone } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { formatDayShort, istDateKey } from "@/lib/time";
 import { cn } from "@/lib/utils";
-import { Kicker } from "@/components/public/kicker";
+import { Reveal, SlidingIndicator } from "@/components/ui/motion";
+import { SectionHead } from "@/components/public/event/section-head";
 
 type PublicSession = PublicEventResponse["sessions"][number];
 
@@ -50,21 +51,24 @@ export async function Schedule({ data, day, track, cue }: Props) {
     .filter((s) => istDateKey(s.startsAt) === day && (!track || s.trackId === track))
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt) || a.title.localeCompare(b.title));
 
+  // Filter pills. The active fill is a separate span that glides to the new pill when the filter
+  // changes (a view transition on the navigation); without support it simply moves.
   const pill = (active: boolean) =>
     cn(
-      "inline-flex min-h-11 items-center gap-1.5 rounded-full border-[1.5px] px-4 text-sm font-medium whitespace-nowrap transition-colors duration-(--duration-fast) ease-out md:min-h-9",
-      active
-        ? "border-curtain bg-curtain text-on-curtain"
-        : "border-border-strong bg-transparent text-fg hover:bg-surface",
+      "press relative isolate inline-flex min-h-11 items-center rounded-full border-[1.5px] px-4 text-sm font-medium whitespace-nowrap md:min-h-9",
+      active ? "border-transparent text-on-curtain" : "border-border-strong text-fg hover:bg-surface",
     );
+  const fill = (name: string) => (
+    <SlidingIndicator name={name} className="absolute -inset-[1.5px] -z-10 rounded-full bg-curtain" />
+  );
 
   return (
-    <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-20 flex-col gap-4">
-      <Kicker>{cue}</Kicker>
-      <h2 id="schedule-title" className="text-2xl md:text-3xl">
+    <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-20 flex-col gap-8">
+      <SectionHead cue={cue} id="schedule-title">
         {t("event.scheduleTitle")}
-      </h2>
+      </SectionHead>
 
+      <div className="flex flex-col gap-3">
       <nav aria-label={t("event.dayNav")}>
         <ul className="flex gap-2 overflow-x-auto pb-1">
           {days.map((d) => {
@@ -77,7 +81,7 @@ export async function Schedule({ data, day, track, cue }: Props) {
                   aria-current={active ? "true" : undefined}
                   className={pill(active)}
                 >
-                  {active ? <Check aria-hidden className="size-4" /> : null}
+                  {active ? fill("schedule-day") : null}
                   {first ? formatDayShort(first.startsAt) : d}
                 </Link>
               </li>
@@ -98,7 +102,7 @@ export async function Schedule({ data, day, track, cue }: Props) {
                     aria-current={active ? "true" : undefined}
                     className={pill(active)}
                   >
-                    {active ? <Check aria-hidden className="size-4" /> : null}
+                    {active ? fill("schedule-track") : null}
                     {id ? tracks.get(id)?.name : t("event.allTracks")}
                   </Link>
                 </li>
@@ -107,12 +111,13 @@ export async function Schedule({ data, day, track, cue }: Props) {
           </ul>
         </nav>
       ) : null}
+      </div>
 
       {sessions.length === 0 ? (
         <EmptyState title={t("event.noSessions")} />
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
-          {sessions.map((s) => {
+        <ul className="grid gap-4 md:grid-cols-2 md:gap-6">
+          {sessions.map((s, i) => {
             const room = rooms.get(s.roomId);
             const tr = s.trackId ? tracks.get(s.trackId) : undefined;
             const names = s.speakerIds.map((id) => speakers.get(id)?.name).filter(Boolean);
@@ -122,26 +127,30 @@ export async function Schedule({ data, day, track, cue }: Props) {
             const titleId = `session-${s.id}`;
             const hintId = `${titleId}-hint`;
             return (
-              <li key={s.id}>
+              <Reveal as="li" key={s.id} index={i % 2}>
                 <article
                   aria-labelledby={titleId}
                   className={cn(
-                    "flex h-full flex-col gap-3 rounded-card border bg-surface p-5 shadow-card",
+                    "spot spot-edge lift flex h-full flex-col gap-3 rounded-card border bg-surface p-5 depth-2 md:p-6",
                     s.status === "delayed" ? "border-pending" : "border-border",
+                    (s.status === "done" || s.status === "cancelled") && "bg-surface/60",
                   )}
                 >
                   <div className="flex flex-wrap items-center gap-2 text-sm">
                     <TimeRange
                       start={s.startsAt}
                       end={s.endsAt}
-                      className="font-mono text-xs font-medium tracking-[0.04em] text-curtain-text"
+                            className="font-mono text-xs font-medium tracking-[0.04em] text-curtain-text tabular-nums"
                     />
                     <Badge tone="outline">{t(`event.sessionKind.${s.kind}`)}</Badge>
                     {tone ? <Badge tone={tone}>{t(`event.sessionStatus.${s.status}`)}</Badge> : null}
                   </div>
                   <h3
                     id={titleId}
-                    className={cn("text-lg leading-snug", s.status === "cancelled" && "line-through")}
+                    className={cn(
+                      "text-xl text-balance",
+                      s.status === "cancelled" && "line-through",
+                    )}
                   >
                     {s.title}
                   </h3>
@@ -171,8 +180,8 @@ export async function Schedule({ data, day, track, cue }: Props) {
                       </li>
                     ) : null}
                   </ul>
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
-                    <p className="font-mono text-xs text-fg-muted">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+                    <p className="font-mono text-xs text-fg-muted tabular-nums">
                       {t("event.seatsSession", { registered: s.registeredCount, capacity: s.capacity })}
                       {full ? (
                         <Badge tone="pending" className="ml-2">
@@ -197,7 +206,7 @@ export async function Schedule({ data, day, track, cue }: Props) {
                     ) : null}
                   </div>
                 </article>
-              </li>
+              </Reveal>
             );
           })}
         </ul>

@@ -28,6 +28,9 @@ export { ThemeToggle } from "./theme-toggle";
 export { LanguageSwitcher } from "./language-switcher";
 export { Providers } from "./providers";
 
+// Premium kit (also importable from "@/components/ui/motion")
+export * from "./motion";
+
 // Composites
 export { ProposalCard, type Evidence } from "./proposal-card";
 export { DiffView, type DiffEntry } from "./diff-view";

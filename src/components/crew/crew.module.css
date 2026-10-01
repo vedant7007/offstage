@@ -1,0 +1,49 @@
+/* Crew motion: scan feedback and sync status only. Opacity and transforms only; the global
+   reduced-motion rule in theme.css stops every animation here, and the flash is not rendered at all. */
+
+/* Full-screen answer flash, portalled to <body> so no transformed ancestor can box it in. */
+.flash {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  animation: flash 360ms var(--ease-out) both;
+}
+.flash svg {
+  width: 6rem;
+  height: 6rem;
+  stroke-width: 1.5;
+}
+@keyframes flash {
+  18% {
+    opacity: 0.92;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* The result card settles in with a soft spring, after the flash has done the shouting. */
+.result {
+  animation: result-in 600ms var(--spring-soft) both;
+}
+@keyframes result-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+
+/* Offline and waiting banners slide down into place. */
+.drop {
+  animation: drop 240ms var(--ease-out-expo) both;
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+}

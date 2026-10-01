@@ -1,12 +1,22 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-function Card({ className, ...props }: React.ComponentProps<"div">) {
+type CardProps = React.ComponentProps<"div"> & {
+  /** Interactive card: cursor spotlight, lit border near the cursor, 2px hover lift. */
+  spotlight?: boolean;
+  /** Key card (at most three per page): gradient hairline. Not with spotlight, both use ::before. */
+  edge?: boolean;
+};
+
+/** Surface with a lit top edge and a soft long shadow (depth-2). */
+function Card({ className, spotlight, edge, ...props }: CardProps) {
   return (
     <div
       data-slot="card"
       className={cn(
-        "flex flex-col gap-4 rounded-card border border-border bg-surface p-5 text-fg shadow-card md:p-6",
+        "flex flex-col gap-4 rounded-card border border-border bg-surface p-5 text-fg depth-2 md:p-6",
+        spotlight && "spot spot-edge lift",
+        edge && !spotlight && "edge",
         className,
       )}
       {...props}
@@ -26,14 +36,16 @@ function CardTitle({
   return (
     <Heading
       data-slot="card-title"
-      className={cn("text-lg font-medium tracking-[-0.02em]", className)}
+      className={cn("text-lg font-medium tracking-[-0.015em]", className)}
       {...props}
     />
   );
 }
 
 function CardDescription({ className, ...props }: React.ComponentProps<"p">) {
-  return <p data-slot="card-description" className={cn("text-sm text-fg-muted", className)} {...props} />;
+  return (
+    <p data-slot="card-description" className={cn("measure text-sm text-fg-muted", className)} {...props} />
+  );
 }
 
 function CardContent({ className, ...props }: React.ComponentProps<"div">) {
@@ -44,10 +56,10 @@ function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       data-slot="card-footer"
-      className={cn("flex flex-wrap items-center gap-2 border-t border-border pt-4", className)}
+      className={cn("mt-2 flex flex-wrap items-center gap-2 border-t border-border pt-4", className)}
       {...props}
     />
   );
 }
 
-export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };
+export { Card, type CardProps, CardHeader, CardTitle, CardDescription, CardContent, CardFooter };

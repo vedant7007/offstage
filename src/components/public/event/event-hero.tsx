@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowRight, CalendarDays, Info, MapPin, MonitorPlay } from "lucide-react";
 import type { PublicEventResponse } from "@/contracts";
 import { Badge, Button, Progress } from "@/components/ui";
+import { LivePulse, TextReveal } from "@/components/ui/motion";
 import { getT } from "@/lib/i18n/server";
 import { formatDate, formatDayShort } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -30,7 +31,7 @@ export async function EventHero({ data, isDemo }: Props) {
   return (
     <section
       aria-labelledby="event-title"
-      className="dark relative isolate overflow-hidden rounded-card border border-border bg-bg text-fg shadow-(--shadow-card)"
+      className="dark grain relative isolate before:-z-10 overflow-hidden rounded-card border border-border bg-bg text-fg depth-3"
     >
       {/* A soft stage light from above. Decorative. */}
       <div
@@ -41,19 +42,19 @@ export async function EventHero({ data, isDemo }: Props) {
         <div className="flex min-w-0 flex-col gap-6">
           <div className="flex flex-col gap-4">
             {event.status === "live" ? (
-              <Badge tone="approved" className="w-fit text-sm">
-                <span aria-hidden className="size-2 animate-pulse rounded-full bg-approved" />
+              <Badge tone="approved" className="w-fit gap-2 text-sm">
+                <LivePulse />
                 {t("event.live")}
               </Badge>
             ) : null}
-            <h1
+            {/* The page's one signature moment: the name rises out of a mask, with a soft tone fade. */}
+            <TextReveal
               id="event-title"
-              className="text-[clamp(2.5rem,10vw,5.5rem)] leading-[0.95] font-medium tracking-[-0.045em] break-words"
-            >
-              {event.name}
-            </h1>
+              text={event.name}
+              className="text-[clamp(2.75rem,10vw,5.5rem)] leading-[0.98] font-medium tracking-[-0.045em] text-balance break-words [&_.tr-inner]:text-fade"
+            />
             {event.tagline ? (
-              <p className="max-w-2xl text-lg text-pretty text-fg-muted md:text-xl">{event.tagline}</p>
+              <p className="measure-lede text-lg text-pretty text-fg-muted md:text-xl">{event.tagline}</p>
             ) : null}
           </div>
 
@@ -82,7 +83,7 @@ export async function EventHero({ data, isDemo }: Props) {
           </ul>
         </div>
 
-        <div className="flex flex-col gap-4 self-start rounded-card border border-border bg-surface p-5 shadow-card md:col-start-2 md:row-span-2 md:row-start-1">
+        <div className="edge flex flex-col gap-4 self-start rounded-card bg-surface p-5 depth-2 md:col-start-2 md:row-span-2 md:row-start-1 md:p-6">
           <Progress
             label={t("event.seatsTaken", { registered: capacity.registered, total: capacity.total })}
             value={Math.min(capacity.registered, capacity.total)}
@@ -99,12 +100,7 @@ export async function EventHero({ data, isDemo }: Props) {
                 : t("event.seatsLeft", { count: left })}
           </p>
           {closed ? null : (
-            <Button
-              asChild
-              block
-              size="lg"
-              className="group rounded-full transition-[background-color,transform] duration-(--duration-slow) hover:-translate-y-0.5"
-            >
+            <Button asChild block size="lg" magnetic className="group">
               <Link href={`/e/${event.slug}/register`}>
                 {full ? t("event.joinWaitlist") : t("event.register")}
                 <ArrowRight
@@ -114,7 +110,7 @@ export async function EventHero({ data, isDemo }: Props) {
               </Link>
             </Button>
           )}
-          <Button asChild block variant="secondary" className="rounded-full">
+          <Button asChild block variant="secondary">
             <Link href={`/e/${event.slug}/status`}>
               <MonitorPlay aria-hidden />
               {t("event.statusBoard")}
@@ -123,7 +119,7 @@ export async function EventHero({ data, isDemo }: Props) {
         </div>
 
         <div className="flex min-w-0 flex-col gap-4">
-          <p className="max-w-prose text-base leading-relaxed text-pretty text-fg">{event.description}</p>
+          <p className="measure text-base leading-relaxed text-pretty text-fg">{event.description}</p>
           {isDemo ? (
             <p className="flex items-start gap-2 text-sm text-fg-muted">
               <Info aria-hidden className="mt-0.5 size-4 shrink-0" />

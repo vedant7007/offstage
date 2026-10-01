@@ -2,8 +2,9 @@
 
 import * as React from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Check, History, Mic, Square, X } from "lucide-react";
+import { ArrowUp, Check, History, Mic, Square, X } from "lucide-react";
 import { Alert, Badge, Button, IconButton, Input } from "@/components/ui";
+import { vtAnchor } from "@/components/ui/motion";
 import { formatTime } from "@/lib/time";
 import { useReducedMotion } from "../fx";
 import { useVoice, VOICE_OPTIONS, type Mode, type Steps, type Turn } from "./use-voice";
@@ -24,6 +25,8 @@ const STEP_NAME = { plan: "Plan", delegate: "Delegate", execute: "Execute", appr
 const NOT_CAUGHT = "(not caught)";
 const usd = (x: number) => `$${x.toFixed(4)}`;
 const ms = (x: number) => (x < 1000 ? `${x} ms` : `${(x / 1000).toFixed(1)} s`);
+/** Safe, read-only questions for the empty state: each one answers from event data and changes nothing. */
+const SUGGESTIONS = ["What is on today?", "How are registrations going?", "What if 30 percent more people come?"];
 const FOCUSABLE = "button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex='-1'])";
 
 type Phase = "closed" | "opening" | "open" | "closing";
@@ -43,7 +46,12 @@ function Orb({ mode, size, children }: { mode: Mode; size: string; children: Rea
 
 function Strip({ steps }: { steps: Steps }) {
   return (
-    <ol aria-label="Plan, delegate, execute, approve" className="grid w-full max-w-2xl grid-cols-4 gap-2">
+    <ol
+      aria-label="Plan, delegate, execute, approve"
+      className={`grid w-full max-w-2xl grid-cols-4 gap-1.5 transition-opacity duration-(--duration-slow) md:gap-2 ${
+        STEP_ORDER.every((k) => steps[k].state === "todo") ? "opacity-60" : ""
+      }`}
+    >
       {STEP_ORDER.map((k) => {
         const s = steps[k];
         const look =
@@ -57,7 +65,7 @@ function Strip({ steps }: { steps: Steps }) {
         return (
           <li key={k} className="flex min-w-0 flex-col items-center gap-1.5">
             <span
-              className={`inline-flex w-full items-center justify-center gap-1.5 rounded-full border px-2 py-1.5 font-mono text-[0.7rem] font-medium transition-colors duration-(--duration-slow) md:px-3 md:text-xs ${look}`}
+              className={`inline-flex w-full items-center justify-center gap-1 rounded-full border px-1.5 py-1.5 font-mono text-xs font-medium transition-colors duration-(--duration-slow) md:gap-1.5 md:px-3 ${look}`}
             >
               {s.state === "done" ? (
                 <Check aria-hidden className="size-3 shrink-0" />
@@ -71,7 +79,7 @@ function Strip({ steps }: { steps: Steps }) {
               <span className="sr-only">: {s.state === "todo" ? "not started" : s.state}</span>
             </span>
             <span
-              className="min-h-4 w-full truncate text-center font-mono text-[0.7rem] text-fg-muted"
+              className="min-h-[1.125rem] w-full truncate text-center font-mono text-xs text-fg-muted"
               title={s.label}
             >
               {s.state === "todo" ? "" : s.label}
@@ -114,26 +122,26 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
 function Exchange({ t, latest, thinking }: { t: Turn; latest: boolean; thinking: boolean }) {
   const replies = t.replies.filter((r) => r.text !== t.followUp);
   return (
-    <li className="flex flex-col gap-3">
+    <li className={`${css.turn} flex flex-col gap-3`}>
       <p
-        className={`max-w-[85%] self-end rounded-[18px] rounded-br-[6px] border border-border bg-surface-raised px-4 py-2.5 text-base ${
+        className={`max-w-[85%] self-end rounded-[18px] rounded-br-[6px] border border-border bg-surface-raised px-4 py-2.5 text-base depth-1 transition-colors duration-(--duration-slow) ${
           latest ? "text-fg" : "text-fg-muted"
         }`}
       >
         <span className="sr-only">You: </span>
-        {t.you}
+        {t.you === NOT_CAUGHT ? <span className="text-fg-muted">Nothing heard. Try again.</span> : t.you}
       </p>
       {replies.length ? (
         <p
           className={
             latest
-              ? "text-lg leading-snug font-medium tracking-[-0.015em] text-pretty md:text-2xl"
-              : "text-base text-fg-muted md:text-lg"
+              ? "text-xl font-medium text-pretty md:text-2xl"
+              : "text-base text-pretty text-fg-muted transition-colors duration-(--duration-slow) md:text-lg"
           }
         >
           <span className="sr-only">Offstage: </span>
           {replies.map((r, i) => (
-            <span key={i} className={r.kind === "filler" ? "text-fg-muted" : undefined}>
+            <span key={i} className={`${css.chunk} ${r.kind === "filler" ? "text-fg-muted" : ""}`}>
               {r.text}{" "}
             </span>
           ))}
@@ -152,14 +160,12 @@ function Exchange({ t, latest, thinking }: { t: Turn; latest: boolean; thinking:
       ) : null}
       {t.followUp ? (
         <div
-          className={`rounded-card border px-4 py-3 md:px-5 md:py-4 ${
-            latest ? "border-curtain/50 bg-curtain-soft" : "border-border"
+          className={`rounded-card px-4 py-3 md:px-5 md:py-4 ${
+            latest ? `${css.ask} edge bg-curtain-soft depth-2` : "border border-border"
           }`}
         >
           <p className="kicker text-curtain-soft-fg">Offstage asks</p>
-          <p
-            className={`mt-1 font-medium tracking-[-0.02em] text-fg ${latest ? "text-xl md:text-2xl" : "text-base"}`}
-          >
+          <p className={`mt-2 font-medium text-fg ${latest ? "text-xl md:text-2xl" : "text-base"}`}>
             {t.followUp}
           </p>
         </div>
@@ -214,8 +220,11 @@ export function VoiceDock({ eventId }: { eventId: string }) {
   const hint = v.handsFree
     ? 'Hands-free is on. Say "Hey Offstage", then ask anything about the event.'
     : hearing
-      ? 'Go ahead. Try "What is on today?"'
+      ? "Go ahead, Offstage is listening. Ask a question or give a command."
       : "Tap the orb and speak, or type below. Ask anything about the event.";
+  const send = (q: string) => {
+    if (q) v.type(q);
+  };
 
   React.useEffect(() => {
     live.current = { mode: v.mode, level: v.level, analyser: v.analyser };
@@ -262,7 +271,7 @@ export function VoiceDock({ eventId }: { eventId: string }) {
     if (phase === "closing") {
       // A frame later, once the browser has let go of the now inert layer, focus returns to the orb.
       const raf = requestAnimationFrame(() => launcherRef.current?.focus({ preventScroll: true }));
-      const t = setTimeout(() => setPhase("closed"), still ? 220 : 380);
+      const t = setTimeout(() => setPhase("closed"), still ? 220 : 340);
       return () => {
         cancelAnimationFrame(raf);
         clearTimeout(t);
@@ -352,11 +361,15 @@ export function VoiceDock({ eventId }: { eventId: string }) {
         {s.label}
       </p>
 
-      <div className={`${phase === "opening" || phase === "open" ? "hidden" : "flex"} items-center gap-3`}>
+      {/* Anchored, so the orb stays perfectly still while the page underneath changes. */}
+      <div
+        {...vtAnchor("voice-orb")}
+        className={`${phase === "opening" || phase === "open" ? "hidden" : "flex"} items-center gap-3`}
+      >
         {v.mode !== "off" && v.mode !== "idle" ? (
           <span
             aria-hidden
-            className="inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 font-mono text-xs text-fg shadow-card"
+            className={`${css.pill} inline-flex items-center gap-2 rounded-full border border-border bg-surface-raised px-3 py-1.5 font-mono text-xs text-fg depth-2`}
           >
             <span className={`size-1.5 rounded-full ${s.dot}`} />
             {s.label}
@@ -364,7 +377,7 @@ export function VoiceDock({ eventId }: { eventId: string }) {
         ) : v.handsFree ? (
           <span
             aria-hidden
-            className="hidden rounded-full border border-border bg-surface-raised px-3 py-1.5 font-mono text-xs text-fg-muted shadow-card md:inline-flex"
+            className={`${css.pill} hidden rounded-full border border-border bg-surface-raised px-3 py-1.5 font-mono text-xs text-fg-muted depth-2 md:inline-flex`}
           >
             Say &quot;Hey Offstage&quot;
           </span>
@@ -398,8 +411,11 @@ export function VoiceDock({ eventId }: { eventId: string }) {
         <div aria-hidden className={css.rays} />
         <div aria-hidden className={css.flash} />
 
-        <div className={`${css.content} relative flex h-full flex-col`}>
-          <header className="flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2 md:px-8 md:pt-5">
+        <div className="relative flex h-full flex-col">
+          <header
+            style={{ "--i": 0 } as React.CSSProperties}
+            className={`${css.enter} flex items-center gap-3 px-4 pt-[max(0.75rem,env(safe-area-inset-top))] pb-2 md:px-8 md:pt-5`}
+          >
             <span aria-hidden className="size-2 rounded-full bg-curtain" />
             <h2 id={titleId} className="kicker text-fg">
               Voice Commander
@@ -424,7 +440,7 @@ export function VoiceDock({ eventId }: { eventId: string }) {
           <div className="flex min-h-0 flex-1">
             <div className={`min-w-0 flex-1 flex-col items-center ${panel ? "hidden md:flex" : "flex"}`}>
               <div className="flex shrink-0 flex-col items-center gap-2">
-                <div className={css.stage}>
+                <div className={`${css.stage} ${css.rise}`}>
                   <span aria-hidden className={css.ring} />
                   <span aria-hidden className={css.ring} />
                   <span aria-hidden className={css.ring} />
@@ -433,14 +449,17 @@ export function VoiceDock({ eventId }: { eventId: string }) {
                     type="button"
                     onClick={() => (busy ? v.stop() : void v.talk())}
                     aria-label={busy ? "Stop Offstage" : "Talk to Offstage"}
-                    className="relative rounded-full outline-offset-8"
+                    className={`${css.launcher} relative outline-offset-8`}
                   >
                     <Orb mode={v.mode} size="clamp(5.5rem, 13vh, 8.5rem)">
                       {busy ? <Square aria-hidden fill="currentColor" /> : <Mic aria-hidden />}
                     </Orb>
                   </button>
                 </div>
-                <div className="flex min-h-11 flex-wrap items-center justify-center gap-3">
+                <div
+                  style={{ "--i": 2 } as React.CSSProperties}
+                  className={`${css.enter} flex min-h-11 flex-wrap items-center justify-center gap-3`}
+                >
                   <p
                     aria-hidden
                     className="flex items-center gap-2 font-mono text-xs tracking-[0.12em] text-fg-muted uppercase"
@@ -461,7 +480,8 @@ export function VoiceDock({ eventId }: { eventId: string }) {
 
               <div
                 ref={convoRef}
-                className="min-h-0 w-full max-w-3xl flex-1 overflow-y-auto px-4 [mask-image:linear-gradient(transparent,#000_3rem)] md:px-8"
+                style={{ "--i": 3 } as React.CSSProperties}
+                className={`${css.enter} flex min-h-0 w-full max-w-3xl flex-1 flex-col overflow-y-auto px-4 [mask-image:linear-gradient(transparent,#000_3rem)] md:px-8`}
               >
                 {convo.length ? (
                   <ol aria-label="Conversation" className="flex flex-col gap-6 pt-8 pb-4">
@@ -470,7 +490,23 @@ export function VoiceDock({ eventId }: { eventId: string }) {
                     ))}
                   </ol>
                 ) : (
-                  <p className="pt-8 text-center text-base text-balance text-fg-muted md:text-lg">{hint}</p>
+                  <div className="m-auto flex flex-col items-center gap-4 py-8 text-center">
+                    <p className="text-2xl font-medium text-balance md:text-3xl">Run the event by voice</p>
+                    <p className="measure-tight text-base text-pretty text-fg-muted md:text-lg">{hint}</p>
+                    <ul aria-label="Try asking" className="mt-4 flex flex-wrap justify-center gap-2">
+                      {SUGGESTIONS.map((q, i) => (
+                        <li key={q} className={css.suggest} style={{ "--i": i } as React.CSSProperties}>
+                          <button
+                            type="button"
+                            onClick={() => send(q)}
+                            className="press inline-flex min-h-11 items-center rounded-full border border-border bg-surface-raised/60 px-4 text-sm text-fg depth-1 hover:border-border-strong hover:bg-surface-raised md:min-h-9"
+                          >
+                            {q}
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
                 )}
               </div>
               {/* Spoken lines, announced one at a time. */}
@@ -478,13 +514,43 @@ export function VoiceDock({ eventId }: { eventId: string }) {
                 {v.caption.offstage ? `Offstage: ${v.caption.offstage}` : ""}
               </p>
 
-              <div className="flex w-full shrink-0 flex-col items-center gap-3 px-4 pt-3 md:px-8">
+              <div
+                style={{ "--i": 4 } as React.CSSProperties}
+                className={`${css.enter} flex w-full shrink-0 flex-col items-center gap-3 px-4 pt-4 md:px-8`}
+              >
                 <Strip steps={v.steps} />
                 {v.error ? <Alert variant="warning" title={v.error} className="w-full max-w-xl" /> : null}
               </div>
 
-              <div className="flex w-full max-w-3xl shrink-0 flex-col gap-3 px-4 pt-3 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-8 md:pb-8">
-                <div className="flex flex-wrap items-center gap-2">
+              <div
+                style={{ "--i": 5 } as React.CSSProperties}
+                className={`${css.enter} flex w-full max-w-3xl shrink-0 flex-col gap-3 px-4 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] md:px-8 md:pb-8`}
+              >
+                <form
+                  className="relative"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    send(text.trim());
+                    setText("");
+                  }}
+                >
+                  <Input
+                    aria-label="Type to Offstage"
+                    placeholder={asking ? "Type your answer" : "Type a question or a command"}
+                    value={text}
+                    onChange={(e) => setText(e.target.value)}
+                    className="min-h-14 rounded-full pr-16 pl-5 text-base"
+                  />
+                  <Button
+                    type="submit"
+                    disabled={!text.trim()}
+                    className="absolute top-1.5 right-1.5 size-11 px-0 motion-safe:hover:translate-y-0"
+                  >
+                    <ArrowUp aria-hidden className="size-5" />
+                    <span className="sr-only">Send</span>
+                  </Button>
+                </form>
+                <div className="flex flex-wrap items-center justify-center gap-2">
                   <Toggle on={converse} onClick={() => setConverse((c) => !c)}>
                     Conversation
                   </Toggle>
@@ -515,27 +581,6 @@ export function VoiceDock({ eventId }: { eventId: string }) {
                     ))}
                   </fieldset>
                 </div>
-                <form
-                  className="flex gap-2"
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    if (text.trim()) {
-                      v.type(text.trim());
-                      setText("");
-                    }
-                  }}
-                >
-                  <Input
-                    aria-label="Type to Offstage"
-                    placeholder={asking ? "Type your answer" : "Or type: what is on today?"}
-                    value={text}
-                    onChange={(e) => setText(e.target.value)}
-                    className="rounded-full px-5"
-                  />
-                  <Button type="submit" disabled={!text.trim()}>
-                    Send
-                  </Button>
-                </form>
               </div>
             </div>
 

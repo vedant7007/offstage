@@ -3,8 +3,33 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { Tabs as TabsPrimitive } from "radix-ui";
+import { SlidingIndicator } from "./motion/transitions";
 
-const Tabs = TabsPrimitive.Root;
+// The active underline glides between tabs (a shared view transition), so Tabs tracks the value
+// itself and changes it inside startTransition. Controlled and uncontrolled use work as before.
+const TabsState = React.createContext<{ value: string | undefined; name: string } | null>(null);
+
+function Tabs({
+  value: controlled,
+  defaultValue,
+  onValueChange,
+  ...props
+}: React.ComponentProps<typeof TabsPrimitive.Root>) {
+  const [own, setOwn] = React.useState(defaultValue);
+  const value = controlled ?? own;
+  const name = `tabs-${React.useId().replace(/[^a-zA-Z0-9_-]/g, "")}`;
+  const change = (next: string) => {
+    React.startTransition(() => {
+      setOwn(next);
+      onValueChange?.(next);
+    });
+  };
+  return (
+    <TabsState.Provider value={{ value, name }}>
+      <TabsPrimitive.Root value={value} onValueChange={change} {...props} />
+    </TabsState.Provider>
+  );
+}
 
 /** Scrolls sideways on narrow screens instead of wrapping. Arrow keys move between tabs. */
 function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.List>) {
@@ -19,18 +44,27 @@ function TabsList({ className, ...props }: React.ComponentProps<typeof TabsPrimi
   );
 }
 
-function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+function TabsTrigger({ className, children, ...props }: React.ComponentProps<typeof TabsPrimitive.Trigger>) {
+  const state = React.useContext(TabsState);
   return (
     <TabsPrimitive.Trigger
       className={cn(
-        "-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 border-transparent px-4 text-base font-medium text-fg-muted",
-        "transition-[color,border-color] duration-(--duration-slow) ease-out hover:border-border-strong hover:text-fg",
-        "data-[state=active]:border-curtain data-[state=active]:text-fg",
+        "relative inline-flex min-h-11 shrink-0 items-center gap-2 px-4 text-base font-medium text-fg-muted",
+        "transition-colors duration-(--duration-slow) ease-out hover:text-fg",
+        "data-[state=active]:text-fg",
         "[&_svg]:size-4",
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+      {state && state.value === props.value ? (
+        <SlidingIndicator
+          name={state.name}
+          className="absolute inset-x-2 -bottom-px h-0.5 rounded-full bg-curtain forced-colors:bg-[CanvasText]"
+        />
+      ) : null}
+    </TabsPrimitive.Trigger>
   );
 }
 

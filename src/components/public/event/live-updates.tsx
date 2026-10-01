@@ -1,17 +1,18 @@
-import { Clock, Megaphone } from "lucide-react";
+import { Clock } from "lucide-react";
 import type { AnnouncementCategory, PublicEventResponse } from "@/contracts";
 import { Alert } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
 import { formatTime } from "@/lib/time";
 import { AnnouncementLabel } from "@/components/public/announcement-label";
-import { Kicker } from "@/components/public/kicker";
+import { Reveal } from "@/components/ui/motion";
+import { SectionHead } from "@/components/public/event/section-head";
 
-// Left edge colour by category; emergencies are rendered separately as an emergency alert.
-const CATEGORY_EDGE: Record<Exclude<AnnouncementCategory, "emergency">, string> = {
-  info: "border-l-info",
-  change: "border-l-pending",
-  official: "border-l-curtain",
+// Dot colour by category; emergencies are rendered separately as an emergency alert.
+const CATEGORY_DOT: Record<Exclude<AnnouncementCategory, "emergency">, string> = {
+  info: "bg-info",
+  change: "bg-pending",
+  official: "bg-curtain",
 };
 
 type Props = { data: PublicEventResponse; cue: string };
@@ -31,24 +32,28 @@ export async function LiveUpdates({ data, cue }: Props) {
   const empty = !announcements.length && !disrupted.length;
 
   return (
-    <section aria-labelledby="updates-title" className="flex flex-col gap-4">
-      <Kicker>{cue}</Kicker>
-      <h2 id="updates-title" className="flex items-center gap-2 text-2xl md:text-3xl">
-        <Megaphone aria-hidden className="size-5 text-curtain-text" />
+    <section aria-labelledby="updates-title" className="flex flex-col gap-8">
+      <SectionHead cue={cue} id="updates-title">
         {t("event.updatesTitle")}
-      </h2>
+      </SectionHead>
       {emergencies.map((a) => (
         <Alert key={a.id} variant="emergency" title={a.title}>
           {a.body}
           <AnnouncementLabel announcement={a} onColour />
         </Alert>
       ))}
-      {empty ? <p className="text-fg-muted">{t("event.noUpdates")}</p> : null}
-      <ul className="flex flex-col gap-2">
-        {disrupted.map((s) => (
-          <li
+      {empty ? (
+        <p className="measure-tight rounded-card border border-dashed border-border-strong p-5 text-fg-muted">
+          {t("event.noUpdates")}
+        </p>
+      ) : null}
+      <ul className="flex flex-col gap-3">
+        {disrupted.map((s, i) => (
+          <Reveal
+            as="li"
             key={s.id}
-            className="flex items-start gap-3 rounded-card border border-pending bg-pending-soft p-4 text-pending-soft-fg"
+            index={i}
+            className="flex items-start gap-3 rounded-card border border-pending bg-pending-soft p-5 text-pending-soft-fg"
           >
             <Clock aria-hidden className="mt-0.5 size-4 shrink-0" />
             <p>
@@ -57,27 +62,33 @@ export async function LiveUpdates({ data, cue }: Props) {
                 ? t("event.cancelledNote")
                 : t("event.runningLate", { minutes: s.delayMinutes })}
             </p>
-          </li>
+          </Reveal>
         ))}
-        {others.map((a) => (
-          <li
+        {others.map((a, i) => (
+          <Reveal
+            as="li"
             key={a.id}
-            className={cn(
-              "flex flex-col gap-1.5 rounded-card border border-l-4 border-border bg-surface p-4 shadow-(--shadow-card)",
-              a.category !== "emergency" && CATEGORY_EDGE[a.category],
-            )}
+            index={disrupted.length + i}
+            className="flex flex-col gap-2 rounded-card border border-border bg-surface p-5 depth-2 md:p-6"
           >
-            <div className="flex flex-wrap items-center gap-2">
-              <p className="font-medium">{a.title}</p>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <span
+                aria-hidden
+                className={cn(
+                  "size-2 shrink-0 rounded-full",
+                  a.category !== "emergency" && CATEGORY_DOT[a.category],
+                )}
+              />
+              <p className="text-lg font-medium">{a.title}</p>
               {a.sentAt ? (
                 <time dateTime={a.sentAt} className="font-mono text-xs text-fg-muted">
                   {formatTime(a.sentAt)} {t("time.ist")}
                 </time>
               ) : null}
             </div>
-            <p className="text-sm">{a.body}</p>
+            <p className="measure text-pretty text-fg-muted">{a.body}</p>
             <AnnouncementLabel announcement={a} />
-          </li>
+          </Reveal>
         ))}
       </ul>
     </section>

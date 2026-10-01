@@ -24,7 +24,7 @@ function Chip({ selected = false, icon, count, className, children, ...props }: 
       aria-pressed={selected}
       className={cn(
         chipBase,
-        "transition-colors duration-(--duration-slow) ease-out",
+        "press",
         selected
           ? "border-fg bg-fg text-bg"
           : "border-border-strong bg-transparent text-fg hover:border-fg hover:bg-surface-raised",

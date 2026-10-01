@@ -143,6 +143,16 @@
     letter-spacing: -0.015em;
   }
 
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+
+  p {
+    text-wrap: pretty;
+  }
+
   /* One visible focus style for everything keyboard reachable */
   :focus-visible {
     outline: 2px solid var(--ring);
@@ -191,15 +201,30 @@
   text-transform: uppercase;
 }
 
-/* App chrome backdrop: two soft spotlights and a faint grid that fades out below the top bar.
-   Pure CSS, sits behind everything, never takes clicks. */
+/* App chrome backdrop: two soft spotlights, a faint grid that fades out below the top bar, and a
+   static grain. Pure CSS, sits behind everything, never takes clicks, never animates.
+   data-stage adds a third light behind the focal area (Live Stage, a hero). */
 @utility shell-backdrop {
   pointer-events: none;
   inset: 0;
   z-index: -1;
+  contain: strict;
   background:
     radial-gradient(56rem 32rem at 8% -12%, var(--ambient-1), transparent 70%),
     radial-gradient(44rem 28rem at 104% -6%, var(--ambient-2), transparent 70%);
+  &[data-stage] {
+    background:
+      radial-gradient(48rem 30rem at 50% 18%, var(--ambient-1), transparent 72%),
+      radial-gradient(56rem 32rem at 8% -12%, var(--ambient-1), transparent 70%),
+      radial-gradient(44rem 28rem at 104% -6%, var(--ambient-2), transparent 70%);
+  }
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--grain) 0 0 / 160px;
+    opacity: var(--grain-opacity);
+  }
   &::after {
     content: "";
     position: absolute;
@@ -212,14 +237,267 @@
   }
 }
 
-/* Page enter: each new page under the app chrome rises in once. Zero specificity, so a page's
-   own animation wins; translate (not transform) so it never fights a page's transforms. */
+/* Page enter for pages not yet wrapped in PageTransition: each page under the app chrome rises in
+   once. Zero specificity, so a page's own animation wins. translate with a backwards fill, so nothing
+   stays transformed afterwards and fixed overlays are never trapped. Pages wrapped in PageTransition
+   (data-vt-page) animate through view transitions instead. Delete once every area wraps its pages. */
 @keyframes shell-enter {
   from {
     opacity: 0;
     translate: 0 6px;
   }
 }
-:where([data-shell-main] > *) {
+:where([data-shell-main] > :not([data-vt-page], :has([data-vt-page]))) {
   animation: shell-enter var(--duration-slower) var(--ease-out) backwards;
+}
+
+/* Static grain on any surface (a hero band, a stage). Needs a positioned parent. Uses ::before. */
+@utility grain {
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: var(--grain) 0 0 / 160px;
+    opacity: var(--grain-opacity);
+  }
+}
+
+/* Depth comes from light: a 1px inner top highlight plus soft long shadows. On ink the shadows vanish
+   and the highlight and border carry it. depth-1 controls, depth-2 cards, depth-3 popovers, dialogs. */
+@utility depth-1 {
+  box-shadow:
+    inset 0 1px 0 var(--highlight),
+    0 1px 2px rgb(var(--shadow-ink) / 0.06);
+}
+@utility depth-2 {
+  box-shadow:
+    inset 0 1px 0 var(--highlight),
+    0 1px 0.5px rgb(var(--shadow-ink) / 0.08),
+    0 16px 32px -16px rgb(var(--shadow-ink) / 0.18);
+}
+@utility depth-3 {
+  box-shadow:
+    inset 0 1px 0 var(--highlight),
+    0 2px 4px -1px rgb(var(--shadow-ink) / 0.06),
+    0 12px 24px -8px rgb(var(--shadow-ink) / 0.14),
+    0 32px 64px -24px rgb(var(--shadow-ink) / 0.22);
+}
+
+/* Gradient hairline for key cards only (ticket, focused approval, final CTA, voice panel): at most
+   three per page. Uses ::before, so do not combine with spot. */
+@utility edge {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--fg) 20%, transparent),
+      color-mix(in srgb, var(--fg) 5%, transparent) 45%,
+      color-mix(in srgb, var(--curtain) 40%, transparent)
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+  }
+}
+
+/* With edge: the one moving border on a page (the final CTA or the voice ring). Small elements only. */
+@property --angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+@keyframes edge-spin {
+  to {
+    --angle: 360deg;
+  }
+}
+@utility edge-live {
+  &::before {
+    /* A travelling arc of light over the resting hairline */
+    background:
+      conic-gradient(from var(--angle), transparent 0 70%, var(--curtain) 85%, transparent),
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--fg) 18%, transparent),
+        color-mix(in srgb, var(--fg) 6%, transparent)
+      );
+    animation: edge-spin 6s linear infinite;
+  }
+}
+
+/* Spring press for buttons, chips and persona cards. Uses scale, so it composes with translate (lift,
+   magnet). The magnet (data-magnetic) retimes translate through --mag-duration and --mag-ease. */
+@utility press {
+  transition:
+    color var(--duration-slow) var(--ease-out),
+    background-color var(--duration-slow) var(--ease-out),
+    border-color var(--duration-slow) var(--ease-out),
+    scale 400ms var(--spring-snappy),
+    translate var(--mag-duration, 400ms) var(--mag-ease, var(--spring-snappy));
+  &:active:not(:disabled, [aria-disabled="true"]) {
+    scale: 0.97;
+    transition-duration:
+      var(--duration-instant), var(--duration-instant), var(--duration-instant), var(--duration-instant),
+      var(--mag-duration, 400ms);
+    transition-timing-function: var(--ease-out);
+  }
+}
+
+/* Hover lift for interactive cards: 2px up and the border firms. Never animates the shadow. */
+@utility lift {
+  transition:
+    translate var(--duration-slow) var(--ease-out),
+    border-color var(--duration-slow) var(--ease-out);
+  @media (hover: hover) {
+    &:hover {
+      border-color: var(--border-strong);
+    }
+  }
+  @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+    &:hover {
+      translate: 0 -2px;
+    }
+  }
+}
+
+/* Cursor spotlight: a soft accent glow that follows the mouse. The PointerFx delegate in Providers
+   writes --mx and --my, so no handlers are needed. Keyboard focus shows it too. Uses ::before. */
+@utility spot {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--duration-slow) var(--ease-out);
+    background: radial-gradient(
+      260px circle at var(--mx, 50%) var(--my, 50%),
+      color-mix(in srgb, var(--curtain) 12%, transparent),
+      transparent 70%
+    );
+  }
+  &:focus-visible::before,
+  &:has(:focus-visible)::before {
+    opacity: 1;
+  }
+  @media (hover: hover) {
+    &:hover::before {
+      opacity: 1;
+    }
+  }
+}
+
+/* With spot: the border lights up near the cursor (a masked 1px ring). Uses ::after. */
+@utility spot-edge {
+  &::after {
+    content: "";
+    position: absolute;
+    inset: -1px;
+    padding: 1px;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity var(--duration-slow) var(--ease-out);
+    background: radial-gradient(
+      180px circle at var(--mx, 50%) var(--my, 50%),
+      color-mix(in srgb, var(--curtain) 55%, transparent),
+      transparent 70%
+    );
+    -webkit-mask:
+      linear-gradient(#000 0 0) content-box,
+      linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask:
+      linear-gradient(#000 0 0) content-box exclude,
+      linear-gradient(#000 0 0);
+  }
+  &:focus-visible::after,
+  &:has(:focus-visible)::after {
+    opacity: 1;
+  }
+  @media (hover: hover) {
+    &:hover::after {
+      opacity: 1;
+    }
+  }
+}
+
+/* Linear-style tone fade, hero h1 only. Solid text in forced colours. */
+@utility text-fade {
+  background: linear-gradient(180deg, var(--fg) 35%, color-mix(in srgb, var(--fg) 64%, transparent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  @media (forced-colors: active) {
+    background: none;
+    color: CanvasText;
+  }
+}
+
+/* Fluid display sizes: hero 44 to 72 px, section h2 36 to 56 px. Tracking is in em, so it scales. */
+@utility text-hero {
+  font-size: clamp(2.75rem, 2.1rem + 2.667vw, 4.5rem);
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+}
+@utility text-section {
+  font-size: clamp(2.25rem, 1.786rem + 1.905vw, 3.5rem);
+  line-height: 1.08;
+  letter-spacing: -0.032em;
+}
+
+/* Reading measures: body 65ch, lede 52ch, empty-state copy 44ch */
+@utility measure {
+  max-width: 65ch;
+}
+@utility measure-lede {
+  max-width: 52ch;
+}
+@utility measure-tight {
+  max-width: 44ch;
+}
+
+/* Devanagari (Hindi, not Latin-script Hinglish): negative tracking breaks the shirorekha and tight
+   display leading clips matras. Unlayered, so it beats the tracking and leading utilities. */
+:is(h1, h2, h3, [class*="text-"], [class*="tracking-"]):lang(hi):not(:lang(hi-Latn)) {
+  letter-spacing: 0;
+}
+:is(
+    h1,
+    h2,
+    h3,
+    [class*="text-xl"],
+    [class*="text-2xl"],
+    [class*="text-3xl"],
+    [class*="text-4xl"],
+    [class*="text-5xl"],
+    [class*="text-6xl"],
+    [class*="text-7xl"],
+    [class*="text-hero"],
+    [class*="text-section"]
+  ):lang(hi):not(:lang(hi-Latn)) {
+  line-height: 1.3;
+}
+
+/* Cross-document navigations (full page loads) crossfade too. In-app routes use React ViewTransition
+   (src/components/ui/motion/page-transition.tsx); its CSS lives in motion.css. */
+@view-transition {
+  navigation: auto;
 }
