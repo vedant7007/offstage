@@ -43,7 +43,7 @@ const MOTION = `@media (prefers-reduced-motion: no-preference) {
   .os-banner { display: flex; animation: os-drop ${BANNER_MS}ms cubic-bezier(.4,0,.1,1) both; }
 }
 @keyframes os-in { from { opacity: 0; transform: translateY(14px) scale(.96); } to { opacity: 1; transform: none; } }
-@keyframes os-glow { 0%, 30% { box-shadow: 0 0 0 1px rgb(193 255 0 / .55), 0 0 24px rgb(193 255 0 / .35); } 100% { box-shadow: 0 0 0 1px transparent, 0 0 0 transparent; } }
+@keyframes os-glow { 0%, 30% { box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-lime) 55%, transparent), 0 0 24px color-mix(in srgb, var(--color-lime) 35%, transparent); } 100% { box-shadow: 0 0 0 1px transparent, 0 0 0 transparent; } }
 @keyframes os-drop { 0% { opacity: 0; transform: translateY(-130%); } 12%, 84% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(-130%); } }`;
 
 const same = (a: string, b: string) => a.replace(/[.\s]+$/, "") === b.replace(/[.\s]+$/, "");
@@ -93,7 +93,7 @@ function Message({ m, fresh }: { m: Item; fresh: boolean }) {
     ) : kind === "in_app" ? (
       <div className="mb-1.5 flex items-center gap-2">
         <span aria-hidden className="flex size-5 shrink-0 items-center justify-center rounded-md bg-black">
-          <span className="size-2 rounded-full bg-[#c1ff00]" />
+          <span className="size-2 rounded-full bg-lime" />
         </span>
         <span className="min-w-0 flex-1 truncate font-mono text-[0.625rem] tracking-[0.08em] text-white/75 uppercase">
           OFFSTAGE, {c.label}
@@ -122,7 +122,17 @@ function Message({ m, fresh }: { m: Item; fresh: boolean }) {
   );
 }
 
-function Phone({ p, time, fresh, banner }: { p: Persona; time: string; fresh: Set<string>; banner?: Item }) {
+export function Phone({
+  p,
+  time,
+  fresh,
+  banner,
+}: {
+  p: Persona;
+  time: string;
+  fresh: Set<string>;
+  banner?: Item;
+}) {
   const listRef = React.useRef<HTMLOListElement>(null);
   const last = p.items.at(-1)?.id;
   React.useEffect(() => {
@@ -146,7 +156,7 @@ function Phone({ p, time, fresh, banner }: { p: Persona; time: string; fresh: Se
             {banner ? (
               <div aria-hidden key={banner.id} className={cn(PHONE.banner, "os-banner hidden")}>
                 <span className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-black">
-                  <span className="size-2.5 rounded-full bg-[#c1ff00]" />
+                  <span className="size-2.5 rounded-full bg-lime" />
                 </span>
                 <span className="flex min-w-0 flex-col">
                   <span className="font-mono text-[0.625rem] tracking-[0.08em] text-white/75 uppercase">

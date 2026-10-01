@@ -106,7 +106,7 @@ export function useStage(eventId: string) {
   React.useEffect(() => {
     void loadPending().catch(() => undefined);
     void loadDelivery();
-    api.call("overview", { params: { eventId } }).then(
+    const overview = api.call("overview", { params: { eventId } }).then(
       (o) => {
         offset.current = Date.parse(o.metrics.at) - Date.now();
         setSkew(offset.current);
@@ -116,13 +116,21 @@ export function useStage(eventId: string) {
       },
       () => undefined,
     );
-    api.call("listAgentRuns", { params: { eventId }, query: { limit: 50 } }).then(
-      (r) => {
+    // Run times are on the event clock; the overview's clock turns them into this browser's time.
+    void Promise.all([
+      api.call("listAgentRuns", { params: { eventId }, query: { limit: 50 } }),
+      overview,
+    ]).then(
+      ([r]) => {
         const last: Partial<Record<AgentName, Finished>> = {};
         const running: Partial<Record<AgentName, Live>> = {};
         for (const run of [...r.items].reverse()) {
           if (run.status === "running") running[run.agent] = { runId: run.id, phase: "thinking" };
-          else last[run.agent] = { status: run.status, at: Date.parse(run.finishedAt ?? run.startedAt) };
+          else
+            last[run.agent] = {
+              status: run.status,
+              at: Date.parse(run.finishedAt ?? run.startedAt) - offset.current,
+            };
         }
         setFinished(last);
         setLive(running);

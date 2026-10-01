@@ -145,7 +145,7 @@ export function metricsSnapshot(w: EventWorld): MetricsSnapshot {
   const tenMinAgo = now - 10 * 60_000;
   const confirmed = w.registrations.filter((r) => r.status === "confirmed").length;
   const firstCheckins = w.checkins.filter((c) => !c.duplicate);
-  const pending = w.proposals.filter((p) => p.status === "pending");
+  const pending = w.proposals.filter((p) => p.status === "pending" && !p.parentId);
   const pendingByDomain: MetricsSnapshot["pendingByDomain"] = {};
   for (const p of pending) pendingByDomain[p.domain] = (pendingByDomain[p.domain] ?? 0) + 1;
 

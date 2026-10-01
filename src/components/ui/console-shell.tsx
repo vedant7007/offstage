@@ -44,7 +44,7 @@ function StatusPill({ overview }: { overview: OverviewResponse }) {
   return (
     <p className={cn(pill, "bg-surface/80 depth-1 animate-in fade-in-0 duration-(--duration-base)")}>
       {s.live ? (
-        <LivePulse className="text-[#c1ff00] ring-1 ring-black/30" />
+        <LivePulse className="text-lime ring-1 ring-black/30" />
       ) : (
         <span aria-hidden className="size-2 shrink-0 rounded-full bg-neutral" />
       )}

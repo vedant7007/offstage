@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ENDPOINTS, StreamMessage, type EndpointName } from "@/contracts/api";
 import { onMessage } from "@/showcase/bus";
 import { loadScenario, WORLD } from "@/showcase/data";
-import { GAP_TO, resetDemo, schedule } from "@/showcase/engine";
+import { GAP_MIN, GAP_TO, PHASE_MAX, resetDemo, schedule } from "@/showcase/engine";
 import { showcaseCall } from "@/showcase/mock";
 import {
   AS_HEADER,
@@ -66,6 +66,19 @@ describe("timeline", () => {
       900 + GAP_TO,
       1000 + GAP_TO,
     ]);
+  });
+
+  it("caps a long phase at PHASE_MAX, keeping order and real gaps of at least GAP_MIN", async () => {
+    const stream = (await loadScenario("lunch_confusion")).phases[0]!.stream;
+    const at = schedule(stream);
+    expect(at).toHaveLength(stream.length);
+    expect(at.at(-1)!).toBeLessThanOrEqual(PHASE_MAX + 1);
+    expect(at.at(-1)!).toBeGreaterThan(PHASE_MAX * 0.9);
+    stream.forEach(({ t }, i) => {
+      if (i === 0) return;
+      const recorded = Math.min(t - stream[i - 1]!.t, GAP_TO);
+      expect(at[i]! - at[i - 1]!).toBeGreaterThanOrEqual(Math.min(recorded, GAP_MIN) - 1);
+    });
   });
 
   it("plays speaker_cancel end to end: trigger, owner then faculty, after phase, helpdesk", async () => {
@@ -159,6 +172,58 @@ describe("timeline", () => {
       await call("whatIf", { body: { eventId: EVENT, scenario: "What if the main speaker cancels?" } });
       await call("verifyKey", { params: { slug: WORLD.eventSlug } });
     }
+  });
+});
+
+describe("several scenarios", () => {
+  it("accumulate lists across scenarios and count only what the Approvals list shows", async () => {
+    const lists = async () => {
+      const props = (await call("listProposals", {
+        params: { eventId: EVENT },
+        query: { status: "pending", limit: 100 },
+      })) as { items: { id: string; parentId?: string | null; status: string }[] };
+      const runs = (await call("listAgentRuns", { params: { eventId: EVENT }, query: { limit: 50 } })) as {
+        items: { id: string }[];
+      };
+      const o = (await call("overview", { params: { eventId: EVENT } })) as {
+        metrics: { pendingApprovals: number };
+        recent: { id: string }[];
+      };
+      return { props, runs, o };
+    };
+    setLedger((l) => ({ ...l, persona: "owner", phases: ["speaker_cancel/trigger"] }));
+    const one = await lists();
+    // The plan's 11 steps are not on the Approvals list, so they are not in the badge either.
+    const shown = one.props.items.filter((p) => !p.parentId && p.status === "pending");
+    expect(one.o.metrics.pendingApprovals).toBe(shown.length);
+    expect(one.props.items.length).toBeGreaterThan(shown.length);
+
+    setLedger((l) => ({ ...l, phases: [...l.phases, "budget_breach/trigger"] }));
+    const two = await lists();
+    const has = (rows: { id: string }[], id: string) => rows.some((r) => r.id === id);
+    expect(has(two.props.items, CANCEL)).toBe(true);
+    expect(has(two.props.items, "c659735b-e0e9-4fe3-a7a7-60f64b155698")).toBe(true);
+    for (const r of one.runs.items) expect(has(two.runs.items, r.id)).toBe(true);
+    expect(two.runs.items.length).toBeGreaterThan(one.runs.items.length);
+    for (const e of one.o.recent.slice(0, 5)) expect(has(two.o.recent, e.id)).toBe(true);
+    // Newest scenario first.
+    const budget = (await loadScenario("budget_breach")).phases[0]!.responses;
+    const budgetRuns = Object.entries(budget).find(
+      ([k]) => k.startsWith("listAgentRuns ") && k.endsWith('"limit":50}}'),
+    )![1] as {
+      items: { id: string }[];
+    };
+    expect(two.runs.items[0]!.id).toBe(budgetRuns.items[0]!.id);
+
+    // Approving speaker_cancel's plan drops it from the list while budget_breach's proposal stays.
+    setLedger((l) => ({ ...l, phases: [...l.phases, "speaker_cancel/approve-1"] }));
+    const three = await lists();
+    expect(has(three.props.items, CANCEL)).toBe(false);
+    expect(has(three.props.items, "c659735b-e0e9-4fe3-a7a7-60f64b155698")).toBe(true);
+    const feed = (await call("personaFeed", { params: { eventId: EVENT } })) as {
+      personas: { key: string; items: unknown[] }[];
+    };
+    expect(feed.personas.find((p) => p.key === "speaker")!.items.length).toBeGreaterThan(0);
   });
 });
 

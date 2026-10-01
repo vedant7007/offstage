@@ -37,6 +37,12 @@ export function metaOf(p: ActionProposal): string {
 const message = (e: unknown) =>
   e instanceof ApiClientError ? e.message : e instanceof Error ? e.message : "Something went wrong";
 
+/** Who to switch to for the missing sign-off. The showcase recordings need the Event head and the Faculty approver. */
+function secondApprover(p: ActionProposal) {
+  if (!isShowcase() || !p.facultyApprovalRequired) return "the Event head or Program Lead";
+  return p.approvals.some((a) => a.role === "faculty_approver") ? "the Event head" : "the Faculty approver";
+}
+
 /** How long the approve burst plays before the list moves on. */
 const BURST_MS = 380;
 
@@ -81,15 +87,14 @@ export function ApproveButton({
               params: { eventId, proposalId: proposal.id },
               body: { diffHash: proposal.diffHash },
             });
-            const left = proposal.requiredApprovals - proposal.approvals.length - 1;
+            // Still pending after this approval means someone else must sign too.
+            const left =
+              res.proposal.status === "pending"
+                ? Math.max(1, res.proposal.requiredApprovals - res.proposal.approvals.length)
+                : 0;
             toast.success(
               left > 0
-                ? `Approved. ${left} more person must approve before it runs: switch persona to ${
-                    // The showcase recordings need the faculty approver as the second sign-off.
-                    isShowcase() && proposal.facultyApprovalRequired
-                      ? "the Faculty approver"
-                      : "the Event head or Program Lead"
-                  }.`
+                ? `Approved. ${left} more person must approve before it runs: switch persona to ${secondApprover(res.proposal)}.`
                 : "Approved",
             );
             setOk(true);
@@ -98,9 +103,12 @@ export function ApproveButton({
             onDone(res.proposal);
           } catch (e) {
             const text = message(e);
+            // The showcase answer already names who is still missing.
             if (/already approved/i.test(text))
               toast.info(
-                "You approved this. A second person must approve it: switch persona to the Event head or Program Lead.",
+                isShowcase()
+                  ? text
+                  : "You approved this. A second person must approve it: switch persona to the Event head or Program Lead.",
               );
             else toast.error(text);
           } finally {

@@ -99,9 +99,17 @@ async function doApprove(c: Ctx, a: Args) {
   if (d.proposal.status !== "pending") throw new ApiClientError(409, "conflict", "This is no longer pending");
   if (!persona || !APPROVERS.includes(persona))
     throw forbidden("Your role can view proposals but not approve them. Switch persona to the Event head.");
-  if ((c.l.approvals[proposalId] ?? []).includes(persona))
-    throw new ApiClientError(409, "conflict", "You already approved this");
   const rule = await ruleFor(c.l, proposalId);
+  const got = c.l.approvals[proposalId] ?? [];
+  if (got.includes(persona)) {
+    const roles = rule.roles ?? (d.proposal.facultyApprovalRequired ? ["owner", "faculty"] : ["owner"]);
+    const missing = roles.filter((r) => !got.includes(r as DemoPersona)).map((r) => LABEL[r] ?? r);
+    throw new ApiClientError(
+      409,
+      "conflict",
+      `You already approved this. Switch persona to ${missing.length ? missing.join(" and ") : "another approver"} for the second sign-off.`,
+    );
+  }
   if (rule.roles && !rule.roles.includes(persona))
     throw forbidden(
       `This needs ${rule.roles.map((r) => LABEL[r] ?? r).join(" and ")}. Switch persona to approve it.`,
@@ -193,13 +201,12 @@ export async function showcaseCall(
       const o = c.map.get(key) as { metrics: { at: string; pendingApprovals: number } } | undefined;
       if (!o) return undefined;
       const at = new Date(Date.now() + clockOffset(l, WORLD.demoClock)).toISOString();
-      // Approved or rejected here but still pending in the recording: no longer waiting.
+      // What the Approvals list shows: top-level proposals still pending after this visitor's approvals.
       const pending = c.map.get(
         responseKey("listProposals", { params: a.params, query: { limit: 100, status: "pending" } }),
       ) as { items: ActionProposal[] } | undefined;
       const patched = await Promise.all((pending?.items ?? []).map((x) => patchProposal(c, x)));
-      const settled = patched.filter((x) => x.status !== "pending").length;
-      const pendingApprovals = Math.max(0, o.metrics.pendingApprovals - settled);
+      const pendingApprovals = patched.filter((x) => !x.parentId && x.status === "pending").length;
       return { ...o, metrics: { ...o.metrics, at, pendingApprovals } };
     }
     case "realSends":
@@ -245,8 +252,9 @@ export async function showcaseCall(
       if (!browser) return { message: "" };
       return trigger((a.body as { scenario: string }).scenario);
     case "listAgentRuns": {
-      if (c.map.has(key)) return c.map.get(key);
-      const all = c.map.get(responseKey(name, { params: a.params, query: { limit: 50 } })) as
+      // The recorded answer when there is one (merged across scenarios, newest first), else the full list.
+      const all = (c.map.get(key) ??
+        c.map.get(responseKey(name, { params: a.params, query: { limit: 50 } }))) as
         { items: { agent: string }[] } | undefined;
       if (!all) return undefined;
       const agent = a.query?.agent;
