@@ -12,10 +12,11 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
-import { CONSOLE_PATH, DEMO_EVENT_SLUG, eventPath } from "@/components/public/links";
+import { CONTACT_MAILTO, DEMO_EVENT_SLUG, LOGIN_PATH, REPO_URL, eventPath } from "@/components/public/links";
 import en from "@/lib/i18n/en.json";
 import { useT } from "@/lib/i18n/provider";
 import type { MessageKey, Translate } from "@/lib/i18n/translate";
+import { isShowcase } from "@/showcase/flag";
 import { ActCommander } from "./act-commander";
 import { ActFeatures } from "./act-features";
 import { ShowAct } from "./act-show";
@@ -31,6 +32,8 @@ import {
   IMPACT,
   LAW,
   LAW_LINE,
+  PROOF,
+  TEAM,
   TIERS,
   TRUST,
   actLabel,
@@ -79,6 +82,18 @@ function CueHead({
       <p className={cx(s.cueKicker, s.mono)}>{act?.cue ? `Cue ${act.cue}` : act?.label}</p>
       {children}
     </header>
+  );
+}
+
+/** The award, as a gold pill. Shown in the hero and again at the curtain call. */
+function Badge({ text }: { text: string }) {
+  return (
+    <p className={cx(s.badge, s.mono)}>
+      <svg viewBox="0 0 24 24" aria-hidden className={s.badgeIcon}>
+        <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" />
+      </svg>
+      {text}
+    </p>
   );
 }
 
@@ -153,6 +168,7 @@ export function TheatrePage() {
   useTheatre(rootRef, film);
   const t = useT();
   const copy = useMemo(() => translateTree(t, en.theatre, "theatre"), [t]);
+  const L = copy.landing;
 
   // Smooth wheel scrolling on this page only. It moves the real window scroll, so the theatre's
   // scroll listener keeps working; destroyed on unmount so other routes scroll natively.
@@ -196,8 +212,8 @@ export function TheatrePage() {
           {actLabel(0)}
         </p>
       </header>
-      <Link href={CONSOLE_PATH} className={cx(s.btn, s.btnLime, s.navCta)}>
-        Enter live demo
+      <Link href={LOGIN_PATH} className={cx(s.btn, s.btnLime, s.navCta)}>
+        {L.ctaDemo}
       </Link>
 
       <nav className={s.rail} aria-label="Story progress">
@@ -223,26 +239,29 @@ export function TheatrePage() {
           id="opening"
           data-act="opening"
           className={cx(s.act, s.dark)}
-          style={vars({ "--acth": "200vh" })}
+          style={vars({ "--acth": "170vh" })}
         >
           <div className={cx(s.stage, s.stageHero, s.persp)}>
             <div className={s.hero} data-t="hero">
-              <p className={cx(s.heroKicker, s.mono)}>An event operating system</p>
+              <Badge text={L.badge} />
               <h1 className={s.heroTitle}>
-                <span className={s.line}>The show</span>{" "}
+                <span className={s.line}>{L.heroTitleA}</span>{" "}
                 <span className={s.line}>
-                  goes <span className={s.accent}>on.</span>
+                  {L.heroTitleB} <span className={s.accent}>{L.heroTitleC}</span>
                 </span>
               </h1>
-              <p className={s.heroSub}>OFFSTAGE runs everything behind it.</p>
-              <ul className={cx(s.heroMeta, s.mono)}>
-                <li>14 agents</li>
-                <li>A human lead on each</li>
-                <li>Built for Indian colleges</li>
-              </ul>
+              <p className={s.heroSub}>{L.heroSub}</p>
+              <div className={s.heroCtas}>
+                <Link href={LOGIN_PATH} className={cx(s.btn, s.btnLime, s.btnLg)}>
+                  {L.ctaDemo} <span aria-hidden>→</span>
+                </Link>
+                <a href="#how" className={cx(s.btn, s.btnGhost, s.btnLg)}>
+                  {L.ctaHow}
+                </a>
+              </div>
             </div>
             <p className={cx(s.hint, s.mono)} data-t="hint" aria-hidden>
-              Scroll to open the house <span className={s.hintDot} />
+              Scroll for the story <span className={s.hintDot} />
             </p>
             <div className={s.valance} aria-hidden />
             <div className={cx(s.curtain, s.curtainL)} data-t="curtL" aria-hidden />
@@ -311,52 +330,13 @@ export function TheatrePage() {
           />
         </section>
 
-        {/* Cue 03: the crew */}
-        <section id="crew" data-act="crew" className={cx(s.act, s.dark)} style={vars({ "--acth": "260vh" })}>
-          <div className={cx(s.stage, s.stageCrew, s.persp)}>
-            <div className={s.crewSpot} aria-hidden />
-            <CueHead id="crew" sticky>
-              <h2 className={s.cueTitle}>The crew</h2>
-              <p className={s.cueLede}>14 agents, every one with a human lead. Scroll to turn the stage.</p>
-            </CueHead>
-            <div className={s.rings}>
-              <ul className={s.ring} data-t="ring">
-                {CREW.map((a) => (
-                  <li key={a.name} className={s.agent}>
-                    <AgentBody agent={a} />
-                  </li>
-                ))}
-              </ul>
-              <div className={cx(s.agent, s.agentCore)}>
-                <AgentBody agent={COMMANDER} />
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Cue 04: the show must go on */}
-        <section id="show" data-act="show" className={cx(s.act, s.dark)} style={vars({ "--acth": "280vh" })}>
-          <ShowAct
-            chain={CHAIN}
-            impact={IMPACT}
-            text={copy.show}
-            film={film}
-            head={
-              <CueHead id="show">
-                <h2 className={s.cueTitle}>
-                  <span className={s.line}>The show</span> <span className={s.line}>must go on</span>
-                </h2>
-              </CueHead>
-            }
-          />
-        </section>
-
-        {/* Cue 05: the rule */}
-        <section id="rule" data-act="rule" className={cx(s.act, s.light, s.actTail)}>
+        {/* Cue 03: how it works */}
+        <section id="how" data-act="how" className={cx(s.act, s.light, s.actTail)}>
           <div className={s.scroll} data-scroll="" style={vars({ "--scrollh": "180vh" })}>
             <div className={cx(s.stage, s.stageRule)}>
-              <CueHead id="rule">
-                <h2 className={s.cueTitle}>The rule</h2>
+              <CueHead id="how">
+                <h2 className={s.cueTitle}>How it works</h2>
+                <p className={s.cueLede}>One rule runs every agent, every hour of the event.</p>
               </CueHead>
               <ol className={s.plates} data-t="plates">
                 {LAW.map((line, i) => (
@@ -384,6 +364,46 @@ export function TheatrePage() {
           </div>
         </section>
 
+        {/* Cue 04: the crew */}
+        <section id="crew" data-act="crew" className={cx(s.act, s.dark)} style={vars({ "--acth": "260vh" })}>
+          <div className={cx(s.stage, s.stageCrew, s.persp)}>
+            <div className={s.crewSpot} aria-hidden />
+            <CueHead id="crew" sticky>
+              <h2 className={s.cueTitle}>The crew</h2>
+              <p className={s.cueLede}>14 agents, every one with a human lead. Scroll to turn the stage.</p>
+            </CueHead>
+            <div className={s.rings}>
+              <ul className={s.ring} data-t="ring">
+                {CREW.map((a) => (
+                  <li key={a.name} className={s.agent}>
+                    <AgentBody agent={a} />
+                  </li>
+                ))}
+              </ul>
+              <div className={cx(s.agent, s.agentCore)}>
+                <AgentBody agent={COMMANDER} />
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Cue 05: the live ops board */}
+        <section id="show" data-act="show" className={cx(s.act, s.dark)} style={vars({ "--acth": "280vh" })}>
+          <ShowAct
+            chain={CHAIN}
+            impact={IMPACT}
+            text={copy.show}
+            film={film}
+            head={
+              <CueHead id="show">
+                <h2 className={s.cueTitle}>
+                  <span className={s.line}>The show</span> <span className={s.line}>must go on</span>
+                </h2>
+              </CueHead>
+            }
+          />
+        </section>
+
         {/* Cue 06: what runs backstage */}
         <section
           id="features"
@@ -405,7 +425,24 @@ export function TheatrePage() {
           />
         </section>
 
-        {/* Cue 07: trust */}
+        {/* Cue 07: proof */}
+        <section id="proof" data-act="proof" className={cx(s.act, s.light)}>
+          <div className={s.proof}>
+            <CueHead id="proof">
+              <h2 className={s.cueTitle}>{L.proofKicker}</h2>
+            </CueHead>
+            <ul className={s.proofGrid} data-reveal="">
+              {PROOF.map((p) => (
+                <li key={p.key}>
+                  <span className={s.proofN}>{p.value ?? L.proofCostValue}</span>
+                  <span className={s.proofT}>{L[p.key]}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </section>
+
+        {/* Cue 08: trust */}
         <section id="trust" data-act="trust" className={cx(s.act, s.light, s.actTail)}>
           <div className={s.scroll} data-scroll="" style={vars({ "--scrollh": "120vh" })}>
             <div className={cx(s.stage, s.stageTrust)}>
@@ -456,12 +493,15 @@ export function TheatrePage() {
               </h2>
               <p className={s.finalS}>OFFSTAGE runs everything behind it.</p>
             </div>
-            <p className={cx(s.team, s.mono)} data-t="team">
-              Vedant · Abhinav · Thanishka
-            </p>
+            <div className={s.team} data-t="team">
+              <Badge text={L.badge} />
+              <p className={s.mono}>
+                {L.teamLabel}: {TEAM.join(", ")}
+              </p>
+            </div>
             <div className={s.ctaRow} data-t="cta">
-              <Link href={CONSOLE_PATH} className={cx(s.btn, s.btnLime, s.btnLg)}>
-                Enter the live demo <span aria-hidden>→</span>
+              <Link href={LOGIN_PATH} className={cx(s.btn, s.btnLime, s.btnLg)}>
+                {L.ctaDemo} <span aria-hidden>→</span>
               </Link>
               <Link href={eventPath(DEMO_EVENT_SLUG)} className={cx(s.btn, s.btnGhost, s.btnLg)}>
                 See the attendee side
@@ -471,17 +511,51 @@ export function TheatrePage() {
             <div className={cx(s.curtain, s.curtainR, s.finCurtain)} data-t="finR" aria-hidden />
           </div>
         </section>
+
+        {isShowcase() ? (
+          <section className={s.notice} aria-labelledby="demo-notice">
+            <h2 id="demo-notice" className={cx(s.noticeH, s.mono)}>
+              {L.noticeTitle}
+            </h2>
+            <p className={s.noticeP}>{L.noticeBody}</p>
+          </section>
+        ) : null}
+
+        <section id="contact" className={s.contact} aria-labelledby="contact-title" data-reveal="">
+          <p className={cx(s.cueKicker, s.mono)}>{L.contactKicker}</p>
+          <h2 id="contact-title" className={s.contactT}>
+            {L.contactTitle}
+          </h2>
+          <p className={s.contactP}>{L.contactBody}</p>
+          <div className={s.contactRow}>
+            <a href={CONTACT_MAILTO} className={cx(s.btn, s.btnInk, s.btnLg)}>
+              {L.contactCta} <span aria-hidden>→</span>
+            </a>
+            <a
+              href={REPO_URL}
+              className={cx(s.btn, s.btnLine, s.btnLg)}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {L.source}
+            </a>
+          </div>
+        </section>
       </main>
 
       <footer className={s.foot}>
         <p className={cx(s.law, s.mono)}>{LAW_LINE}</p>
         <p className={cx(s.flow, s.mono)} aria-hidden>
-          chaos → commander → crew → show → rule → backstage → trust → curtain call
+          problem → commander → rule → crew → live ops → backstage → proof → trust → curtain call
         </p>
         <nav aria-label="Footer" className={s.footNav}>
           <Link href="/about-ai">About our AI</Link>
           <Link href={eventPath(DEMO_EVENT_SLUG)}>Demo event</Link>
-          <Link href={CONSOLE_PATH}>Console</Link>
+          <Link href={LOGIN_PATH}>{L.ctaDemo}</Link>
+          <a href={CONTACT_MAILTO}>{L.contactCta}</a>
+          <a href={REPO_URL} target="_blank" rel="noopener noreferrer">
+            GitHub
+          </a>
         </nav>
       </footer>
     </div>

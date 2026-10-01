@@ -26,7 +26,7 @@ export const COMMANDER_EN = {
   barEvent: "Event days",
   team: "Agent team",
   teamNote: "Each one reports to a human lead",
-  handoff: "Next: the crew",
+  handoff: "Next: how it works",
   closing: "One shared source of truth.",
 } as const;
 

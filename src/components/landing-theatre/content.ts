@@ -11,13 +11,14 @@ export type Agent = { name: string; does: string; lead: string };
 /** Acts in page order. `label` is the one name each act uses in the nav cue, the rail and the h2 kicker. */
 export const ACTS = [
   { id: "opening", label: "Opening", cue: null },
-  { id: "chaos", label: "The chaos", cue: "01" },
-  { id: "commander", label: "Enter the Commander", cue: "02" },
-  { id: "crew", label: "The crew", cue: "03" },
-  { id: "show", label: "The show must go on", cue: "04" },
-  { id: "rule", label: "The rule", cue: "05" },
+  { id: "chaos", label: "The problem", cue: "01" },
+  { id: "commander", label: "The solution", cue: "02" },
+  { id: "how", label: "How it works", cue: "03" },
+  { id: "crew", label: "The crew", cue: "04" },
+  { id: "show", label: "Live ops board", cue: "05" },
   { id: "features", label: "What runs backstage", cue: "06" },
-  { id: "trust", label: "Trust", cue: "07" },
+  { id: "proof", label: "Proof", cue: "07" },
+  { id: "trust", label: "Trust", cue: "08" },
   { id: "final", label: "Curtain call", cue: null },
 ] as const;
 
@@ -177,6 +178,19 @@ export const TRUST = [
   "Minimum data, by default.",
   "Aligned with DPDP principles.",
 ];
+
+/**
+ * The proof strip, as the team measured it during the hackathon (golden eval set, guard suite,
+ * solver checks and a full demo run). Labels come from i18n keys under "theatre.landing".
+ */
+export const PROOF = [
+  { value: "95%", key: "proofGrounding" },
+  { value: "20 / 20", key: "proofInjections" },
+  { value: "42 / 42", key: "proofSolver" },
+  { value: null, key: "proofCost" },
+] as const;
+
+export const TEAM = ["Vedant Idlgave", "Abhinav Nakka", "V Thanishka"];
 
 export const BOW = [
   "Event completed.",

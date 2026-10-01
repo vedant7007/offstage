@@ -4,7 +4,7 @@ import { LanguageSwitcher, ThemeToggle, buttonVariants, vtAnchor } from "@/compo
 import { ScrollHeader, SiteMenu, SiteNavLinks } from "@/components/ui/shell-bits";
 import { cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
-import { CONSOLE_PATH, DEMO_EVENT_SLUG, eventPath } from "./links";
+import { DEMO_EVENT_SLUG, LOGIN_PATH, eventPath } from "./links";
 
 /** Wordmark with the lime cue dot. Shared by the header and footer. */
 export function Wordmark() {
@@ -26,7 +26,7 @@ export async function SiteHeader() {
     { href: eventPath(DEMO_EVENT_SLUG), label: t("landing.demoCta") },
     { href: "/about-ai", label: t("site.aboutAi") },
   ];
-  const cta = { href: CONSOLE_PATH, label: "Enter live demo" };
+  const cta = { href: LOGIN_PATH, label: t("site.demo") };
   return (
     <ScrollHeader {...vtAnchor("site-header")} className="sticky top-0 z-(--z-appbar)">
       <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4 md:px-8">

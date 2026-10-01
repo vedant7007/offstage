@@ -163,7 +163,10 @@
   "site": {
     "home": "OFFSTAGE home",
     "aboutAi": "Hamare AI ke baare mein",
-    "law": "Agents propose karte hain. Policy decide karti hai. Insaan approve karte hain. Code execute karta hai."
+    "law": "Agents propose karte hain. Policy decide karti hai. Insaan approve karte hain. Code execute karta hai.",
+    "contact": "Humse contact karo",
+    "github": "GitHub",
+    "demo": "Live demo try karo"
   },
   "landing": {
     "eyebrow": "Ek dibbe mein poori event team",
@@ -538,7 +541,7 @@
       "barEvent": "Event ke din",
       "team": "Agent team",
       "teamNote": "Har agent ek human lead ko report karta hai",
-      "handoff": "Aage: crew",
+      "handoff": "Aage: yeh kaise kaam karta hai",
       "closing": "Sach ka ek shared source."
     },
     "show": {
@@ -575,6 +578,29 @@
       "headcount": "Headcount",
       "foodCount": "Food count",
       "sandbox": "Sandbox"
+    },
+    "landing": {
+      "badge": "1st Prize, AIML Hacks 2026, KG Reddy College",
+      "heroTitleA": "Aapka event,",
+      "heroTitleB": "chalega",
+      "heroTitleC": "offstage.",
+      "heroSub": "Chaudah AI agents aapke event ke peeche ka kaam sambhalte hain, aur har ek ke saath ek human lead hota hai. Jo bhi public ho, bulk ho ya paison se juda ho, woh kisi insaan ke approval ka wait karta hai.",
+      "ctaDemo": "Live demo try karo",
+      "ctaHow": "Yeh kaise kaam karta hai",
+      "proofKicker": "Hackathon ke dauran measure kiya",
+      "proofGrounding": "helpdesk answers event documents ke citation ke saath",
+      "proofInjections": "prompt injection attacks guard ne block kiye",
+      "proofSolver": "schedule solver checks pass, koi clash nahi chhoota",
+      "proofCost": "poore demo run ka andaazan model kharcha",
+      "proofCostValue": "US$0.03",
+      "teamLabel": "Team MASTICODE",
+      "noticeTitle": "Is demo ke baare mein",
+      "noticeBody": "Yeh simulated data wala live demo hai. Koi asli message nahi jaata aur koi paisa charge nahi hota.",
+      "contactKicker": "Contact",
+      "contactTitle": "Apne event ke liye OFFSTAGE chahiye?",
+      "contactBody": "Apne fest, hackathon ya conference ke baare mein batao, hum aapse contact karenge.",
+      "contactCta": "Humse contact karo",
+      "source": "GitHub par source code"
     }
   }
 }

@@ -163,7 +163,10 @@
   "site": {
     "home": "OFFSTAGE home",
     "aboutAi": "About our AI",
-    "law": "Agents propose. Policy decides. Humans approve. Code executes."
+    "law": "Agents propose. Policy decides. Humans approve. Code executes.",
+    "contact": "Contact us",
+    "github": "GitHub",
+    "demo": "Try the live demo"
   },
   "landing": {
     "eyebrow": "An event operations team in a box",
@@ -639,7 +642,7 @@
       "barEvent": "Event days",
       "team": "Agent team",
       "teamNote": "Each one reports to a human lead",
-      "handoff": "Next: the crew",
+      "handoff": "Next: how it works",
       "closing": "One shared source of truth."
     },
     "show": {
@@ -676,6 +679,29 @@
       "headcount": "Headcount",
       "foodCount": "Food count",
       "sandbox": "Sandbox"
+    },
+    "landing": {
+      "badge": "1st Prize, AIML Hacks 2026, KG Reddy College",
+      "heroTitleA": "Your event,",
+      "heroTitleB": "run",
+      "heroTitleC": "offstage.",
+      "heroSub": "Fourteen AI agents run the work behind your event, each paired with a human lead. Anything public, bulk or about money waits for a person to approve it.",
+      "ctaDemo": "Try the live demo",
+      "ctaHow": "How it works",
+      "proofKicker": "Measured during the hackathon",
+      "proofGrounding": "of helpdesk answers grounded in cited event documents",
+      "proofInjections": "prompt injection attacks blocked by the guard",
+      "proofSolver": "schedule solver checks passed, no clashes let through",
+      "proofCost": "approximate model cost of one full demo run",
+      "proofCostValue": "US$0.03",
+      "teamLabel": "Team MASTICODE",
+      "noticeTitle": "About this demo",
+      "noticeBody": "This is a live demo with simulated data. No real messages are sent and nothing is charged.",
+      "contactKicker": "Contact",
+      "contactTitle": "Want OFFSTAGE for your event?",
+      "contactBody": "Tell us about your fest, hackathon or conference and we will get back to you.",
+      "contactCta": "Contact us",
+      "source": "Source code on GitHub"
     }
   }
 }
