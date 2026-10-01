@@ -4,7 +4,7 @@
  * escalations, today's agent runs). The arithmetic is the same metricsSnapshot the fixtures use,
  * so mock mode and the database agree on what each number means.
  */
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, isNull } from "drizzle-orm";
 import type { AgentName, Domain, DomainEvent, MetricsSnapshot } from "@/contracts";
 import type { OverviewResponse } from "@/contracts/api";
 import type { EventWorld } from "@/contracts/fixtures";
@@ -21,7 +21,14 @@ async function extras(eventId: string, now: Date) {
     db
       .select({ domain: t.proposals.domain, agent: t.proposals.proposerAgent })
       .from(t.proposals)
-      .where(and(eq(t.proposals.eventId, eventId), eq(t.proposals.status, "pending"))),
+      // Top-level only, like the Approvals list: a plan's steps are approved with the plan.
+      .where(
+        and(
+          eq(t.proposals.eventId, eventId),
+          eq(t.proposals.status, "pending"),
+          isNull(t.proposals.parentId),
+        ),
+      ),
     db
       .select({ body: t.messages.body, at: t.messages.at })
       .from(t.messages)

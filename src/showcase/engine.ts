@@ -15,16 +15,38 @@ import { clockOffset, fresh, getLedger, setLedger, type Ledger } from "./store";
 export const GAP_MAX = 4000;
 export const GAP_TO = 1500;
 
-/** Real offsets (ms from phase start) for each message, gaps over GAP_MAX squeezed to GAP_TO. */
+/** A phase never takes longer than this to replay. */
+export const PHASE_MAX = 20_000;
+/** Scaling never brings a gap below this, unless the recorded gap was already shorter (a burst stays a burst). */
+export const GAP_MIN = 150;
+
+/**
+ * Real offsets (ms from phase start) for each message: gaps over GAP_MAX squeezed to GAP_TO, then, if the
+ * phase still runs past PHASE_MAX, every gap scaled down by one factor, floored at GAP_MIN.
+ */
 export function schedule(stream: { t: number }[]): number[] {
-  let at = 0;
   let prev = 0;
-  return stream.map(({ t }) => {
+  const gaps = stream.map(({ t }) => {
     const gap = Math.max(0, t - prev);
-    at += gap > GAP_MAX ? GAP_TO : gap;
     prev = t;
-    return at;
+    return gap > GAP_MAX ? GAP_TO : gap;
   });
+  const scaled = (k: number) => gaps.map((g) => Math.max(g * k, Math.min(g, GAP_MIN)));
+  const total = (k: number) => scaled(k).reduce((a, b) => a + b, 0);
+  let k = 1;
+  if (total(1) > PHASE_MAX) {
+    // The floors make the total non-linear in k; bisect for the largest k that fits.
+    let lo = 0;
+    let hi = 1;
+    for (let i = 0; i < 30; i++) {
+      const mid = (lo + hi) / 2;
+      if (total(mid) > PHASE_MAX) hi = mid;
+      else lo = mid;
+    }
+    k = lo;
+  }
+  let at = 0;
+  return scaled(k).map((g) => Math.round((at += g)));
 }
 
 const demoNow = (l: Ledger) => new Date(Date.now() + clockOffset(l, WORLD.demoClock)).toISOString();

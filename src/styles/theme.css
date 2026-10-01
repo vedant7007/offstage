@@ -9,6 +9,8 @@
   --color-current: currentColor;
   --color-white: #ffffff;
   --color-black: #000000;
+  /* The brand lime, the same in both themes: live dots and the stage's signal colour. */
+  --color-lime: #c1ff00;
 
   --color-bg: var(--bg);
   --color-surface: var(--surface);

@@ -74,9 +74,87 @@ export async function activeScenarios(l: Ledger): Promise<Scenario[]> {
   return Promise.all([...names].map(loadScenario));
 }
 
+type Row = { id: string };
+const ids = (rows: Row[]) => new Set(rows.map((r) => r.id));
+
+/**
+ * One list from the world's rows and each played scenario's latest rows (oldest scenario first). Every
+ * scenario was recorded from the same starting world, so a world row is kept only while every scenario
+ * still lists it (a scenario that approved a pending proposal drops it), in its newest version. Rows a
+ * scenario added come newest scenario first for `desc` lists, last for `asc` (a phone feed reads down).
+ */
+export function mergeRows<T extends Row>(base: T[], scenarios: T[][], order: "desc" | "asc"): T[] {
+  const baseIds = ids(base);
+  const latest = new Map<string, T>();
+  for (const rows of scenarios) for (const r of rows) latest.set(r.id, r);
+  const kept = base
+    .filter((r) => scenarios.every((rows) => ids(rows).has(r.id)))
+    .map((r) => latest.get(r.id) ?? r);
+  const added: T[] = [];
+  const seen = new Set<string>();
+  for (const rows of order === "desc" ? [...scenarios].reverse() : scenarios)
+    for (const r of rows)
+      if (!baseIds.has(r.id) && !seen.has(r.id)) {
+        seen.add(r.id);
+        added.push(latest.get(r.id)!);
+      }
+  return order === "desc" ? [...added, ...kept] : [...kept, ...added];
+}
+
+type Items = { items: Row[] };
+type Feed = { personas: { key: string; items: Row[] }[] };
+type Overview = { recent: Row[] };
+
+/** How each list-shaped response merges across scenarios. Everything else is the latest snapshot. */
+function merger(key: string): ((base: unknown, snaps: unknown[]) => unknown) | null {
+  if (key.startsWith("listProposals ") || key.startsWith("listAgentRuns "))
+    return (base, snaps) => {
+      const s = snaps as Items[];
+      return {
+        ...s.at(-1),
+        items: mergeRows(
+          (base as Items | undefined)?.items ?? [],
+          s.map((x) => x.items),
+          "desc",
+        ),
+      };
+    };
+  if (key.startsWith("overview "))
+    return (base, snaps) => {
+      const s = snaps as Overview[];
+      const b = (base as Overview | undefined)?.recent ?? [];
+      return {
+        ...s.at(-1),
+        recent: mergeRows(
+          b,
+          s.map((x) => x.recent),
+          "desc",
+        ).slice(0, 50),
+      };
+    };
+  if (/^persona:\w+ personaFeed /.test(key))
+    return (base, snaps) => {
+      const s = snaps as Feed[];
+      const last = s.at(-1)!;
+      return {
+        ...last,
+        personas: last.personas.map((p) => {
+          const rows = (f: Feed | undefined) => f?.personas.find((x) => x.key === p.key)?.items ?? [];
+          return { ...p, items: mergeRows(rows(base as Feed | undefined), s.map(rows), "asc") };
+        }),
+      };
+    };
+  return null;
+}
+
 let cache: { key: string; map: Promise<Map<string, unknown>> } | null = null;
 
-/** world.json responses with each played phase's snapshot laid over them, in play order. */
+/**
+ * world.json responses with the played phases laid over them. Within a scenario a later phase replaces
+ * an earlier one. Across scenarios, plain responses take the latest snapshot, while lists (proposals,
+ * agent runs, the event feed, the phones) accumulate, so playing a second scenario keeps the first one's
+ * work on screen.
+ */
 export function responsesFor(l: Ledger): Promise<Map<string, unknown>> {
   const key = l.phases.join("|");
   if (cache?.key !== key) {
@@ -84,10 +162,23 @@ export function responsesFor(l: Ledger): Promise<Map<string, unknown>> {
       key,
       map: (async () => {
         const map = new Map(Object.entries(WORLD.responses));
+        // Response key to scenario to that scenario's latest snapshot, in the order scenarios last played.
+        const lists = new Map<string, Map<string, unknown>>();
         for (const k of l.phases) {
+          const scenario = k.split("/")[0]!;
           const phase = await loadPhase(k);
-          for (const [rk, v] of Object.entries(phase?.responses ?? {})) map.set(rk, v);
+          for (const [rk, v] of Object.entries(phase?.responses ?? {})) {
+            if (!merger(rk)) {
+              map.set(rk, v);
+              continue;
+            }
+            const per = lists.get(rk) ?? new Map<string, unknown>();
+            per.delete(scenario);
+            per.set(scenario, v);
+            lists.set(rk, per);
+          }
         }
+        for (const [rk, per] of lists) map.set(rk, merger(rk)!(WORLD.responses[rk], [...per.values()]));
         return map;
       })(),
     };

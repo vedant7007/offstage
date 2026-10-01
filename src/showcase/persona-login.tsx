@@ -65,9 +65,9 @@ export function PersonaLogin({ next, eventId }: { next: string; eventId: string 
       id: "speaker",
       persona: "viewer",
       title: "Lakshmi Prasad, speaker",
-      hint: "See her phone in the console as the plan reaches her. Read only.",
+      hint: "Her phone: the message that reaches her when her session moves. Read only.",
       icon: Mic,
-      home: `${stage}#phones-title`,
+      home: `${stage}/speaker`,
     },
     {
       id: "viewer",

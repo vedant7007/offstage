@@ -10,10 +10,11 @@ import type { NodeState } from "./use-stage";
 
 type Signal = { key: string; label: string; value: number; color: string };
 
-const LIME = "#c1ff00";
-const INFO = "#8a95ff";
-const GOLD = "#ffe45e";
-const RED = "#ff6b61";
+// The panel is always ink (`dark`), so these read the ink values.
+const LIME = "var(--color-lime)";
+const INFO = "var(--info)";
+const GOLD = "var(--pending)";
+const RED = "var(--danger-text)";
 
 /** What Radar watches, straight from the live metrics feed. Nothing here is estimated. */
 function signalsOf(m: MetricsSnapshot): Signal[] {
@@ -86,15 +87,15 @@ export function RadarPanel({
         type="button"
         onClick={onOpen}
         aria-label="Open Radar's glass box"
-        className="group relative mx-auto aspect-square w-full max-w-[15rem] rounded-full border border-[#c1ff00]/30 bg-[radial-gradient(circle,rgb(7_27_223/0.35),rgb(0_0_0/0.9)_70%)] shadow-[0_0_0_6px_rgb(193_255_0/0.05),0_0_60px_-10px_rgb(26_47_251/0.6)] transition-[translate,box-shadow] duration-300 ease-[cubic-bezier(.4,0,.1,1)] motion-safe:hover:-translate-y-0.5 hover:shadow-[0_0_0_6px_rgb(193_255_0/0.1),0_0_70px_-10px_rgb(26_47_251/0.8)]"
+        className="group relative mx-auto aspect-square w-full max-w-[15rem] rounded-full border border-lime/30 bg-[radial-gradient(circle,rgb(7_27_223/0.35),rgb(0_0_0/0.9)_70%)] shadow-[0_0_0_6px_rgb(193_255_0/0.05),0_0_60px_-10px_rgb(26_47_251/0.6)] transition-[translate,box-shadow] duration-300 ease-[cubic-bezier(.4,0,.1,1)] motion-safe:hover:-translate-y-0.5 hover:shadow-[0_0_0_6px_rgb(193_255_0/0.1),0_0_70px_-10px_rgb(26_47_251/0.8)]"
       >
         {/* Rings and cross hairs. */}
         <span
           aria-hidden
           className="absolute inset-0 rounded-full bg-[repeating-radial-gradient(circle,transparent_0,transparent_calc(25%-1px),rgb(193_255_0/0.18)_calc(25%-1px),rgb(193_255_0/0.18)_25%)]"
         />
-        <span aria-hidden className="absolute inset-x-0 top-1/2 h-px bg-[#c1ff00]/15" />
-        <span aria-hidden className="absolute inset-y-0 left-1/2 w-px bg-[#c1ff00]/15" />
+        <span aria-hidden className="absolute inset-x-0 top-1/2 h-px bg-lime/15" />
+        <span aria-hidden className="absolute inset-y-0 left-1/2 w-px bg-lime/15" />
         {/* The sweep: a lime wedge that fades behind its leading edge. Still under reduced motion. */}
         <span
           aria-hidden
@@ -115,10 +116,7 @@ export function RadarPanel({
             </span>
           );
         })}
-        <span
-          aria-hidden
-          className="absolute top-1/2 left-1/2 size-2 -translate-1/2 rounded-full bg-[#c1ff00]"
-        />
+        <span aria-hidden className="absolute top-1/2 left-1/2 size-2 -translate-1/2 rounded-full bg-lime" />
       </button>
 
       {metrics ? (

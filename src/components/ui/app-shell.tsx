@@ -161,7 +161,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
       className="flex min-h-11 min-w-0 items-center gap-2.5 text-lg font-medium tracking-[-0.03em]"
     >
       {/* The lime cue dot, same as the public wordmark */}
-      <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-[#c1ff00] ring-1 ring-black/40" />
+      <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-lime ring-1 ring-black/40" />
       <span className={cn("truncate", hasSidebar && collapsed && "md:sr-only")}>{title}</span>
     </Link>
   );
