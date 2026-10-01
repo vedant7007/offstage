@@ -4,7 +4,15 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { DemoPersona } from "@/contracts";
 import { Alert, Button, Field, Input, Reveal } from "@/components/ui";
-import { ArrowRight, LayoutDashboard, LoaderCircle, ScanLine, Ticket, type LucideIcon } from "lucide-react";
+import {
+  ArrowRight,
+  LayoutDashboard,
+  LoaderCircle,
+  MailCheck,
+  ScanLine,
+  Ticket,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DemoInboxLink } from "@/components/public/register/demo-inbox-link";
 import { Turnstile } from "@/components/public/register/turnstile";
@@ -157,8 +165,9 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
       </Field>
       {sent ? (
         <>
-          <p aria-live="polite" className="rounded-inner bg-surface-sunken px-4 py-3 text-sm">
-            {t("login.codeSent", { email: email.trim() })}
+          <p aria-live="polite" className="flex gap-3 rounded-inner bg-surface-sunken px-4 py-3 text-sm">
+            <MailCheck aria-hidden className="mt-0.5 size-4 shrink-0 text-approved-text" />
+            <span>{t("login.codeSent", { email: email.trim() })}</span>
           </p>
           {demoMode ? <DemoInboxLink slug={demoEventSlug} email={email.trim()} sent={sent} /> : null}
           <Field label={t("login.code")} error={error?.field === "code" ? error.text : undefined} required>
@@ -177,7 +186,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
             />
           </Field>
           <div className="flex flex-col gap-2">
-            <Button type="submit" size="lg" loading={busy === "signin"} block>
+            <Button type="submit" size="lg" loading={busy === "signin"} block magnetic data-max={4}>
               {t("login.signIn")}
             </Button>
             <div className="flex flex-wrap items-center justify-between gap-x-4">
@@ -185,6 +194,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
                 type="button"
                 variant="ghost"
                 size="sm"
+                className="-ml-4"
                 onClick={() => void sendCode()}
                 disabled={busy !== null}
               >
@@ -212,7 +222,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
             language={locale === "hi" ? "hi" : "en"}
             onToken={setToken}
           />
-          <Button type="submit" size="lg" loading={busy === "send"} block>
+          <Button type="submit" size="lg" loading={busy === "send"} block magnetic data-max={4}>
             {t("login.sendCode")}
           </Button>
         </>
@@ -307,7 +317,8 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
           </div>
         </Reveal>
       </section>
-      <Reveal index={5} className="flex flex-col gap-6">
+      {/* No scroll reveal here: on a laptop this block sits at the fold, and a form must never wait to appear. */}
+      <div className="flex flex-col gap-6">
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-3">
             <span aria-hidden className="h-px flex-1 bg-border" />
@@ -317,7 +328,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
           <p className="text-center text-sm text-fg-muted">{t("login.intro")}</p>
         </div>
         {form}
-      </Reveal>
+      </div>
     </div>
   );
 }
