@@ -159,7 +159,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
     const args = (rest[0] ?? {}) as CallArgs<N>;
     if (isMock) {
       const { mockCall } = await import("./api-client.mock");
-      const res = await mockCall(name, args as never, options.headers?.cookie);
+      const res = await mockCall(name, args as never, options.headers);
       return ENDPOINTS[name].response.parse(res) as ApiResponse<N>;
     }
     const res = await request(name, args);

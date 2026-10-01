@@ -10,6 +10,7 @@ import { VoiceDock } from "@/components/console/voice/voice-dock";
 import { createApiClient } from "@/lib/api-client";
 import { getSessionInfo, membershipFor } from "@/server/authz";
 import { isShowcase } from "@/showcase/flag";
+import { AS_HEADER } from "@/showcase/store";
 
 const demoMode = process.env.DEMO_MODE === "true" || process.env.DEMO_MODE === "1" || isShowcase();
 const mockApi = process.env.NEXT_PUBLIC_API_MOCK === "1" || process.env.NEXT_PUBLIC_API_MOCK === "true";
@@ -19,9 +20,9 @@ export default async function ConsoleLayout({ children, params }: LayoutProps<"/
   const { eventId } = await params;
   let role: string | null = null;
   if (isShowcase()) {
-    // The persona chosen in this browser, read from its cookie by the showcase api client.
+    // The persona chosen in this browser, read from its cookie; before choosing, the read-only judge view.
     const h = await headers();
-    const me = await createApiClient({ headers: { cookie: h.get("cookie") ?? "" } })
+    const me = await createApiClient({ headers: { cookie: h.get("cookie") ?? "", [AS_HEADER]: "viewer" } })
       .me()
       .catch(() => null);
     role = me?.memberships.find((m) => m.eventId === eventId)?.role ?? null;

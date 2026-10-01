@@ -44,11 +44,15 @@ function mockCheckin(w: EventWorld, scan: CheckinRequest): CheckinResult {
   return { ...samples.checkedIn, clientId: scan.clientId };
 }
 
-/** `cookie` is the caller's Cookie header on the server, where the showcase reads the visitor's state. */
-export async function mockCall(name: EndpointName, args: Args, cookie?: string): Promise<unknown> {
+/** `headers` are the server caller's: the showcase reads the visitor's state from the cookie. */
+export async function mockCall(
+  name: EndpointName,
+  args: Args,
+  headers?: Record<string, string>,
+): Promise<unknown> {
   if (isShowcase()) {
     const { showcaseCall } = await import("@/showcase/mock");
-    const recorded = await showcaseCall(name, args, cookie);
+    const recorded = await showcaseCall(name, args, headers);
     if (recorded !== undefined) return recorded;
   }
   const p = args.params ?? {};

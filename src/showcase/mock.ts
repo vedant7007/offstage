@@ -9,19 +9,19 @@ import type {
   ChatRequest,
   CheckinRequest,
   CheckinResult,
-  DemoPersona,
   EndpointName,
   MeResponse,
   MyRegistrationResponse,
   MyScheduleResponse,
   ProposalResponse,
 } from "@/contracts/api";
+import { DemoPersona } from "@/contracts/api";
 import { ApiClientError } from "@/lib/api-client";
 import { personaKey, responseKey, type KeyArgs } from "./key";
 import { responsesFor, WORLD } from "./data";
 import { approve, APPROVERS, reject, ruleFor, satisfied, trigger } from "./engine";
 import { chat } from "./helpdesk";
-import { clockOffset, getLedger, ledgerFromCookie, setLedger, type Ledger } from "./store";
+import { AS_HEADER, clockOffset, getLedger, ledgerFromCookie, setLedger, type Ledger } from "./store";
 import tickets from "./tickets.json";
 
 type Args = { params?: Record<string, string>; body?: unknown; query?: Record<string, unknown> };
@@ -142,9 +142,15 @@ function closestWhatIf(question: string) {
   return best?.response ?? WORLD.responses.whatIf;
 }
 
-export async function showcaseCall(name: EndpointName, a: Args, cookie?: string): Promise<unknown> {
+export async function showcaseCall(
+  name: EndpointName,
+  a: Args,
+  headers: Record<string, string> = {},
+): Promise<unknown> {
   const browser = typeof window !== "undefined";
-  const l = browser ? getLedger() : ledgerFromCookie(cookie);
+  let l = browser ? getLedger() : ledgerFromCookie(headers.cookie);
+  const as = DemoPersona.safeParse(headers[AS_HEADER]);
+  if (!l.persona && as.success) l = { ...l, persona: as.data };
   const c: Ctx = { l, map: await responsesFor(l), browser };
   const key = responseKey(name, keyArgs(a));
   const p = a.params ?? {};

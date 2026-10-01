@@ -4,7 +4,15 @@ import { onMessage } from "@/showcase/bus";
 import { loadScenario, WORLD } from "@/showcase/data";
 import { GAP_TO, resetDemo, schedule } from "@/showcase/engine";
 import { showcaseCall } from "@/showcase/mock";
-import { decode, fresh, getLedger, ledgerFromCookie, resetMemoryForTests, setLedger } from "@/showcase/store";
+import {
+  AS_HEADER,
+  decode,
+  fresh,
+  getLedger,
+  ledgerFromCookie,
+  resetMemoryForTests,
+  setLedger,
+} from "@/showcase/store";
 
 const EVENT = WORLD.eventId;
 const CANCEL = "b44229c5-4e96-4c2b-845e-f7a3dceb6d24";
@@ -151,6 +159,18 @@ describe("timeline", () => {
       await call("whatIf", { body: { eventId: EVENT, scenario: "What if the main speaker cancels?" } });
       await call("verifyKey", { params: { slug: WORLD.eventSlug } });
     }
+  });
+});
+
+describe("server pages", () => {
+  it("render the cookie persona, or the area default before one is chosen", async () => {
+    vi.unstubAllGlobals();
+    const name = async (headers: Record<string, string>) =>
+      ((await showcaseCall("me", {}, headers)) as { user: { name: string } }).user.name;
+    expect(await name({ [AS_HEADER]: "attendee" })).toBe("Sneha Reddy");
+    const cookie = `offstage_showcase=${encodeURIComponent(JSON.stringify({ ...fresh(), persona: "faculty" }))}`;
+    expect(await name({ cookie, [AS_HEADER]: "attendee" })).toBe("Dr. Srinivasa Rao");
+    await expect(showcaseCall("me", {}, {})).rejects.toMatchObject({ status: 401 });
   });
 });
 

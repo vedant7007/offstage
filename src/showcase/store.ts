@@ -28,6 +28,11 @@ export const Ledger = z.object({
 export type Ledger = z.infer<typeof Ledger>;
 
 export const COOKIE = "offstage_showcase";
+/**
+ * Server pages send this header to name who a visitor sees before choosing a persona: Sneha on /me,
+ * Ravi on /crew, the judge view in the console. A chosen persona always wins.
+ */
+export const AS_HEADER = "x-showcase-as";
 const KEY = "offstage:showcase";
 
 export const fresh = (now = Date.now()): Ledger => ({

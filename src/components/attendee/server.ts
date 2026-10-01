@@ -1,8 +1,16 @@
 import "server-only";
 import { headers } from "next/headers";
-import type { MeResponse, MyRegistrationResponse, MyScheduleResponse, MyTicketResponse } from "@/contracts";
+import type {
+  DemoPersona,
+  MeResponse,
+  MyRegistrationResponse,
+  MyScheduleResponse,
+  MyTicketResponse,
+} from "@/contracts";
 import { fixtures } from "@/contracts/fixtures";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
+import { isShowcase } from "@/showcase/flag";
+import { AS_HEADER } from "@/showcase/store";
 
 /**
  * Server-side data for the attendee portal. Calls the real API with the visitor's cookie.
@@ -12,9 +20,11 @@ import { ApiClientError, createApiClient } from "@/lib/api-client";
  */
 export type Sourced<T> = { data: T; source: "api" | "fixture" };
 
-async function api() {
+/** `as`: in the showcase, who a visitor sees here before choosing a persona (src/showcase/store.ts). */
+async function api(as: DemoPersona = "attendee") {
   const h = await headers();
-  return createApiClient({ headers: { cookie: h.get("cookie") ?? "" } });
+  const cookie = h.get("cookie") ?? "";
+  return createApiClient({ headers: isShowcase() ? { cookie, [AS_HEADER]: as } : { cookie } });
 }
 
 /** A route that does not exist yet answers with a plain 404 page, not an ApiError body. */
@@ -25,9 +35,9 @@ const unauthenticated = (err: unknown) =>
 const routeMissing = (err: unknown) =>
   err instanceof ApiClientError && err.status === 404 && err.code !== "not_found";
 
-export async function getMe(): Promise<MeResponse | null> {
+export async function getMe(as?: DemoPersona): Promise<MeResponse | null> {
   try {
-    return await (await api()).me();
+    return await (await api(as)).me();
   } catch (err) {
     if (unauthenticated(err)) return null;
     throw err;
