@@ -96,6 +96,11 @@ async function openConversation(input: AskInput): Promise<string> {
   return row!.id;
 }
 
+const SMALL_TALK =
+  /^(ok|okay|okk+|k|thanks|thank you|thank u|thx|ty|hi|hello|hey|hii+|good morning|good evening|cool|great|nice|shukriya|dhanyavaad)[\s!.?]*$/i;
+export const SMALL_TALK_REPLY = "Anytime. Ask me about the schedule, food, venue or your ticket.";
+export const isSmallTalk = (text: string) => SMALL_TALK.test(text.trim());
+
 export async function askHelpdesk(input: AskInput): Promise<ChatResult> {
   const language = detectLanguage(input.text);
   const conversationId = await openConversation(input);
@@ -113,6 +118,9 @@ export async function askHelpdesk(input: AskInput): Promise<ChatResult> {
   const open = (await gate.enabled(input.eventId, "helpdesk")) && !(await gate.killSwitch(input.eventId));
   if (!open) {
     answer = { answer: PAUSED[language], citations: [], confidence: 0, needsEscalation: false, language };
+  } else if (isSmallTalk(input.text)) {
+    // Thanks, hi, ok: a short reply, never a model call or an escalation.
+    answer = { answer: SMALL_TALK_REPLY, citations: [], confidence: 1, needsEscalation: false, language };
   } else {
     const deps = runtimeDepsFor(input.eventId);
     // Keep the guard verdict the runtime records, for the message row and the audit entry.

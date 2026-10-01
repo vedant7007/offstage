@@ -37,6 +37,28 @@ describe("Radar detectors", () => {
     expect(classify(t)).toEqual({ category: "av", skill: "av_tech" });
     expect(classify("someone fainted near the stage").category).toBe("medical");
   });
+
+  it("never mistakes an emergency for an IT problem", () => {
+    const cases: [string, string][] = [
+      ["Someone collapsed near Lab 204 and is not breathing", "medical"],
+      ["A student is unconscious in the seminar hall", "medical"],
+      ["Ek ladka gir gaya, hosh nahi hai", "medical"],
+      ["Seizure in Lab 204", "medical"],
+      ["Someone fainted next to the projector", "medical"],
+      ["Smoke coming from the server room", "fire"],
+      ["A girl is being harassed near the food court", "harassment"],
+      ["There is a fight at the registration desk", "safety"],
+      ["Stampede at the gate", "safety"],
+      ["Gate pe bhagdad ho rahi hai", "safety"],
+      ["लैब 204 में एक लड़की बेहोश हो गई", "medical"],
+      ["कैंटीन में आग लगी है", "fire"],
+      ["गेट पर मारपीट हो रही है", "safety"],
+      ["एक लड़की को छेड़ा जा रहा है", "harassment"],
+    ];
+    for (const [text, category] of cases) expect(classify(text).category, text).toBe(category);
+    expect(classify("Lab 204 ka projector kaam nahi kar raha").category).toBe("av");
+    expect(classify("The wifi is down in Lab 204").category).toBe("it");
+  });
 });
 
 describe("Finance reallocation", () => {

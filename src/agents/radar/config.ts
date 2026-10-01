@@ -3,7 +3,7 @@
 // events report it (dedupe keys per time bucket, and an open incident on the same thing stops a repeat).
 
 import { z } from "zod";
-import type { Incident, Volunteer } from "@/contracts";
+import { isEmergencyCategory, type Incident, type Volunteer } from "@/contracts";
 import type { ReadServices } from "@/agents/runtime/services";
 import type { AgentConfig, AgentProposal, PipelineIO, RunContext } from "@/agents/runtime/types";
 import { draft } from "@/agents/runtime/wording";
@@ -235,19 +235,24 @@ async function voicePlan(ctx: Ctx, io: IO): Promise<AgentProposal[]> {
   if (!transcript) return [];
   const room = roomIn(transcript, await ctx.services.rooms());
   const { category, skill } = classify(transcript);
-  const emergency = category === "medical" || category === "fire";
-  const words = io
-    ? await draft(io, {
-        schema: Report,
-        instructions:
-          "A volunteer sent a voice note (transcribed, may be Hinglish). Turn it into an incident title and description in English.",
-        facts: `Room: ${room?.name ?? "not named"}. Category: ${category}.`,
-        untrusted: transcript,
-      })
-    : null;
-  const title =
-    words?.title ||
-    `${category === "av" ? "AV problem" : "Problem reported"}${room ? ` in ${room.name}` : ""}`;
+  const emergency = isEmergencyCategory(category);
+  // Emergencies skip the model: no wording step can delay or soften the alert.
+  const words =
+    io && !emergency
+      ? await draft(io, {
+          schema: Report,
+          instructions:
+            "A volunteer sent a voice note (transcribed, may be Hinglish). Turn it into an incident title and description in English.",
+          facts: `Room: ${room?.name ?? "not named"}. Category: ${category}.`,
+          untrusted: transcript,
+        })
+      : null;
+  const what = emergency
+    ? `Emergency (${category}) reported`
+    : category === "av"
+      ? "AV problem"
+      : "Problem reported";
+  const title = words?.title || `${what}${room ? ` in ${room.name}` : ""}`;
   const key = `voice:${category}:${room?.id ?? "none"}:${bucket(ctx.services.now(), 30)}`;
   const evidence = [
     { type: "row" as const, ref: `volunteers/${p.fromVolunteerId ?? "unknown"}`, label: "Voice note" },

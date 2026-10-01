@@ -196,7 +196,7 @@ export function dedupeKey(recipient: Pick<Recipient, "type" | "id">, channel: Ch
   return createHash("sha256").update(`${recipient.type}:${recipient.id}|${channel}|${body}`).digest("hex");
 }
 
-interface Delivery {
+export interface Delivery {
   recipients: Recipient[];
   channels: Channel[];
   bodyByChannel: BodyByChannel;
@@ -213,7 +213,7 @@ export interface DeliveryCounts {
   deferredUntil: string | null;
 }
 
-async function deliver(ctx: ExecCtx, d: Delivery): Promise<DeliveryCounts> {
+export async function deliver(ctx: ExecCtx, d: Delivery): Promise<DeliveryCounts> {
   const counts: DeliveryCounts = { queued: 0, inApp: 0, skipped: {}, deferredUntil: null };
   const skip = (reason: string) => (counts.skipped[reason] = (counts.skipped[reason] ?? 0) + 1);
   const base = d.scheduledFor ? new Date(d.scheduledFor) : ctx.now;

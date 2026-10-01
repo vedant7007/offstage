@@ -1,9 +1,10 @@
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, inArray, sql } from "drizzle-orm";
 import { DomainEventPayloads, isEmergencyCategory } from "@/contracts";
 import * as t from "@/db/schema";
 import { bumpVersion } from "@/db/versioning";
 import { ExecutionError, impact, type Executor } from "../types";
 import { mustLoad } from "./_util";
+import { deliver, resolveDirect } from "./comms";
 
 // ---------------------------------------------------------------- incidents
 
@@ -24,7 +25,7 @@ export const createIncident: Executor<"incident.create"> = {
     };
   },
   async execute(p, ctx) {
-    if (p.roomId) await mustLoad(ctx.db, t.rooms, p.roomId, ctx.eventId, "Room");
+    const room = p.roomId ? await mustLoad(ctx.db, t.rooms, p.roomId, ctx.eventId, "Room") : null;
     const emergency = isEmergencyCategory(p.category);
     const [row] = await ctx.db
       .insert(t.incidents)
@@ -61,6 +62,34 @@ export const createIncident: Executor<"incident.create"> = {
           summary: p.title,
         }),
       });
+      // Agents never act on emergencies: every lead hears at once on every channel they have, no
+      // approval and no model in the path. Emergency category skips quiet hours and the hourly cap.
+      const leads = await ctx.db
+        .select({ userId: t.memberships.userId })
+        .from(t.memberships)
+        .where(
+          and(
+            eq(t.memberships.eventId, ctx.eventId),
+            inArray(t.memberships.role, ["owner", "organizer", "lead", "faculty_approver"]),
+          ),
+        );
+      const recipients = await Promise.all(
+        leads.map(({ userId }) => resolveDirect(ctx.db, ctx.eventId, { type: "user", id: userId })),
+      );
+      const where = room ? ` in ${room.name}` : "";
+      const body = `A ${p.category} emergency was reported${where}: ${p.title}. Agents do not act on emergencies. Respond now.`;
+      const channels = ["in_app", "telegram", "email"] as const;
+      if (recipients.length)
+        await deliver(
+          { ...ctx, humanApproved: true },
+          {
+            recipients,
+            channels: [...channels],
+            bodyByChannel: Object.fromEntries(channels.map((c) => [c, body])),
+            subject: `Emergency: ${p.title}`.slice(0, 160),
+            category: "emergency",
+          },
+        );
     }
     return { undoData: { incidentId: row!.id } };
   },

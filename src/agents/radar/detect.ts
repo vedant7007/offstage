@@ -70,16 +70,29 @@ export function roomIn(text: string, rooms: Room[]): Room | undefined {
 
 const AV = /\b(projector|screen|mic|microphone|speaker|sound|audio|hdmi|display|laptop)\b/i;
 const FACILITY = /\b(ac|fan|light|power|socket|water|leak|door|chair)\b/i;
-const MEDICAL = /\b(faint|injur|bleed|chest|ambulance|doctor|medical|behosh)\w*/i;
-const FIRE = /\b(fire|smoke|aag|dhuaan)\b/i;
+const MEDICAL =
+  /\b(faint|injur|bleed|chest|ambulance|doctor|medical|behosh|collaps|unconscious|breath|seizure|heart attack|allerg|first aid|chakkar|hosh)\w*/i;
+const FIRE = /\b(fire|smoke|aag|dhuaan|burning|sparks|short circuit)\b/i;
+const HARASSMENT = /\b(harass|molest|stalk|grop|eve.?teas|chhed)\w*/i;
+const SAFETY = /\b(fight|stampede|crush|weapon|knife|violen|threat|jhagd|maar ?peet|bhagdad)\w*/i;
+// Hindi script: \b does not work on Devanagari, so these match anywhere.
+const FIRE_HI = /आग|धुआ|धुँआ/;
+const MEDICAL_HI = /बेहोश|खून|एम्बुलेंस|डॉक्टर|दौरा|सांस|साँस|चक्कर|गिर (गया|गई|गयी)/;
+const HARASSMENT_HI = /छेड़|छेड|परेशान कर/;
+const SAFETY_HI = /झगड़|झगड|मारपीट|भगदड़|भगदड/;
 
-/** Category and the skill that fixes it. Medical and fire are emergencies: Radar only alerts people. */
+/**
+ * Category and the skill that fixes it. Medical, fire, harassment and safety are emergencies: Radar
+ * only alerts people. Emergencies are checked first, so "fainted next to the projector" is medical.
+ */
 export function classify(text: string): {
-  category: "av" | "facilities" | "medical" | "fire" | "it";
+  category: "av" | "facilities" | "medical" | "fire" | "harassment" | "safety" | "it";
   skill: string;
 } {
-  if (FIRE.test(text)) return { category: "fire", skill: "crowd" };
-  if (MEDICAL.test(text)) return { category: "medical", skill: "first_aid" };
+  if (FIRE.test(text) || FIRE_HI.test(text)) return { category: "fire", skill: "crowd" };
+  if (MEDICAL.test(text) || MEDICAL_HI.test(text)) return { category: "medical", skill: "first_aid" };
+  if (HARASSMENT.test(text) || HARASSMENT_HI.test(text)) return { category: "harassment", skill: "crowd" };
+  if (SAFETY.test(text) || SAFETY_HI.test(text)) return { category: "safety", skill: "crowd" };
   if (AV.test(text)) return { category: "av", skill: "av_tech" };
   if (FACILITY.test(text)) return { category: "facilities", skill: "runner" };
   return { category: "it", skill: "av_tech" };
