@@ -139,9 +139,9 @@ export function useStage(eventId: string) {
 
   // The stream.
   React.useEffect(() => {
-    const url = api.streamUrl("stream", { eventId });
-    if (!url) return;
-    const es = new EventSource(url);
+    // An EventSource, or in the showcase the recorded timeline with the same events.
+    const es = api.openStream({ eventId });
+    if (!es) return;
     es.onopen = () => setConnected(true);
     es.onerror = () => setConnected(false);
     const on = <T extends StreamMessage["type"]>(

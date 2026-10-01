@@ -10,6 +10,8 @@
  */
 import type { z } from "zod";
 import { ApiError, ChatStreamChunk, ENDPOINTS, type ApiErrorCode, type EndpointName } from "@/contracts/api";
+import { ShowcaseStream, type StreamLike } from "@/showcase/bus";
+import { isShowcase } from "@/showcase/flag";
 
 type Endpoints = typeof ENDPOINTS;
 type EP<N extends EndpointName> = Endpoints[N];
@@ -83,6 +85,8 @@ function defaultBaseUrl(): string {
 
 function mockEnabled(opt: boolean | undefined): boolean {
   if (opt !== undefined) return opt;
+  // The showcase has no backend at all: every call is answered in the browser.
+  if (isShowcase()) return true;
   return process.env.NEXT_PUBLIC_API_MOCK === "1" || process.env.NEXT_PUBLIC_API_MOCK === "true";
 }
 
@@ -155,7 +159,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
     const args = (rest[0] ?? {}) as CallArgs<N>;
     if (isMock) {
       const { mockCall } = await import("./api-client.mock");
-      return ENDPOINTS[name].response.parse(await mockCall(name, args as never)) as ApiResponse<N>;
+      const res = await mockCall(name, args as never, options.headers?.cookie);
+      return ENDPOINTS[name].response.parse(res) as ApiResponse<N>;
     }
     const res = await request(name, args);
     const json: unknown = await res.json();
@@ -200,10 +205,21 @@ export function createApiClient(options: ApiClientOptions = {}) {
     return isMock ? null : urlFor(name, params);
   }
 
+  /**
+   * The console stream as an EventSource. The showcase plays recorded messages through a stand-in with
+   * the same events; plain mock mode has no stream (null: poll instead).
+   */
+  function openStream(params: { eventId: string }): StreamLike | null {
+    if (isShowcase()) return new ShowcaseStream();
+    const url = streamUrl("stream", params);
+    return url ? new EventSource(url) : null;
+  }
+
   return {
     call,
     chat,
     streamUrl,
+    openStream,
     mock: isMock,
 
     // public

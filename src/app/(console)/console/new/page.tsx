@@ -4,9 +4,15 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { AppShell, ThemeToggle } from "@/components/ui";
 import { IntakeChat } from "@/components/console/intake-chat";
 import { getSessionInfo } from "@/server/authz";
+import { isShowcase } from "@/showcase/flag";
+import { ledgerFromCookie } from "@/showcase/store";
 
 export default async function NewEventPage() {
-  if (!(await getSessionInfo(await headers()))) redirect("/login?next=/console/new");
+  const h = await headers();
+  const signedIn = isShowcase()
+    ? !!ledgerFromCookie(h.get("cookie") ?? undefined).persona
+    : !!(await getSessionInfo(h));
+  if (!signedIn) redirect("/login?next=/console/new");
   return (
     <AppShell
       title="OFFSTAGE console"

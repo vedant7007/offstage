@@ -12,6 +12,9 @@ import type {
 } from "@/contracts/api";
 import { CHARITY_SLUG, fixtures, type EventWorld } from "@/contracts/fixtures";
 import * as responses from "@/contracts/fixtures/responses";
+import { isShowcase } from "@/showcase/flag";
+import closeoutFx from "@/showcase/fixtures/closeout.json";
+import evalsFx from "@/showcase/fixtures/evals.json";
 import { ApiClientError } from "./api-client";
 
 type Args = { params?: Record<string, string>; body?: unknown; query?: Record<string, unknown> };
@@ -41,7 +44,13 @@ function mockCheckin(w: EventWorld, scan: CheckinRequest): CheckinResult {
   return { ...samples.checkedIn, clientId: scan.clientId };
 }
 
-export async function mockCall(name: EndpointName, args: Args): Promise<unknown> {
+/** `cookie` is the caller's Cookie header on the server, where the showcase reads the visitor's state. */
+export async function mockCall(name: EndpointName, args: Args, cookie?: string): Promise<unknown> {
+  if (isShowcase()) {
+    const { showcaseCall } = await import("@/showcase/mock");
+    const recorded = await showcaseCall(name, args, cookie);
+    if (recorded !== undefined) return recorded;
+  }
   const p = args.params ?? {};
   const w = worldFor(p.slug);
   switch (name) {
@@ -95,6 +104,13 @@ export async function mockCall(name: EndpointName, args: Args): Promise<unknown>
       return responses.milestones(w);
     case "incidents":
       return responses.incidents(w);
+    case "closeout":
+      return closeoutFx.closeout;
+    case "closeoutSummary":
+      return closeoutFx.closeoutSummary;
+    case "evals":
+    case "runEvals":
+      return evalsFx;
     case "getBriefing":
     case "generateBriefing":
       return { briefing: w.briefings[0] ?? null };
@@ -200,6 +216,11 @@ export async function mockCall(name: EndpointName, args: Args): Promise<unknown>
 }
 
 export async function* mockChat(body: ChatRequest): AsyncGenerator<ChatStreamChunk> {
+  if (isShowcase()) {
+    const { showcaseChat } = await import("@/showcase/mock");
+    yield* showcaseChat(body);
+    return;
+  }
   const w = fixtures.eventFull();
   const q = body.message.toLowerCase();
   const result = /od|lunch|khana|food|wifi|check.?in/.test(q)

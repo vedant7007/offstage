@@ -4,21 +4,30 @@ import * as React from "react";
 import type { DemoScenario } from "@/contracts";
 import { api } from "@/lib/api-client";
 import { Button, toast } from "@/components/ui";
+import { isShowcase } from "@/showcase/flag";
 import { Kicker } from "./fx";
 import { RealSendsToggle } from "./real-sends";
 
-const SCENARIOS: { scenario: DemoScenario; label: string }[] = [
+type Scenario = DemoScenario | "emergency";
+const SCENARIOS: { scenario: Scenario; label: string }[] = [
   { scenario: "speaker_cancel", label: "Keynote speaker cancels" },
   { scenario: "lunch_confusion", label: "Lunch confusion" },
   { scenario: "volunteer_noshow", label: "Volunteer no-show" },
   { scenario: "queue_spike", label: "Check-in queue spike" },
   { scenario: "budget_breach", label: "Budget breach" },
   { scenario: "projector_voice_note", label: "Projector voice note" },
+  // Live, a volunteer voice note raises this; the showcase replays that recording from a button.
+  ...(isShowcase() ? [{ scenario: "emergency" as const, label: "Medical emergency" }] : []),
 ];
+
+const start = (scenario: Scenario) =>
+  scenario === "emergency"
+    ? import("@/showcase/engine").then((e) => e.trigger(scenario))
+    : api.call("demoTrigger", { body: { scenario } });
 
 /** DEMO_MODE only: fire a scripted disruption. The agents react through the worker, like a real event. */
 export function DemoScenarios() {
-  const [busy, setBusy] = React.useState<DemoScenario | null>(null);
+  const [busy, setBusy] = React.useState<Scenario | null>(null);
   return (
     <section
       aria-labelledby="demo-scenarios"
@@ -42,8 +51,7 @@ export function DemoScenarios() {
             disabled={busy !== null && busy !== scenario}
             onClick={() => {
               setBusy(scenario);
-              api
-                .call("demoTrigger", { body: { scenario } })
+              start(scenario)
                 .then(
                   (r) => toast.success(r.message),
                   (e: unknown) =>
