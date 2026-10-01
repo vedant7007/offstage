@@ -249,11 +249,14 @@ export function VoiceDock({ eventId }: { eventId: string }) {
   const median = latencies.length
     ? [...latencies].sort((a, b) => a - b)[Math.floor(latencies.length / 2)]
     : null;
-  const hint = v.handsFree
-    ? 'Hands-free is on. Say "Hey Offstage", then ask anything about the event.'
-    : hearing
-      ? "Go ahead, Offstage is listening. Ask a question or give a command."
-      : "Tap the orb and speak, or type below. Ask anything about the event.";
+  const hint =
+    v.demo && !v.demo.listens
+      ? "Type to talk in this browser. Pick a question below or type one."
+      : v.handsFree
+        ? 'Hands-free is on. Say "Hey Offstage", then ask anything about the event.'
+        : hearing
+          ? "Go ahead, Offstage is listening. Ask a question or give a command."
+          : "Tap the orb and speak, or type below. Ask anything about the event.";
   const send = (q: string) => {
     if (q) v.type(q);
   };
@@ -461,6 +464,7 @@ export function VoiceDock({ eventId }: { eventId: string }) {
             <h2 id={titleId} className="kicker text-fg">
               Voice Commander
             </h2>
+            {v.demo ? <Badge tone="neutral">Demo voice</Badge> : null}
             <div className="ml-auto flex items-center gap-1">
               <IconButton
                 label={panel ? "Hide the voice panel" : "Show the voice panel"}
@@ -606,7 +610,8 @@ export function VoiceDock({ eventId }: { eventId: string }) {
                   <Toggle on={v.handsFree} onClick={() => void v.toggleHandsFree()}>
                     Hands-free
                   </Toggle>
-                  <fieldset className="flex flex-wrap items-center gap-1">
+                  {/* The showcase speaks with the browser's own voice, so there is no voice to pick. */}
+                  <fieldset className={`${v.demo ? "hidden" : "flex"} flex-wrap items-center gap-1`}>
                     <legend className="sr-only">Voice</legend>
                     <span aria-hidden className="mx-1 font-mono text-xs text-fg-muted">
                       Voice

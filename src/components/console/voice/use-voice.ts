@@ -5,6 +5,9 @@
 
 import * as React from "react";
 import type { TranscribeResponse, VoiceEvent, VoiceIntent, VoiceStep } from "@/contracts";
+import { isShowcase } from "@/showcase/flag";
+import { TYPE_ONLY, canListen, listen, speak } from "@/showcase/voice/browser-voice";
+import { showcaseTurn, type Memory } from "@/showcase/voice/turn";
 import { Mic, Player, speakFallback } from "./audio";
 
 export type Mode = "off" | "idle" | "listening" | "hearing" | "thinking" | "speaking";
@@ -45,6 +48,7 @@ const AWAKE_MS = 10_000;
 const WAKE_ONLY = "wake:only";
 /** Push to talk caught nothing usable: ask again here, nothing goes to the Commander. */
 const AGAIN_ONLY = "again:only";
+const noop = () => () => undefined;
 const SAY_AGAIN = "Sorry, say that again or type it.";
 
 // Shared with the Live Stage (node lights, glass box cost) without a context provider.
@@ -110,6 +114,10 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
   const openRef = React.useRef(opts.onOpenProposal);
   /** The backend's conversation thread, when it sends one; every later turn sends it back. */
   const conversationRef = React.useRef<string | null>(null);
+  // Showcase: the browser's own speech recognition, and the conversation the in-browser Commander remembers.
+  const stopRec = React.useRef<(() => void) | null>(null);
+  const memoryRef = React.useRef<Memory>({ turns: [] });
+  const listens = React.useSyncExternalStore(noop, canListen, () => true);
 
   const setVoiceId = (v: VoiceId) => voiceStore.set(v);
   React.useEffect(() => {
@@ -132,7 +140,7 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
     if (!streamDone.current || player.current?.busy || window.speechSynthesis?.speaking) return;
     if (mic.current) mic.current.playing = false;
     if (mic.current) mic.current.armed = handsFreeRef.current;
-    setMode(mic.current?.isOpen ? (handsFreeRef.current ? "listening" : "idle") : "off");
+    setMode(mic.current?.isOpen || isShowcase() ? (handsFreeRef.current ? "listening" : "idle") : "off");
   }, []);
 
   const stopSpeaking = React.useCallback(() => {
@@ -185,6 +193,21 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
         });
       let firstSound = true;
       const speakLine = (line: string, kind: string) => {
+        if (isShowcase()) {
+          // No paid voice: the browser speaks each line, in order.
+          chain = chain.then(async () => {
+            if (ctl.signal.aborted) return;
+            update((t) => t.replies.push({ text: line, kind }));
+            setMode("speaking");
+            setCaption((c) => ({ ...c, offstage: line }));
+            if (firstSound) {
+              firstSound = false;
+              update((t) => (t.latencyMs = Math.round(performance.now() - endedAt)));
+            }
+            await speak(line);
+          });
+          return;
+        }
         // Ask for the audio now, play it after the sentence before: synthesis overlaps playback. At most two
         // requests are in flight (Murf's per-region concurrency), the rest wait their turn.
         const audio = slot().then(([release]) =>
@@ -241,6 +264,42 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
           }
         });
       };
+      /** One VoiceEvent, from the server's stream or the showcase's in-browser turn. */
+      const handle = (parsed: unknown) => {
+        const e = parsed as VoiceEvent;
+        // Optional fields a conversational backend may add to any event: the thread, and a question back.
+        const more = parsed as { conversationId?: unknown; followUp?: unknown };
+        if (typeof more.conversationId === "string") conversationRef.current = more.conversationId;
+        const ask =
+          typeof more.followUp === "string"
+            ? more.followUp
+            : more.followUp === true && e.type === "say"
+              ? e.text
+              : "";
+        if (ask) update((t) => (t.followUp = ask));
+        if (e.type === "intent") update((t) => ((t.intent = e.intent), (t.by = e.by)));
+        else if (e.type === "say") {
+          if (turn.firstSayMs === undefined)
+            update((t) => (t.firstSayMs = Math.round(performance.now() - sentAt)));
+          speakLine(e.text, e.kind);
+        } else if (e.type === "stage") {
+          setSteps((s) => {
+            const next = { ...s, [e.step]: { state: e.state, label: e.label } };
+            // Earlier steps are done once a later one starts.
+            const order: VoiceStep[] = ["plan", "delegate", "execute", "approve"];
+            for (const k of order.slice(0, order.indexOf(e.step)))
+              if (next[k].state !== "done") next[k] = { ...next[k], state: "done" };
+            return next;
+          });
+          window.dispatchEvent(new CustomEvent("offstage:voice-stage", { detail: e }));
+        } else if (e.type === "open") {
+          const ev = new CustomEvent("offstage:open-proposal", { detail: e, cancelable: true });
+          if (window.dispatchEvent(ev)) openRef.current(e.proposalId);
+          // The stream stays open until the tap, to say what was sent; the dock is free meanwhile.
+          streamDone.current = true;
+        } else if (e.type === "done") update((t) => (t.costUsd.model = e.costUsd));
+        else if (e.type === "error") setError(e.message);
+      };
       try {
         if (text === WAKE_ONLY) {
           speakLine("Yes, I'm listening.", "answer");
@@ -248,6 +307,13 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
         }
         if (text === AGAIN_ONLY) {
           speakLine(SAY_AGAIN, "answer");
+          return;
+        }
+        if (isShowcase()) {
+          for await (const e of showcaseTurn(text, memoryRef.current, { signal: ctl.signal })) {
+            if (ctl.signal.aborted) break;
+            handle(e);
+          }
           return;
         }
         const res = await fetch("/api/agents/voice/turn", {
@@ -275,41 +341,7 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
           while ((nl = buf.indexOf("\n")) >= 0) {
             const raw = buf.slice(0, nl);
             buf = buf.slice(nl + 1);
-            if (!raw.trim()) continue;
-            const parsed: unknown = JSON.parse(raw);
-            const e = parsed as VoiceEvent;
-            // Optional fields a conversational backend may add to any event: the thread, and a question back.
-            const more = parsed as { conversationId?: unknown; followUp?: unknown };
-            if (typeof more.conversationId === "string") conversationRef.current = more.conversationId;
-            const ask =
-              typeof more.followUp === "string"
-                ? more.followUp
-                : more.followUp === true && e.type === "say"
-                  ? e.text
-                  : "";
-            if (ask) update((t) => (t.followUp = ask));
-            if (e.type === "intent") update((t) => ((t.intent = e.intent), (t.by = e.by)));
-            else if (e.type === "say") {
-              if (turn.firstSayMs === undefined)
-                update((t) => (t.firstSayMs = Math.round(performance.now() - sentAt)));
-              speakLine(e.text, e.kind);
-            } else if (e.type === "stage") {
-              setSteps((s) => {
-                const next = { ...s, [e.step]: { state: e.state, label: e.label } };
-                // Earlier steps are done once a later one starts.
-                const order: VoiceStep[] = ["plan", "delegate", "execute", "approve"];
-                for (const k of order.slice(0, order.indexOf(e.step)))
-                  if (next[k].state !== "done") next[k] = { ...next[k], state: "done" };
-                return next;
-              });
-              window.dispatchEvent(new CustomEvent("offstage:voice-stage", { detail: e }));
-            } else if (e.type === "open") {
-              const ev = new CustomEvent("offstage:open-proposal", { detail: e, cancelable: true });
-              if (window.dispatchEvent(ev)) openRef.current(e.proposalId);
-              // The stream stays open until the tap, to say what was sent; the dock is free meanwhile.
-              streamDone.current = true;
-            } else if (e.type === "done") update((t) => (t.costUsd.model = e.costUsd));
-            else if (e.type === "error") setError(e.message);
+            if (raw.trim()) handle(JSON.parse(raw));
           }
         }
       } catch (err) {
@@ -328,6 +360,38 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
     [stopSpeaking, update, settle],
   );
 
+  /** A transcript, from STT or the browser's recognition: the wake word, "say again", or a turn. */
+  const onText = React.useCallback(
+    (heard: string, endedAt: number, sttMs?: number, sttCost = 0) => {
+      let text = heard.trim();
+      if (!text || /^[\s.!?,]*$/.test(text) || /^(thank you\.?|you)$/i.test(text)) {
+        // Silence or a whisper hallucination on noise. Push to talk asks again; hands-free stays quiet.
+        if (!handsFreeRef.current || Date.now() < awakeUntil.current) {
+          void run(AGAIN_ONLY, "voice", endedAt, sttMs, sttCost);
+          return;
+        }
+        setCaption({ you: "", offstage: "" });
+        settle();
+        return;
+      }
+      if (handsFreeRef.current && Date.now() > awakeUntil.current) {
+        if (!WAKE.test(text)) {
+          settle();
+          return; // hands-free listens only after "Hey Offstage"
+        }
+        text = text.replace(WAKE, "").trim();
+        awakeUntil.current = Date.now() + AWAKE_MS;
+        if (!text) {
+          void run(WAKE_ONLY, "voice", endedAt, sttMs, sttCost);
+          return;
+        }
+      }
+      awakeUntil.current = Date.now() + AWAKE_MS;
+      void run(text, "voice", endedAt, sttMs, sttCost);
+    },
+    [run, settle],
+  );
+
   const onUtterance = React.useCallback(
     async (wav: Blob, _lastVoiceAt: number, endedAt: number) => {
       if (!handsFreeRef.current) pttArmed.current = false;
@@ -344,34 +408,39 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
         return;
       }
       const stt = (await res.json()) as TranscribeResponse;
-      const sttMs = Math.round(performance.now() - t0);
-      let text = stt.text.trim();
-      if (!text || /^[\s.!?,]*$/.test(text) || /^(thank you\.?|you)$/i.test(text)) {
-        // Silence or a whisper hallucination on noise. Push to talk asks again; hands-free stays quiet.
-        if (!handsFreeRef.current || Date.now() < awakeUntil.current) {
-          void run(AGAIN_ONLY, "voice", endedAt, sttMs, stt.costUsd);
-          return;
-        }
-        setCaption({ you: "", offstage: "" });
-        settle();
-        return;
-      }
-      if (handsFreeRef.current && Date.now() > awakeUntil.current) {
-        if (!WAKE.test(text)) {
-          settle();
-          return; // hands-free listens only after "Hey Offstage"
-        }
-        text = text.replace(WAKE, "").trim();
-        awakeUntil.current = Date.now() + AWAKE_MS;
-        if (!text) {
-          void run(WAKE_ONLY, "voice", endedAt, sttMs, stt.costUsd);
-          return;
-        }
-      }
-      awakeUntil.current = Date.now() + AWAKE_MS;
-      void run(text, "voice", endedAt, sttMs, stt.costUsd);
+      onText(stt.text, endedAt, Math.round(performance.now() - t0), stt.costUsd);
     },
-    [run, settle],
+    [onText, settle],
+  );
+
+  /** Showcase: listen with the browser's speech recognition (once, or continuously for hands-free). */
+  const browserListen = React.useCallback(
+    (continuous: boolean) => {
+      stopRec.current?.();
+      const stop = listen({
+        continuous,
+        onSpeech: () => {
+          if (window.speechSynthesis?.speaking || !streamDone.current) stopSpeaking();
+          setMode("hearing");
+        },
+        onText: (t) => onText(t, performance.now()),
+        onError: (m) => setError(m),
+        onEnd: () => {
+          stopRec.current = null;
+          if (handsFreeRef.current) browserListen(true);
+          else setMode((m) => (m === "listening" || m === "hearing" ? "idle" : m));
+        },
+      });
+      if (!stop) {
+        setError(TYPE_ONLY);
+        return false;
+      }
+      stopRec.current = stop;
+      setError(null);
+      setMode("listening");
+      return true;
+    },
+    [onText, stopSpeaking],
   );
 
   const ensureOpen = React.useCallback(async () => {
@@ -400,27 +469,42 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
 
   /** Push to talk: one utterance, ended by silence. Pressing again while it talks interrupts it. */
   const talk = React.useCallback(async () => {
+    if (isShowcase()) {
+      if (!streamDone.current || window.speechSynthesis?.speaking) stopSpeaking();
+      browserListen(false);
+      return;
+    }
     if (!(await ensureOpen())) return;
     if (player.current?.busy || !streamDone.current) stopSpeaking();
     pttArmed.current = true;
     mic.current!.armed = true;
     awakeUntil.current = Date.now() + AWAKE_MS;
     setMode("listening");
-  }, [ensureOpen, stopSpeaking]);
+  }, [ensureOpen, stopSpeaking, browserListen]);
 
   const toggleHandsFree = React.useCallback(async () => {
     const on = !handsFreeRef.current;
+    if (isShowcase()) {
+      handsFreeRef.current = on;
+      if (on && !browserListen(true)) handsFreeRef.current = false;
+      if (!on) stopRec.current?.();
+      setHandsFree(handsFreeRef.current);
+      setMode(handsFreeRef.current ? "listening" : "idle");
+      return;
+    }
     if (on && !(await ensureOpen())) return;
     handsFreeRef.current = on;
     setHandsFree(on);
     if (mic.current) mic.current.armed = on || pttArmed.current;
     setMode(mic.current?.isOpen ? (on ? "listening" : "idle") : "off");
-  }, [ensureOpen]);
+  }, [ensureOpen, browserListen]);
 
   const type = React.useCallback(
     (text: string) => {
-      player.current ??= new Player();
-      player.current.onIdle = () => settle();
+      if (!isShowcase()) {
+        player.current ??= new Player();
+        player.current.onIdle = () => settle();
+      }
       void run(text, "keyboard", performance.now());
     },
     [run, settle],
@@ -429,6 +513,7 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
   React.useEffect(
     () => () => {
       abort.current?.abort();
+      stopRec.current?.();
       mic.current?.close();
       player.current?.stop();
     },
@@ -449,7 +534,10 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
     talk,
     toggleHandsFree,
     type,
+    /** Showcase: replies come from recordings and the browser speaks them; false when it cannot listen. */
+    demo: isShowcase() ? { listens } : null,
     stop: () => {
+      stopRec.current?.();
       stopSpeaking();
       settle();
     },

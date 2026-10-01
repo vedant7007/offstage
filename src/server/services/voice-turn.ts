@@ -13,12 +13,16 @@ import { screen } from "@/ai/guard";
 import { endRun } from "@/ai/router/budget";
 import {
   FILLER,
+  approvalLine,
   SAY_AGAIN,
   SCENARIOS,
   THINKING,
   route,
   ruleRoute,
+  narrateProposal,
+  plural,
   sentences,
+  who,
   type Args,
   type HistoryTurn,
   type Intent,
@@ -51,6 +55,8 @@ import { getMetrics } from "@/server/services/overview";
 import { getProposalDetail } from "@/server/services/proposals";
 import { runWhatIf } from "@/server/services/whatif";
 
+export { narrateProposal };
+
 const log = logger.child({ module: "voice" });
 
 // Conversation memory: the last 10 turns per person and event, so "and tomorrow?" and "remind them" make sense.
@@ -72,23 +78,6 @@ function memoryOf(actor: UserActor): Memory {
 const APPROVAL_WAIT_MS = 120_000;
 const WATCH_MS = 45_000;
 const QUIET_MS = 5_000;
-const NAME: Record<string, string> = {
-  commander: "Commander",
-  scheduler: "Scheduler",
-  crew_chief: "Crew Chief",
-  herald: "Herald",
-  helpdesk: "Helpdesk",
-  radar: "Radar",
-  finance: "Finance",
-  logistics: "Logistics",
-  speaker_liaison: "Speaker Liaison",
-  registrar: "Registrar",
-  planner: "Planner",
-  sponsorship: "Sponsorship",
-  marketing: "Marketing",
-  chronicler: "Chronicler",
-};
-const who = (a: string) => NAME[a] ?? a.replace(/_/g, " ");
 const say = (text: string, kind: "filler" | "answer" | "narration" = "answer"): VoiceEvent => ({
   type: "say",
   text: text.slice(0, 600),
@@ -106,37 +95,6 @@ const stage = (
   label: label.slice(0, 160),
   nodes: nodes.slice(0, 8),
 });
-const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
-const approvalLine = (tier: string) =>
-  tier === "T3"
-    ? "This needs two approvals, yours and the faculty approver's. I've opened it. Tap approve to confirm."
-    : "This needs your approval. I've opened it. Tap approve to confirm.";
-
-/** How a plan or proposal reads out loud, from its own payload. */
-export function narrateProposal(p: ActionProposal, children: ActionProposal[]): string[] {
-  const agent = p.proposedBy.kind === "agent" ? who(p.proposedBy.agent) : "Someone";
-  if (p.kind !== "plan.bundle") return [`${agent} proposes: ${p.summary.replace(/\.$/, "")}.`];
-  const payload = p.payload as { options?: unknown[]; children?: { kind: string; proposedBy?: string }[] };
-  const kids = children.length
-    ? children.map((c) => ({ kind: c.kind }))
-    : (payload.children ?? []).map((c) => ({ kind: c.kind }));
-  const count = (k: string) => kids.filter((c) => c.kind === k).length;
-  const out: string[] = [];
-  const options = payload.options?.length ?? 0;
-  out.push(
-    options > 1
-      ? `The Scheduler found ${options} options and the Commander picked one: ${p.summary.replace(/\.$/, "")}.`
-      : `The Commander's plan: ${p.summary.replace(/\.$/, "")}.`,
-  );
-  const moved = count("crew.assign_shift");
-  if (moved) out.push(`Crew Chief moved ${plural(moved, "volunteer")} to follow it.`);
-  const notes = count("comms.send_announcement");
-  if (notes) out.push(`Herald drafted ${plural(notes, "announcement")} for the people affected.`);
-  if (count("comms.send_direct")) out.push("The speaker and the volunteers get a direct message too.");
-  if (count("kb.publish_update")) out.push("And the Helpdesk will answer with the new times.");
-  return out;
-}
-
 /** An async queue fed by the event bus while a scenario plays out. */
 function busQueue(eventId: string) {
   const items: ({ k: "run"; n: RunNotice } | { k: "event"; n: Notice })[] = [];
