@@ -190,3 +190,36 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
+
+/* App chrome backdrop: two soft spotlights and a faint grid that fades out below the top bar.
+   Pure CSS, sits behind everything, never takes clicks. */
+@utility shell-backdrop {
+  pointer-events: none;
+  inset: 0;
+  z-index: -1;
+  background:
+    radial-gradient(56rem 32rem at 8% -12%, var(--ambient-1), transparent 70%),
+    radial-gradient(44rem 28rem at 104% -6%, var(--ambient-2), transparent 70%);
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(var(--ambient-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--ambient-grid) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: radial-gradient(ellipse 80% 46% at 50% 0%, #000 0%, transparent 80%);
+  }
+}
+
+/* Page enter: each new page under the app chrome rises in once. Zero specificity, so a page's
+   own animation wins; translate (not transform) so it never fights a page's transforms. */
+@keyframes shell-enter {
+  from {
+    opacity: 0;
+    translate: 0 6px;
+  }
+}
+:where([data-shell-main] > *) {
+  animation: shell-enter var(--duration-slower) var(--ease-out) both;
+}

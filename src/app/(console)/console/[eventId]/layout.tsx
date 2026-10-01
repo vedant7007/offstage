@@ -1,7 +1,7 @@
 import { headers } from "next/headers";
 import Link from "next/link";
-import { FileText, FlaskConical, Gauge, History, Inbox, Network, Newspaper, Sparkles } from "lucide-react";
-import { AppShell, Button, EmptyState, ThemeToggle } from "@/components/ui";
+import { Button, EmptyState, ThemeToggle } from "@/components/ui";
+import { ConsoleShell } from "@/components/ui/console-shell";
 import { EmergencyBanner } from "@/components/console/emergency-banner";
 import { PersonaSwitcher } from "@/components/console/persona-switcher";
 import { RealSendsBadge } from "@/components/console/real-sends";
@@ -34,21 +34,9 @@ export default async function ConsoleLayout({ children, params }: LayoutProps<"/
         </main>
       );
   }
-  const base = `/console/${eventId}`;
   return (
-    <AppShell
-      title="OFFSTAGE console"
-      homeHref={base}
-      nav={[
-        { href: base, label: "Live stage", icon: <Network aria-hidden />, exact: true },
-        { href: `${base}/approvals`, label: "Approvals", icon: <Inbox aria-hidden /> },
-        { href: `${base}/briefing`, label: "Briefing", icon: <Newspaper aria-hidden /> },
-        { href: `${base}/whatif`, label: "What if", icon: <FlaskConical aria-hidden /> },
-        { href: `${base}/timeline`, label: "Timeline", icon: <History aria-hidden /> },
-        { href: `${base}/report`, label: "Close-out report", icon: <FileText aria-hidden /> },
-        { href: `${base}/evals`, label: "Evals", icon: <Gauge aria-hidden /> },
-        { href: "/console/new", label: "Plan a new event", icon: <Sparkles aria-hidden /> },
-      ]}
+    <ConsoleShell
+      eventId={eventId}
       actions={
         <div className="flex items-center gap-2">
           {demoMode ? <RealSendsBadge eventId={eventId} /> : null}
@@ -60,6 +48,6 @@ export default async function ConsoleLayout({ children, params }: LayoutProps<"/
       <EmergencyBanner eventId={eventId} />
       {children}
       {role && role !== "viewer" && role !== "sponsor" ? <VoiceDock eventId={eventId} /> : null}
-    </AppShell>
+    </ConsoleShell>
   );
 }

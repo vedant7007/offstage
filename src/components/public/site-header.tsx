@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
 import { LanguageSwitcher, ThemeToggle } from "@/components/ui";
+import { ScrollHeader, SiteMenu } from "@/components/ui/shell-bits";
 import { getT } from "@/lib/i18n/server";
 import { CONSOLE_PATH, DEMO_EVENT_SLUG, eventPath } from "./links";
 
 const navLink =
-  "hidden min-h-11 items-center rounded-full px-3 font-mono text-xs font-medium tracking-[0.12em] text-fg-muted uppercase transition-colors duration-(--duration-fast) ease-out hover:text-fg md:flex";
+  "relative hidden min-h-11 items-center rounded-full px-3 font-mono text-xs font-medium tracking-[0.12em] text-fg-muted uppercase transition-colors duration-(--duration-fast) ease-out hover:text-fg md:flex";
 
 /** Wordmark with the lime cue dot. Shared by the header and footer. */
 export function Wordmark() {
@@ -17,11 +18,16 @@ export function Wordmark() {
   );
 }
 
-/** Top bar for public pages: wordmark, mono nav, language, theme and the live demo pill. */
+/** Top bar for public pages: flush at the top, solid with a hairline once the page scrolls. */
 export async function SiteHeader() {
   const t = await getT();
+  const links = [
+    { href: eventPath(DEMO_EVENT_SLUG), label: t("landing.demoCta") },
+    { href: "/about-ai", label: t("site.aboutAi") },
+  ];
+  const cta = { href: CONSOLE_PATH, label: "Enter live demo" };
   return (
-    <header className="sticky top-0 z-(--z-appbar) border-b border-border bg-bg/90 backdrop-blur-sm">
+    <ScrollHeader className="sticky top-0 z-(--z-appbar)">
       <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4 md:px-8">
         <Link
           href="/"
@@ -30,24 +36,24 @@ export async function SiteHeader() {
         >
           <Wordmark />
         </Link>
-        <nav className="flex items-center gap-1">
-          <Link href={eventPath(DEMO_EVENT_SLUG)} className={navLink}>
-            {t("landing.demoCta")}
-          </Link>
-          <Link href="/about-ai" className={navLink}>
-            {t("site.aboutAi")}
-          </Link>
-          <LanguageSwitcher />
+        <nav aria-label={t("nav.main")} className="flex items-center gap-1">
+          {links.map((l) => (
+            <Link key={l.href} href={l.href} className={navLink}>
+              {l.label}
+            </Link>
+          ))}
+          <LanguageSwitcher className="hidden md:inline-flex" />
           <ThemeToggle />
           <Link
-            href={CONSOLE_PATH}
-            className="ml-1 hidden min-h-11 items-center gap-1.5 rounded-full bg-curtain px-4 text-sm font-medium text-on-curtain transition-[background-color,transform] duration-(--duration-slow) ease-out hover:-translate-y-0.5 hover:bg-curtain-hover sm:inline-flex"
+            href={cta.href}
+            className="ml-1 hidden min-h-11 items-center gap-1.5 rounded-full bg-curtain px-4 text-sm font-medium text-on-curtain transition-[background-color,transform] duration-(--duration-slow) ease-out hover:bg-curtain-hover motion-safe:hover:-translate-y-0.5 sm:inline-flex"
           >
-            Enter live demo
+            {cta.label}
             <ArrowUpRight aria-hidden className="size-4" />
           </Link>
+          <SiteMenu links={links} cta={cta} />
         </nav>
       </div>
-    </header>
+    </ScrollHeader>
   );
 }

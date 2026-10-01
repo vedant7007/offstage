@@ -6,7 +6,8 @@ import { getT } from "@/lib/i18n/server";
 export default async function SiteLayout({ children }: LayoutProps<"/">) {
   const t = await getT();
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div className="relative isolate flex min-h-dvh flex-col">
+      <div aria-hidden className="shell-backdrop fixed" />
       <a
         href="#main"
         className="sr-only z-(--z-toast) rounded-full bg-surface-raised px-4 py-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2"

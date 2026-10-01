@@ -77,6 +77,11 @@
   --on-emergency: #ffffff;
   --emergency-soft: #ffe1de;
   --emergency-soft-fg: #8f0000;
+
+  /* Ambient backdrop behind the app chrome: decoration only, never text */
+  --ambient-1: rgb(7 27 223 / 0.09);
+  --ambient-2: rgb(136 50 247 / 0.06);
+  --ambient-grid: rgb(7 27 223 / 0.05);
 }
 
 .dark {
@@ -136,6 +141,10 @@
   --on-emergency: #ffffff;
   --emergency-soft: #3a0000;
   --emergency-soft-fg: #ff8a82;
+
+  --ambient-1: rgb(26 47 251 / 0.2);
+  --ambient-2: rgb(136 50 247 / 0.1);
+  --ambient-grid: rgb(228 230 239 / 0.04);
 }
 
 /* Non-colour scales. Tailwind reads these as theme values and also emits them as CSS variables. */
