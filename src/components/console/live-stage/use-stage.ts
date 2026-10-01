@@ -262,6 +262,17 @@ export function useStage(eventId: string) {
     return () => es.close();
   }, [eventId, addLog, pulse, loadPending, loadDelivery]);
 
+  // The voice Commander narrates the same work: its steps light the nodes it names and go into the log.
+  React.useEffect(() => {
+    const onStage = (e: Event) => {
+      const d = (e as CustomEvent<{ label: string; nodes: string[]; state: string }>).detail;
+      for (const n of d.nodes) if (n !== "agent:commander") pulse("agent:commander", n);
+      if (d.state === "active") addLog(`Voice: ${d.label}`, "human");
+    };
+    window.addEventListener("offstage:voice-stage", onStage);
+    return () => window.removeEventListener("offstage:voice-stage", onStage);
+  }, [addLog, pulse]);
+
   const waitingBy = new Map<AgentName, ActionProposal[]>();
   for (const p of pending) {
     const a = p.proposedBy.kind === "agent" ? p.proposedBy.agent : null;

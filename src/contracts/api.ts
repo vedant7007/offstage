@@ -253,6 +253,77 @@ export const PersonaFeedResponse = z.object({
 });
 export type PersonaFeedResponse = z.infer<typeof PersonaFeedResponse>;
 
+// ---------------------------------------------------------------------------
+// Voice Commander
+// ---------------------------------------------------------------------------
+
+export const VoiceIntent = z.enum([
+  "briefing",
+  "registrations",
+  "speaker_cancel",
+  "lunch_confusion",
+  "projector_voice_note",
+  "budget_breach",
+  "volunteer_noshow",
+  "whatif",
+  "closeout",
+  "approve",
+  "unknown",
+  "blocked",
+]);
+export type VoiceIntent = z.infer<typeof VoiceIntent>;
+export const VoiceStep = z.enum(["plan", "delegate", "execute", "approve"]);
+export type VoiceStep = z.infer<typeof VoiceStep>;
+
+/** POST /api/agents/voice/transcribe (multipart: audio). */
+export const TranscribeResponse = z.object({
+  text: z.string().max(2000),
+  ms: z.int().nonnegative().describe("Provider time"),
+  seconds: z.number().nonnegative().describe("Audio length"),
+  costUsd: z.number().nonnegative(),
+});
+export type TranscribeResponse = z.infer<typeof TranscribeResponse>;
+
+/** POST /api/agents/voice/turn. Streams VoiceEvent lines. */
+export const VoiceTurnRequest = z.object({
+  turnId: z.string().min(8).max(64),
+  text: z.string().trim().min(1).max(1000),
+  via: z.enum(["voice", "keyboard"]),
+});
+export type VoiceTurnRequest = z.infer<typeof VoiceTurnRequest>;
+export const VoiceEvent = z.discriminatedUnion("type", [
+  z.object({
+    type: z.literal("intent"),
+    intent: VoiceIntent,
+    by: z.enum(["rules", "model", "guard"]),
+    ms: z.int().nonnegative(),
+  }),
+  z.object({
+    type: z.literal("say"),
+    text: z.string().max(600),
+    kind: z.enum(["filler", "answer", "narration"]),
+  }),
+  z.object({
+    type: z.literal("stage"),
+    step: VoiceStep,
+    state: z.enum(["active", "done"]),
+    label: z.string().max(160),
+    nodes: z.array(z.string().max(40)).max(8).describe("Live Stage node ids to light, e.g. agent:scheduler"),
+  }),
+  z.object({ type: z.literal("open"), proposalId: Id, tier: RiskTier }),
+  z.object({ type: z.literal("done"), costUsd: z.number().nonnegative(), ms: z.int().nonnegative() }),
+  z.object({ type: z.literal("error"), message: z.string().max(300) }),
+]);
+export type VoiceEvent = z.infer<typeof VoiceEvent>;
+
+/** POST /api/agents/voice/tts. Returns raw 16-bit mono PCM at 24 kHz. */
+export const VoiceTtsRequest = z.object({
+  turnId: z.string().min(8).max(64),
+  text: z.string().trim().min(1).max(600),
+  voiceId: z.enum(["en-US-matthew", "en-IN-priya", "en-US-natalie"]),
+});
+export type VoiceTtsRequest = z.infer<typeof VoiceTtsRequest>;
+
 /** GET /api/events/:eventId/closeout. The close-out report: every number from SQL, the model writes only the summary. */
 const Count = z.int().nonnegative();
 export const CloseoutReport = z.object({

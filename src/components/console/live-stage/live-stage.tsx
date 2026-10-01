@@ -28,6 +28,15 @@ const CHANNELS = [
 export function LiveStage({ eventId }: { eventId: string }) {
   const s = useStage(eventId);
   const [open, setOpen] = React.useState<string | null>(null);
+  // "Approve it" by voice opens the gate's panel here (Approve is still a tap); elsewhere the dock navigates.
+  React.useEffect(() => {
+    const onOpen = (e: Event) => {
+      e.preventDefault();
+      setOpen("gate:head");
+    };
+    window.addEventListener("offstage:open-proposal", onOpen);
+    return () => window.removeEventListener("offstage:open-proposal", onOpen);
+  }, []);
 
   const two = s.pending.filter((p) => p.riskTier === "T3").length;
   const needsPerson = s.pending.filter((p) => p.riskTier === "T2" || p.riskTier === "T3").length;
