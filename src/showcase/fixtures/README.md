@@ -5,6 +5,11 @@ Real recorded data for the zero-cost hosted showcase, replayed in the browser. R
 worker, `DEMO_MODE=true`, real sends off and every external channel empty. Do not edit by hand:
 re-record.
 
+The recording used `AI_PROFILE=dev` (free models only), with the worker's smart tier on Groq first
+(`AI_CHAIN_SMART=groq,ollama`): with qwen3:4b on Ollama the speaker_cancel Commander finished
+without proposing a plan and fell back. Fast-tier agents ran on qwen3:4b-instruct (Ollama), which
+reports no cost.
+
 ## Extensions to the shared format
 
 The format (response keys, world.json, scenarios/\*.json, kb.json, recorded-runs.json, evals.json,
