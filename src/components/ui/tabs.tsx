@@ -24,8 +24,8 @@ function TabsTrigger({ className, ...props }: React.ComponentProps<typeof TabsPr
     <TabsPrimitive.Trigger
       className={cn(
         "-mb-px inline-flex min-h-11 shrink-0 items-center gap-2 border-b-2 border-transparent px-4 text-base font-medium text-fg-muted",
-        "transition-colors duration-(--duration-fast) ease-out hover:text-fg",
-        "data-[state=active]:border-curtain data-[state=active]:font-semibold data-[state=active]:text-fg",
+        "transition-[color,border-color] duration-(--duration-slow) ease-out hover:border-border-strong hover:text-fg",
+        "data-[state=active]:border-curtain data-[state=active]:text-fg",
         "[&_svg]:size-4",
         className,
       )}

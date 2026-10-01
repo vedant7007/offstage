@@ -1,12 +1,19 @@
 import type { Metadata, Viewport } from "next";
-import { Eczar, Noto_Sans, Noto_Sans_Devanagari } from "next/font/google";
+import { IBM_Plex_Mono, Inter_Tight, Noto_Sans_Devanagari } from "next/font/google";
 import { Providers } from "@/components/ui/providers";
 import { getLocale } from "@/lib/i18n/server";
 import { getMessages } from "@/lib/i18n/messages";
 import { HTML_LANG } from "@/lib/i18n/translate";
 import "./globals.css";
 
-const notoSans = Noto_Sans({ subsets: ["latin"], variable: "--font-noto-sans", display: "swap" });
+// Inter Tight for every heading and paragraph, IBM Plex Mono for kickers, labels and numbers.
+const grotesk = Inter_Tight({ subsets: ["latin", "latin-ext"], variable: "--font-grotesk", display: "swap" });
+const plexMono = IBM_Plex_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-plex-mono",
+  display: "swap",
+});
 
 // Loaded without preload: the browser fetches it only when Devanagari text appears.
 const notoDevanagari = Noto_Sans_Devanagari({
@@ -15,9 +22,6 @@ const notoDevanagari = Noto_Sans_Devanagari({
   display: "swap",
   preload: false,
 });
-
-// Display face for public page headings only.
-const eczar = Eczar({ subsets: ["latin"], variable: "--font-eczar", display: "swap", preload: false });
 
 export const metadata: Metadata = {
   title: { default: "OFFSTAGE", template: "%s | OFFSTAGE" },
@@ -30,8 +34,8 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf6ef" },
-    { media: "(prefers-color-scheme: dark)", color: "#111318" },
+    { media: "(prefers-color-scheme: light)", color: "#E4E6EF" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
   ],
 };
 
@@ -41,7 +45,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
     <html
       lang={HTML_LANG[locale]}
       suppressHydrationWarning
-      className={`${notoSans.variable} ${notoDevanagari.variable} ${eczar.variable} antialiased`}
+      className={`${grotesk.variable} ${plexMono.variable} ${notoDevanagari.variable} antialiased`}
     >
       <body>
         <Providers locale={locale} messages={getMessages(locale)}>

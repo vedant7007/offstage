@@ -95,7 +95,7 @@
   --color-sidebar-border: var(--border);
   --color-sidebar-ring: var(--ring);
 
-  /* shadcn radius scale from --radius (8px). Our components use rounded-control and rounded-card. */
+  /* shadcn radius scale from --radius (3px). Our components use rounded-control and rounded-card. */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -104,11 +104,12 @@
   --radius-3xl: calc(var(--radius) * 2.2);
   --radius-4xl: calc(var(--radius) * 2.6);
 
-  /* Fonts are loaded with next/font in the root layout */
-  --font-sans: var(--font-noto-sans), var(--font-noto-devanagari), ui-sans-serif, system-ui, sans-serif;
+  /* Fonts are loaded with next/font in the root layout. Inter Tight for everything, IBM Plex Mono
+     for kickers, labels and numbers, Noto Sans Devanagari as the Hindi fallback. */
+  --font-sans: var(--font-grotesk), var(--font-noto-devanagari), system-ui, sans-serif;
   --font-heading: var(--font-sans);
-  --font-display: var(--font-eczar), var(--font-noto-devanagari), Georgia, serif;
-  --font-mono: ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --font-display: var(--font-grotesk), var(--font-noto-devanagari), system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, Consolas, monospace;
 }
 
 @layer base {
@@ -127,6 +128,19 @@
     font-size: var(--text-base);
     line-height: 1.5;
     min-height: 100dvh;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1,
+  h2 {
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
+
+  h3 {
+    font-weight: 500;
+    letter-spacing: -0.015em;
   }
 
   /* One visible focus style for everything keyboard reachable */
@@ -135,9 +149,10 @@
     outline-offset: 2px;
   }
 
+  /* Lime selection with black text in both themes */
   ::selection {
-    background: var(--curtain-soft);
-    color: var(--curtain-soft-fg);
+    background: #c1ff00;
+    color: #000000;
   }
 
   a {
@@ -164,4 +179,14 @@
 @utility target {
   min-height: var(--target-min);
   min-width: var(--target-min);
+}
+
+/* Mono label above headings, on tier chips and next to numbers */
+@utility kicker {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.125rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }

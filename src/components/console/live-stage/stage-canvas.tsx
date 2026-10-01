@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  Background,
   BaseEdge,
   type Edge,
   type EdgeProps,
@@ -16,6 +15,8 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AgentName } from "@/contracts";
 import { AgentAvatar, Badge } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { useReducedMotion } from "../fx";
 import { NODE_STATE as STATE, STAGE } from "./theme";
 import type { NodeState, Pulse } from "./use-stage";
 
@@ -34,14 +35,19 @@ const handles = (
 function AgentNode({ data }: NodeProps<Node<AgentData>>) {
   const s = STATE[data.state];
   return (
-    <div className={`${STAGE.agent} ${s.ring} ${data.centre ? STAGE.centre : ""}`}>
+    <div className={cn(STAGE.agent, s.ring, data.centre && STAGE.centre)}>
       {handles}
+      {s.glow ? <span aria-hidden className={cn(STAGE.glow, s.glow, "motion-safe:animate-pulse")} /> : null}
       <AgentAvatar agent={data.agent} showName size={data.centre ? "md" : "sm"} />
       <div className="flex flex-wrap items-center gap-1">
-        <Badge tone={s.tone} className={data.state === "thinking" ? "motion-safe:animate-pulse" : undefined}>
+        <Badge tone={s.tone} className={STAGE.chip}>
           {s.label}
         </Badge>
-        {data.waiting ? <Badge tone="pending">{data.waiting} to approve</Badge> : null}
+        {data.waiting ? (
+          <Badge tone="pending" className={STAGE.chip}>
+            {data.waiting} to approve
+          </Badge>
+        ) : null}
       </div>
     </div>
   );
@@ -49,10 +55,10 @@ function AgentNode({ data }: NodeProps<Node<AgentData>>) {
 
 function BoxNode({ data }: NodeProps<Node<BoxData>>) {
   return (
-    <div className={`${STAGE.box} ${STAGE.boxShape[data.kind]}`}>
+    <div className={cn(STAGE.box, STAGE.boxShape[data.kind])}>
       {handles}
-      <span className="text-sm font-semibold">{data.title}</span>
-      <span className="text-xs text-fg-muted">{data.detail}</span>
+      <span className={STAGE.boxTitle}>{data.title}</span>
+      <span className={STAGE.boxDetail}>{data.detail}</span>
     </div>
   );
 }
@@ -71,7 +77,7 @@ function Dot({ path }: { path: string }) {
   }, []);
   if (done) return null;
   return (
-    <circle r={4} fill={STAGE.dot}>
+    <circle r={4} fill={STAGE.dot} style={{ filter: `drop-shadow(0 0 6px ${STAGE.dot})` }}>
       <animateMotion ref={ref} dur="1.2s" begin="indefinite" fill="freeze" path={path} />
     </circle>
   );
@@ -87,7 +93,7 @@ function PulseEdge({ sourceX, sourceY, targetX, targetY, data }: EdgeProps<Edge<
         path={path}
         style={{
           stroke: active ? STAGE.edgeActive : STAGE.edge,
-          strokeWidth: active ? 2.5 : 1,
+          strokeWidth: active ? 1.5 : 1,
           transition: data?.still ? undefined : "stroke 300ms",
         }}
       />
@@ -124,18 +130,7 @@ function useStable<T extends Item>(items: T[]): T[] {
   });
 }
 
-/** Whether the viewer asked for less motion. */
-export function useReducedMotion() {
-  return React.useSyncExternalStore(
-    (cb) => {
-      const m = window.matchMedia("(prefers-reduced-motion: reduce)");
-      m.addEventListener("change", cb);
-      return () => m.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    () => false,
-  );
-}
+export { useReducedMotion };
 
 const R = 330;
 const at = (x: number, y: number) => ({ x: Math.round(x), y: Math.round(y) });
@@ -223,6 +218,11 @@ export function StageCanvas(props: {
 
   return (
     <div className={STAGE.canvas}>
+      <div aria-hidden className={STAGE.spot} />
+      <div aria-hidden className={STAGE.floor} />
+      <span aria-hidden className={STAGE.kicker}>
+        On stage now
+      </span>
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -235,9 +235,7 @@ export function StageCanvas(props: {
         nodesConnectable={false}
         onNodeClick={onNodeClick}
         proOptions={{ hideAttribution: true }}
-      >
-        <Background gap={24} color={STAGE.grid} />
-      </ReactFlow>
+      />
     </div>
   );
 }

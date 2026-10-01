@@ -31,13 +31,13 @@ function Toaster() {
           "--normal-bg": "var(--surface-raised)",
           "--normal-text": "var(--fg)",
           "--normal-border": "var(--border)",
-          "--border-radius": "var(--radius-control)",
+          "--border-radius": "var(--radius-card)",
           zIndex: "var(--z-toast)",
         } as React.CSSProperties
       }
       toastOptions={{
         closeButtonAriaLabel: t("common.close"),
-        classNames: { toast: "font-sans text-base", description: "text-fg-muted" },
+        classNames: { toast: "font-sans text-base shadow-card", description: "text-fg-muted" },
       }}
     />
   );

@@ -44,7 +44,7 @@ function DataTable<Row>({
   return (
     <div className={cn("w-full", className)}>
       <table className="hidden w-full border-collapse text-left md:table">
-        <caption className={cn("pb-3 text-left text-base font-semibold", hideCaption && "sr-only")}>
+        <caption className={cn("pb-3 text-left text-base font-medium", hideCaption && "sr-only")}>
           {caption}
         </caption>
         <thead>
@@ -54,7 +54,7 @@ function DataTable<Row>({
                 key={c.key}
                 scope="col"
                 className={cn(
-                  "px-3 py-2 text-sm font-semibold text-fg-muted",
+                  "px-3 py-2.5 font-mono text-xs font-medium tracking-[0.08em] text-fg-muted uppercase",
                   c.align === "end" && "text-right",
                   c.className,
                 )}
@@ -66,7 +66,7 @@ function DataTable<Row>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={rowKey(row)} className="border-b border-border last:border-b-0 hover:bg-surface-sunken">
+            <tr key={rowKey(row)} className="border-b border-border transition-colors duration-(--duration-fast) ease-out last:border-b-0 hover:bg-surface-raised">
               {columns.map((c) =>
                 c === primary ? (
                   <th key={c.key} scope="row" className={cn("px-3 py-3 font-medium", c.className)}>
@@ -87,11 +87,11 @@ function DataTable<Row>({
       </table>
 
       <div className="md:hidden">
-        <p className={cn("pb-3 text-base font-semibold", hideCaption && "sr-only")}>{caption}</p>
+        <p className={cn("pb-3 text-base font-medium", hideCaption && "sr-only")}>{caption}</p>
         <ul className="flex flex-col gap-3">
           {rows.map((row) => (
-            <li key={rowKey(row)} className="rounded-card border border-border bg-surface p-4">
-              <p className="font-semibold">{primary.cell(row)}</p>
+            <li key={rowKey(row)} className="rounded-card border border-border bg-surface p-4 shadow-card">
+              <p className="font-medium">{primary.cell(row)}</p>
               <dl className="mt-2 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
                 {rest.map((c) => (
                   <React.Fragment key={c.key}>

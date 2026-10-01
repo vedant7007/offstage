@@ -6,29 +6,35 @@ import { LoaderCircle } from "lucide-react";
 
 const buttonVariants = cva(
   [
-    "inline-flex shrink-0 items-center justify-center gap-2 rounded-control border font-medium whitespace-nowrap select-none",
-    "transition-colors duration-(--duration-fast) ease-out",
+    "inline-flex shrink-0 items-center justify-center gap-2 rounded-full border border-transparent font-medium whitespace-nowrap select-none",
+    "transition-[background-color,border-color,color,box-shadow,transform] duration-(--duration-slow) ease-out",
     "disabled:pointer-events-none disabled:opacity-55 aria-busy:cursor-progress",
     "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
   ],
   {
     variants: {
       variant: {
+        // Filled pill: lifts a little on hover and presses back down. No motion with reduced motion.
         primary:
-          "border-curtain bg-curtain text-on-curtain hover:border-curtain-hover hover:bg-curtain-hover",
-        secondary: "border-border-strong bg-surface text-fg hover:bg-surface-sunken",
-        ghost: "border-transparent bg-transparent text-fg hover:bg-surface-sunken",
-        destructive: "border-danger bg-surface text-danger-text hover:bg-danger-soft",
-        link: "border-transparent bg-transparent px-0 text-curtain-text underline underline-offset-4 hover:no-underline",
+          "bg-curtain text-on-curtain hover:bg-curtain-hover hover:shadow-card motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0",
+        // Outline pill that fills with ink on hover.
+        secondary:
+          "border-[1.5px] border-fg bg-transparent text-fg hover:bg-fg hover:text-bg motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0",
+        ghost: "bg-transparent text-fg hover:bg-surface-sunken active:bg-border",
+        destructive:
+          "border-[1.5px] border-danger bg-transparent text-danger-text hover:bg-danger-soft hover:text-danger-soft-fg motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0",
+        link: "rounded-none bg-transparent px-0 text-curtain-text underline decoration-1 underline-offset-4 hover:decoration-2",
       },
       // Every size meets the 44px touch target on phones; sm tightens only from md up.
       size: {
-        sm: "min-h-11 px-3 text-sm md:min-h-9",
-        md: "min-h-11 px-4 text-base",
-        lg: "min-h-12 px-6 text-lg",
+        sm: "min-h-11 px-4 text-sm md:min-h-9",
+        md: "min-h-11 px-5 text-base",
+        lg: "min-h-12 px-7 text-lg",
       },
       block: { true: "w-full" },
     },
+    // The link variant reads as text, so it drops the pill padding whatever the size.
+    compoundVariants: [{ variant: "link", className: "px-0" }],
     defaultVariants: { variant: "primary", size: "md" },
   },
 );
@@ -80,7 +86,7 @@ type IconButtonProps = Omit<React.ComponentProps<"button">, "aria-label" | "chil
     loading?: boolean;
   };
 
-/** Square 44px button with only an icon. The label is mandatory. */
+/** Round 44px button with only an icon. The label is mandatory. */
 function IconButton({
   label,
   icon,
@@ -96,7 +102,7 @@ function IconButton({
       aria-label={label}
       aria-busy={loading || undefined}
       disabled={disabled || loading}
-      className={cn(buttonVariants({ variant }), "size-11 min-h-11 p-0", className)}
+      className={cn(buttonVariants({ variant }), "size-11 min-h-11 p-0 motion-safe:hover:translate-y-0", className)}
       {...props}
     >
       {loading ? <LoaderCircle aria-hidden className="animate-spin" /> : icon}

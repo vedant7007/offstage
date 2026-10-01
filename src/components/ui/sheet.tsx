@@ -44,7 +44,7 @@ function SheetContent({
       <SheetPrimitive.Content
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
-          "fixed z-(--z-modal) flex flex-col border-border bg-surface-raised text-fg shadow-xl",
+          "fixed z-(--z-modal) flex flex-col border-border bg-surface-raised text-fg shadow-2xl",
           "data-open:animate-in data-closed:animate-out duration-(--duration-slow) ease-out",
           "pb-[env(safe-area-inset-bottom)]",
           SIDES[side],
@@ -62,7 +62,7 @@ function SheetContent({
           />
         ) : null}
         <div className="flex flex-col gap-1 p-6 pr-14">
-          <SheetPrimitive.Title className="text-xl font-semibold">{title}</SheetPrimitive.Title>
+          <SheetPrimitive.Title className="text-xl font-medium tracking-[-0.02em]">{title}</SheetPrimitive.Title>
           {description ? (
             <SheetPrimitive.Description className="text-sm text-fg-muted">
               {description}

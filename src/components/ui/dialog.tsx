@@ -14,7 +14,7 @@ function DialogOverlay({ className, ...props }: React.ComponentProps<typeof Dial
   return (
     <DialogPrimitive.Overlay
       className={cn(
-        "fixed inset-0 z-(--z-overlay) bg-overlay",
+        "fixed inset-0 z-(--z-overlay) bg-overlay backdrop-blur-[2px]",
         "data-open:animate-in data-open:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
         className,
       )}
@@ -29,7 +29,7 @@ function CornerClose() {
   return (
     <DialogPrimitive.Close
       aria-label={t("common.close")}
-      className="absolute top-2 right-2 flex size-11 items-center justify-center rounded-control text-fg-muted hover:bg-surface-sunken hover:text-fg"
+      className="absolute top-3 right-3 flex size-11 items-center justify-center rounded-full text-fg-muted transition-colors duration-(--duration-fast) ease-out hover:bg-surface-sunken hover:text-fg"
     >
       <X aria-hidden className="size-5" />
     </DialogPrimitive.Close>
@@ -51,7 +51,7 @@ function DialogContent({ title, description, footer, className, children, ...pro
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
           "fixed top-1/2 left-1/2 z-(--z-modal) flex max-h-[85dvh] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 flex-col",
-          "rounded-card border border-border bg-surface-raised text-fg shadow-xl",
+          "rounded-card border border-border bg-surface-raised text-fg shadow-2xl",
           "data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           "duration-(--duration-base)",
           className,
@@ -59,7 +59,7 @@ function DialogContent({ title, description, footer, className, children, ...pro
         {...props}
       >
         <div className="flex flex-col gap-1 p-6 pr-14">
-          <DialogPrimitive.Title className="text-xl font-semibold">{title}</DialogPrimitive.Title>
+          <DialogPrimitive.Title className="text-xl font-medium tracking-[-0.02em]">{title}</DialogPrimitive.Title>
           {description ? (
             <DialogPrimitive.Description className="text-sm text-fg-muted">
               {description}

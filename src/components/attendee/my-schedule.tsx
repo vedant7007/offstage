@@ -65,37 +65,59 @@ export function MySchedule({ data }: { data: MyScheduleResponse }) {
   };
 
   const list = (sessions: Session[], showAdd: boolean) =>
-    byDay(sessions).map((day) => (
-      <section key={istDateKey(day[0]!.startsAt)} className="flex flex-col gap-2">
-        <h2 className="text-base font-semibold text-fg-muted">{formatDayShort(day[0]!.startsAt)}</h2>
-        <ul className="flex flex-col gap-2">
+    byDay(sessions).map((day, i) => (
+      <section
+        key={istDateKey(day[0]!.startsAt)}
+        style={{ transitionDelay: `${Math.min(i, 4) * 60}ms` }}
+        className="flex flex-col gap-3 transition-[translate] duration-400 ease-[cubic-bezier(.4,0,.1,1)] starting:translate-y-3"
+      >
+        <h2 className="kicker flex items-center gap-3 text-fg-muted after:h-px after:flex-1 after:bg-border">
+          {formatDayShort(day[0]!.startsAt)}
+        </h2>
+        <ul className="flex flex-col gap-3">
           {day.map((s) => (
             <li
               key={s.id}
               className={cn(
-                "flex flex-col gap-1.5 rounded-card border bg-surface p-4",
+                "relative flex flex-col gap-2 overflow-hidden rounded-card border bg-surface p-4 pl-5 sm:p-5 sm:pl-6",
+                "shadow-[0_20px_40px_-32px_rgb(0_0_0/0.35)] transition-[translate,box-shadow,border-color] duration-300 ease-[cubic-bezier(.4,0,.1,1)]",
+                "hover:border-border-strong hover:shadow-[0_28px_48px_-28px_rgb(7_27_223/0.3)] motion-safe:hover:-translate-y-0.5",
                 s.change ? "border-pending" : "border-border",
               )}
             >
-              <div className="flex flex-wrap items-center gap-2 text-sm">
-                <TimeRange start={s.startsAt} end={s.endsAt} className="font-semibold" />
+              <span
+                aria-hidden
+                className={cn(
+                  "absolute inset-y-0 left-0 w-1",
+                  s.change ? "bg-pending" : s.mine ? "bg-curtain" : "bg-border",
+                )}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <TimeRange start={s.startsAt} end={s.endsAt} className="kicker text-fg" />
                 {s.change ? (
-                  <Badge tone="pending">
+                  <Badge tone="pending" className="font-mono">
                     <RefreshCw aria-hidden />
                     {t("me.schedule.changed")}: {t(`me.schedule.change.${s.change.kind}`)}
                   </Badge>
                 ) : null}
               </div>
-              <p className={cn("font-semibold", s.status === "cancelled" && "line-through")}>{s.title}</p>
+              <p
+                className={cn(
+                  "text-lg leading-snug font-medium tracking-[-0.02em]",
+                  s.status === "cancelled" && "line-through",
+                )}
+              >
+                {s.title}
+              </p>
               {s.change ? <p className="text-sm text-pending-text">{s.change.text}</p> : null}
-              <p className="flex items-center gap-2 text-sm text-fg-muted">
+              <p className="flex items-center gap-2 font-mono text-sm text-fg-muted">
                 <DoorOpen aria-hidden className="size-4" />
                 <span className="sr-only">{t("me.schedule.room")}: </span>
                 {rooms.get(s.roomId) ?? ""}
               </p>
               {showAdd ? (
                 s.mine ? (
-                  <Badge tone="approved" className="mt-1">
+                  <Badge tone="approved" className="mt-1 font-mono">
                     <Check aria-hidden />
                     {t("me.schedule.added")}
                   </Badge>
@@ -103,7 +125,7 @@ export function MySchedule({ data }: { data: MyScheduleResponse }) {
                   <Button
                     size="sm"
                     variant="secondary"
-                    className="mt-1 w-fit"
+                    className="mt-1 w-fit rounded-full px-4"
                     onClick={() => setAddNote(s.id)}
                     aria-describedby={addNote === s.id ? `add-note-${s.id}` : undefined}
                   >
@@ -124,7 +146,7 @@ export function MySchedule({ data }: { data: MyScheduleResponse }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="rounded-card border border-border bg-surface px-4">
+      <div className="rounded-card border border-border bg-surface px-4 shadow-[0_20px_40px_-32px_rgb(0_0_0/0.35)]">
         <Switch
           checked={reminders}
           onCheckedChange={toggleReminders}

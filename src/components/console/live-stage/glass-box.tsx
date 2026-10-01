@@ -30,7 +30,7 @@ function VoiceTurn() {
   const c = t.costUsd;
   return (
     <section aria-label="Last voice turn" className="flex flex-col gap-2">
-      <h3 className="font-semibold">Last voice turn</h3>
+      <h3 className="kicker text-fg-muted">Last voice turn</h3>
       <KeyValueList
         items={[
           { label: "Heard", value: t.you },
@@ -47,13 +47,14 @@ function VoiceTurn() {
 }
 
 const usd = (n: number) => `$${n.toFixed(4)}`;
+const CHIP = "font-mono text-[0.6875rem] uppercase tracking-[0.06em]";
 
 function StepLine({ s }: { s: AgentStep }) {
   switch (s.kind) {
     case "llm":
       return (
         <>
-          <Badge tone={s.ok ? "info" : "danger"}>Model</Badge> {s.provider} {s.model}: {s.inputTokens} in,{" "}
+          <Badge tone={s.ok ? "info" : "danger"} className={CHIP}>Model</Badge> {s.provider} {s.model}: {s.inputTokens} in,{" "}
           {s.outputTokens} out, {usd(s.costUsd)}, {s.latencyMs} ms
           {s.ok ? "" : ` (failed: ${s.error ?? "error"})`}
         </>
@@ -61,33 +62,33 @@ function StepLine({ s }: { s: AgentStep }) {
     case "tool":
       return (
         <>
-          <Badge tone="neutral">Tool</Badge> {s.tool}, {s.latencyMs} ms{s.ok ? "" : ` (failed)`}
+          <Badge tone="neutral" className={CHIP}>Tool</Badge> {s.tool}, {s.latencyMs} ms{s.ok ? "" : ` (failed)`}
         </>
       );
     case "propose":
       return (
         <>
-          <Badge tone="agent">Proposed</Badge> {s.actionKind}: {s.result}
+          <Badge tone="agent" className={CHIP}>Proposed</Badge> {s.actionKind}: {s.result}
           {s.status ? `, ${s.status}` : ""}
         </>
       );
     case "guard":
       return (
         <>
-          <Badge tone={s.verdict === "block" ? "danger" : "neutral"}>Guard</Badge> {s.verdict} by{" "}
+          <Badge tone={s.verdict === "block" ? "danger" : "neutral"} className={CHIP}>Guard</Badge> {s.verdict} by{" "}
           {s.by.replace("_", " ")}
         </>
       );
     case "fallback":
       return (
         <>
-          <Badge tone="pending">Rules fallback</Badge> {s.reason.replace("_", " ")}
+          <Badge tone="pending" className={CHIP}>Rules fallback</Badge> {s.reason.replace("_", " ")}
         </>
       );
     default:
       return (
         <>
-          <Badge tone="neutral">Note</Badge> {"text" in s ? s.text : ""}
+          <Badge tone="neutral" className={CHIP}>Note</Badge> {"text" in s ? s.text : ""}
         </>
       );
   }
@@ -139,22 +140,24 @@ function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
       />
       {cited.length ? (
         <section aria-label="Cited facts" className="flex flex-col gap-1">
-          <h3 className="font-semibold">Cited facts</h3>
+          <h3 className="kicker text-fg-muted">Cited facts</h3>
           <ul className="flex flex-col gap-1 text-sm">
             {cited.map((e) => (
               <li key={e.ref} className="flex flex-wrap items-center gap-1.5">
-                <Badge tone="neutral">{e.type}</Badge> {e.label}
+                <Badge tone="neutral" className={CHIP}>
+                  {e.type}
+                </Badge> {e.label}
                 <span className="font-mono text-xs text-fg-muted">{e.ref}</span>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
-      <h3 className="font-semibold">Steps</h3>
-      <ol className="flex flex-col gap-2 text-sm">
+      <h3 className="kicker text-fg-muted">Steps</h3>
+      <ol className="flex flex-col gap-2 border-l border-border pl-3 text-sm">
         {steps.map((s) => (
           <li key={s.id} className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-fg-muted tabular-nums">{formatTime(s.at)}</span>
+            <span className="font-mono text-xs text-fg-muted tabular-nums">{formatTime(s.at)}</span>
             <StepLine s={s} />
           </li>
         ))}
@@ -175,7 +178,7 @@ function Proposals({
   if (!items.length) return null;
   return (
     <section aria-label="Waiting for approval" className="flex flex-col gap-3">
-      <h3 className="font-semibold">Waiting for approval</h3>
+      <h3 className="kicker text-fg-muted">Waiting for approval</h3>
       {items.map((p) => (
         <ProposalCard
           key={p.id}

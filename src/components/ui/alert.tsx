@@ -41,7 +41,7 @@ function Alert({ variant = "info", title, onDismiss, action, className, children
       data-variant={variant}
       role={role}
       className={cn(
-        "relative flex gap-3 overflow-hidden rounded-control border border-l-4 p-4",
+        "relative flex gap-3 overflow-hidden rounded-card border border-l-4 p-4 md:p-5",
         box,
         className,
       )}
@@ -55,7 +55,7 @@ function Alert({ variant = "info", title, onDismiss, action, className, children
       ) : null}
       <Icon aria-hidden className={cn("relative mt-0.5 shrink-0", emergency ? "size-6" : "size-5")} />
       <div className="relative flex min-w-0 flex-1 flex-col gap-1">
-        <p className={cn("font-semibold", emergency ? "text-lg uppercase tracking-wide" : "text-base")}>
+        <p className={cn("font-medium", emergency ? "text-lg font-semibold uppercase tracking-wide" : "text-base")}>
           <span className="sr-only">{t(`alert.${variant}`)}: </span>
           {title}
         </p>
@@ -67,7 +67,7 @@ function Alert({ variant = "info", title, onDismiss, action, className, children
           type="button"
           onClick={onDismiss}
           aria-label={t("alert.dismiss")}
-          className="relative -m-2 flex size-11 shrink-0 items-center justify-center rounded-control hover:bg-black/10"
+          className="relative -m-2 flex size-11 shrink-0 items-center justify-center rounded-full transition-colors duration-(--duration-fast) ease-out hover:bg-black/10"
         >
           <X aria-hidden className="size-4" />
         </button>

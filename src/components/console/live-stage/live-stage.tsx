@@ -3,6 +3,7 @@
 import * as React from "react";
 import { Badge, PageHeader } from "@/components/ui";
 import { formatTime } from "@/lib/time";
+import { Kicker } from "../fx";
 import { GlassBox } from "./glass-box";
 import { PersonaDock } from "./persona-dock";
 import { StageCanvas } from "./stage-canvas";
@@ -71,10 +72,17 @@ export function LiveStage({ eventId }: { eventId: string }) {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
+        eyebrow={<Kicker>Console, live</Kicker>}
         title="Live stage"
         description="The Commander and thirteen agents, live. Click any node to see what it did and why."
         actions={
-          <Badge tone={s.connected ? "approved" : "pending"}>{s.connected ? "Live" : "Connecting"}</Badge>
+          <Badge tone={s.connected ? "approved" : "pending"} className="gap-1.5 font-mono uppercase">
+            <span
+              aria-hidden
+              className={`size-1.5 rounded-full bg-current ${s.connected ? "motion-safe:animate-pulse" : ""}`}
+            />
+            {s.connected ? "Live" : "Connecting"}
+          </Badge>
         }
       />
       <StageCanvas
@@ -92,7 +100,7 @@ export function LiveStage({ eventId }: { eventId: string }) {
             <li key={a}>
               <button
                 type="button"
-                className="rounded-control border border-border px-2 py-1 text-sm"
+                className="rounded-full border border-border-strong px-3 py-1 font-mono text-xs"
                 onClick={() => setOpen(`agent:${a}`)}
               >
                 {s.label(a)}: {s.stateOf(a)}
@@ -101,16 +109,25 @@ export function LiveStage({ eventId }: { eventId: string }) {
           ))}
         </ul>
       </nav>
-      <section aria-labelledby="stage-log" className="rounded-card border border-border bg-surface">
-        <h2 id="stage-log" className="border-b border-border px-3 py-2 text-sm font-semibold">
-          What is happening
-        </h2>
+      <section
+        aria-labelledby="stage-log"
+        className="overflow-hidden rounded-card border border-border bg-surface shadow-[0_18px_40px_-28px_rgb(0_0_0/0.35)]"
+      >
+        <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-2.5">
+          <h2 id="stage-log" className="text-sm font-medium tracking-[-0.01em]">
+            What is happening
+          </h2>
+          <span className="kicker text-fg-muted">
+            <span className="tabular-nums">{s.log.length}</span> cues
+          </span>
+        </div>
         {/* Newest first; the hook keeps at most 200 lines. */}
-        <ol role="log" className="h-40 overflow-y-auto px-3 py-2 font-mono text-xs leading-relaxed">
+        <ol role="log" className="h-40 overflow-y-auto px-4 py-2 font-mono text-xs leading-relaxed">
           {s.log.length ? (
             [...s.log].reverse().map((l) => (
-              <li key={l.id} className={TONE[l.tone ?? "system"]}>
-                <span className="text-fg-muted tabular-nums">{formatTime(l.at)}</span> {l.text}
+              <li key={l.id} className={`flex gap-3 ${TONE[l.tone ?? "system"]}`}>
+                <span className="shrink-0 text-fg-muted tabular-nums">{formatTime(l.at)}</span>
+                <span>{l.text}</span>
               </li>
             ))
           ) : (

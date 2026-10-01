@@ -36,7 +36,7 @@ function Avatar({ name, src, size = "md", decorative = false, className }: Avata
       )}
     >
       {src ? <AvatarPrimitive.Image src={src} alt="" className="size-full object-cover" /> : null}
-      <AvatarPrimitive.Fallback className="flex size-full items-center justify-center font-semibold text-fg-muted">
+      <AvatarPrimitive.Fallback className="flex size-full items-center justify-center font-mono font-medium text-fg-muted">
         {initials(name)}
       </AvatarPrimitive.Fallback>
     </AvatarPrimitive.Root>

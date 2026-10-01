@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { DemoPersona } from "@/contracts";
 import { Alert, Button, Field, Input } from "@/components/ui";
+import { cn } from "@/lib/utils";
 import { DemoInboxLink } from "@/components/public/register/demo-inbox-link";
 import { Turnstile } from "@/components/public/register/turnstile";
 import { useLocale, useT } from "@/lib/i18n/provider";
@@ -22,6 +23,23 @@ const PERSONA_HOME: Record<DemoPersona, string> = {
   viewer: "/console",
 };
 const PERSONAS = Object.keys(PERSONA_HOME) as DemoPersona[];
+/** Display order: the event head leads as the primary pill. */
+const SHOWN: DemoPersona[] = ["owner", ...PERSONAS.filter((p) => p !== "owner")];
+/** Decorative role dot, one colour per persona. */
+const DOT: Record<DemoPersona, string> = {
+  owner: "bg-on-curtain",
+  attendee: "bg-info",
+  volunteer: "bg-approved",
+  program_lead: "bg-agent",
+  comms_lead: "bg-curtain",
+  faculty: "bg-pending",
+  sponsor: "bg-danger",
+  viewer: "bg-neutral",
+};
+// The shared Button is rounded-control; `!` wins without depending on class order.
+const PILL = "rounded-full!";
+const LIFT =
+  "transition-[color,background-color,border-color,box-shadow,translate]! duration-200 ease-[cubic-bezier(.4,0,.1,1)] motion-safe:hover:-translate-y-0.5 hover:shadow-md";
 
 type Props = {
   next: string;
@@ -114,110 +132,127 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
     }
   };
 
-  return (
-    <div className="flex flex-col gap-8">
-      <form
-        noValidate
-        onSubmit={(e) => {
-          e.preventDefault();
-          void (sent ? signIn() : sendCode());
-        }}
-        className="flex flex-col gap-5"
-      >
-        {error && !error.field ? <Alert variant="danger" title={error.text} /> : null}
-        <Field label={t("login.email")} error={error?.field === "email" ? error.text : undefined} required>
-          <Input
-            type="email"
-            inputMode="email"
-            autoComplete="email"
-            value={email}
-            disabled={sent}
-            onChange={(e) => {
-              setEmail(e.target.value);
-              setError(null);
-            }}
-          />
-        </Field>
-        {sent ? (
-          <>
-            <p aria-live="polite">{t("login.codeSent", { email: email.trim() })}</p>
-            {demoMode ? <DemoInboxLink slug={demoEventSlug} email={email.trim()} sent={sent} /> : null}
-            <Field label={t("login.code")} error={error?.field === "code" ? error.text : undefined} required>
-              <Input
-                ref={codeRef}
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                pattern="[0-9]*"
-                maxLength={6}
-                className="max-w-48 font-mono text-xl tracking-[0.4em]"
-                value={code}
-                onChange={(e) => {
-                  setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
-                  setError(null);
-                }}
-              />
-            </Field>
-            <div className="flex flex-wrap gap-3">
-              <Button type="submit" size="lg" loading={busy === "signin"}>
-                {t("login.signIn")}
-              </Button>
-              <Button type="button" variant="ghost" onClick={() => void sendCode()} disabled={busy !== null}>
-                {t("login.resend")}
-              </Button>
-              <Button
-                type="button"
-                variant="link"
-                onClick={() => {
-                  setSent(false);
-                  setCode("");
-                }}
-              >
-                {t("login.changeEmail")}
-              </Button>
-            </div>
-          </>
-        ) : (
-          <>
-            <Turnstile
-              siteKey={turnstileSiteKey}
-              label={t("login.botCheck")}
-              language={locale === "hi" ? "hi" : "en"}
-              onToken={setToken}
+  const form = (
+    <form
+      noValidate
+      onSubmit={(e) => {
+        e.preventDefault();
+        void (sent ? signIn() : sendCode());
+      }}
+      className="flex flex-col gap-5"
+    >
+      {error && !error.field ? <Alert variant="danger" title={error.text} /> : null}
+      <Field label={t("login.email")} error={error?.field === "email" ? error.text : undefined} required>
+        <Input
+          type="email"
+          inputMode="email"
+          autoComplete="email"
+          value={email}
+          disabled={sent}
+          onChange={(e) => {
+            setEmail(e.target.value);
+            setError(null);
+          }}
+        />
+      </Field>
+      {sent ? (
+        <>
+          <p aria-live="polite">{t("login.codeSent", { email: email.trim() })}</p>
+          {demoMode ? <DemoInboxLink slug={demoEventSlug} email={email.trim()} sent={sent} /> : null}
+          <Field label={t("login.code")} error={error?.field === "code" ? error.text : undefined} required>
+            <Input
+              ref={codeRef}
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]*"
+              maxLength={6}
+              className="max-w-48 font-mono text-xl tracking-[0.4em]"
+              value={code}
+              onChange={(e) => {
+                setCode(e.target.value.replace(/\D/g, "").slice(0, 6));
+                setError(null);
+              }}
             />
-            <Button type="submit" size="lg" loading={busy === "send"} className="w-full sm:w-auto">
-              {t("login.sendCode")}
+          </Field>
+          <div className="flex flex-wrap gap-3">
+            <Button type="submit" size="lg" loading={busy === "signin"} className={PILL}>
+              {t("login.signIn")}
             </Button>
-          </>
-        )}
-      </form>
-
-      {demoMode ? (
-        <section
-          aria-labelledby="demo-title"
-          className="flex flex-col gap-3 rounded-card border border-dashed border-agent p-4"
-        >
-          <div className="flex flex-col gap-1">
-            <h2 id="demo-title" className="text-lg font-semibold">
-              {t("login.demoTitle")}
-            </h2>
-            <p className="text-sm text-fg-muted">{t("login.demoIntro")}</p>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => void sendCode()}
+              disabled={busy !== null}
+              className={PILL}
+            >
+              {t("login.resend")}
+            </Button>
+            <Button
+              type="button"
+              variant="link"
+              onClick={() => {
+                setSent(false);
+                setCode("");
+              }}
+            >
+              {t("login.changeEmail")}
+            </Button>
           </div>
-          <div className="grid gap-2 sm:grid-cols-2">
-            {PERSONAS.map((p) => (
+        </>
+      ) : (
+        <>
+          <Turnstile
+            siteKey={turnstileSiteKey}
+            label={t("login.botCheck")}
+            language={locale === "hi" ? "hi" : "en"}
+            onToken={setToken}
+          />
+          <Button type="submit" size="lg" loading={busy === "send"} className={cn(PILL, "w-full")}>
+            {t("login.sendCode")}
+          </Button>
+        </>
+      )}
+    </form>
+  );
+
+  if (!demoMode) return form;
+
+  return (
+    <div className="flex flex-col gap-6">
+      <section aria-labelledby="demo-title" className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1">
+          <h2 id="demo-title" className="kicker text-fg-muted">
+            {t("login.demoTitle")}
+          </h2>
+          <p className="text-sm text-fg-muted">{t("login.demoIntro")}</p>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {SHOWN.map((p) => {
+            const lead = p === "owner";
+            return (
               <Button
                 key={p}
                 type="button"
-                variant="secondary"
+                variant={lead ? "primary" : "secondary"}
+                size={lead ? "lg" : "md"}
                 loading={busy === p}
                 disabled={busy !== null && busy !== p}
                 onClick={() => void persona(p)}
+                className={cn(PILL, LIFT, lead ? "sm:col-span-2" : "justify-start! text-sm")}
               >
+                {busy === p ? null : <span aria-hidden className={cn("size-2 rounded-full", DOT[p])} />}
                 {t(`login.personas.${p}`)}
               </Button>
-            ))}
-          </div>
-        </section>
-      ) : null}
+            );
+          })}
+        </div>
+      </section>
+      <div className="flex items-center gap-3">
+        <span aria-hidden className="h-px flex-1 bg-border" />
+        <p className="kicker text-fg-muted">or sign in with email</p>
+        <span aria-hidden className="h-px flex-1 bg-border" />
+      </div>
+      {form}
     </div>
   );
 }

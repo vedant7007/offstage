@@ -23,7 +23,7 @@ import type { AgentName } from "@/contracts";
 import { useT } from "@/lib/i18n/provider";
 
 /**
- * Each agent has its own icon. Colour is shared: every agent uses the teal "agent" tone so
+ * Each agent has its own icon. Colour is shared: every agent uses the purple "agent" tone so
  * agent activity is recognisable at a glance, and the Commander alone wears the curtain colour
  * because it leads the team.
  */

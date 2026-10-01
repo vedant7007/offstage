@@ -18,7 +18,7 @@ export const toneClass = {
 export type Tone = keyof typeof toneClass;
 
 const badgeVariants = cva(
-  "inline-flex w-fit shrink-0 items-center gap-1 rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap [&_svg]:size-3.5 [&_svg]:shrink-0",
+  "inline-flex w-fit shrink-0 items-center gap-1 rounded-full border px-2 py-0.5 font-mono text-xs font-medium tracking-[0.02em] whitespace-nowrap [&_svg]:size-3.5 [&_svg]:shrink-0",
   { variants: { tone: toneClass }, defaultVariants: { tone: "neutral" } },
 );
 

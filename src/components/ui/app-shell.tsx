@@ -46,28 +46,39 @@ function AppShell({ title, homeHref = "/", nav, actions, children, preview = fal
         href={item.href}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "relative flex items-center [&_svg]:size-5 [&_svg]:shrink-0",
+          "group relative flex items-center [&_svg]:size-5 [&_svg]:shrink-0",
+          "transition-colors duration-(--duration-slow) ease-out",
           variant === "tab"
             ? "min-h-14 flex-1 flex-col justify-center gap-0.5 px-1 text-xs"
-            : "min-h-11 gap-3 rounded-control px-3 text-base",
+            : "min-h-11 gap-3 rounded-full px-4 text-base",
           active
             ? variant === "tab"
-              ? "font-semibold text-curtain-text"
-              : "bg-curtain-soft font-semibold text-curtain-soft-fg"
+              ? "font-medium text-fg"
+              : "bg-fg font-medium text-bg shadow-card"
             : "text-fg-muted hover:text-fg",
           variant === "side" && !active && "hover:bg-surface-sunken",
         )}
       >
-        {variant === "tab" && active ? (
-          <span aria-hidden className="absolute top-0 h-0.5 w-8 rounded-full bg-curtain" />
-        ) : null}
-        {item.icon}
+        {variant === "tab" ? (
+          // On phones the active tab's icon sits in a filled pill, so the state is not colour alone.
+          <span
+            aria-hidden
+            className={cn(
+              "flex h-7 w-12 items-center justify-center rounded-full transition-colors duration-(--duration-slow) ease-out",
+              active ? "bg-fg text-bg" : "group-hover:bg-surface-sunken",
+            )}
+          >
+            {item.icon}
+          </span>
+        ) : (
+          item.icon
+        )}
         <span className="truncate">{item.label}</span>
         {item.badge ? (
           <span
             className={cn(
-              "rounded-full bg-curtain px-1.5 text-xs font-semibold tabular-nums text-on-curtain",
-              variant === "tab" ? "absolute top-1.5 left-1/2 ml-2" : "ml-auto",
+              "rounded-full bg-curtain px-1.5 font-mono text-xs font-medium tabular-nums text-on-curtain",
+              variant === "tab" ? "absolute top-1 left-1/2 ml-3" : "ml-auto",
             )}
           >
             {item.badge}
@@ -82,16 +93,20 @@ function AppShell({ title, homeHref = "/", nav, actions, children, preview = fal
       {preview ? null : (
         <a
           href="#main"
-          className="sr-only z-(--z-toast) rounded-control bg-surface-raised px-4 py-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+          className="sr-only z-(--z-toast) rounded-full bg-surface-raised px-5 py-3 font-medium shadow-card focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
         >
           {t("common.skipToContent")}
         </a>
       )}
 
-      <header className="sticky top-0 z-(--z-appbar) border-b border-border bg-bg/95 pt-[env(safe-area-inset-top)] backdrop-blur">
+      <header className="sticky top-0 z-(--z-appbar) border-b border-border bg-bg/80 pt-[env(safe-area-inset-top)] backdrop-blur-md backdrop-saturate-150">
         <div className="flex min-h-14 items-center justify-between gap-3 px-4">
-          <Link href={homeHref} className="min-w-0 truncate py-2 text-lg font-semibold">
-            {title}
+          <Link
+            href={homeHref}
+            className="flex min-w-0 items-center gap-2.5 py-2 text-lg font-medium tracking-[-0.02em]"
+          >
+            <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-curtain" />
+            <span className="truncate">{title}</span>
           </Link>
           {actions ? <div className="flex shrink-0 items-center gap-1">{actions}</div> : null}
         </div>
@@ -100,7 +115,7 @@ function AppShell({ title, homeHref = "/", nav, actions, children, preview = fal
       <div className="flex flex-1">
         <nav
           aria-label={preview ? t("nav.sections") : t("nav.main")}
-          className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-border p-3 md:block"
+          className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 overflow-y-auto border-r border-border p-3 md:block"
         >
           <div className="flex flex-col gap-1">{nav.map((item) => link(item, "side"))}</div>
         </nav>
@@ -116,7 +131,7 @@ function AppShell({ title, homeHref = "/", nav, actions, children, preview = fal
 
       <nav
         aria-label={preview ? t("nav.sections") : t("nav.main")}
-        className="fixed inset-x-0 bottom-0 z-(--z-appbar) border-t border-border bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+        className="fixed inset-x-0 bottom-0 z-(--z-appbar) border-t border-border bg-bg/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-md backdrop-saturate-150 md:hidden"
       >
         <div className="flex">{nav.map((item) => link(item, "tab"))}</div>
       </nav>
