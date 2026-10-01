@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import type { DemoPersona } from "@/contracts";
 import { Alert, Button, Field, Input } from "@/components/ui";
+import { ArrowRight, LayoutDashboard, LoaderCircle, ScanLine, Ticket, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DemoInboxLink } from "@/components/public/register/demo-inbox-link";
 import { Turnstile } from "@/components/public/register/turnstile";
@@ -23,15 +24,21 @@ const PERSONA_HOME: Record<DemoPersona, string> = {
   viewer: "/console",
 };
 const PERSONAS = Object.keys(PERSONA_HOME) as DemoPersona[];
-/** Display order: the event head leads as the primary pill. */
-const SHOWN: DemoPersona[] = ["owner", ...PERSONAS.filter((p) => p !== "owner")];
-/** Decorative role dot, one colour per persona. */
-const DOT: Record<DemoPersona, string> = {
-  owner: "bg-on-curtain",
-  attendee: "bg-info",
-  volunteer: "bg-approved",
+/**
+ * The three doors a judge needs first, each with where it leads. The event head is the lead card.
+ * ponytail: hints are English until en.json gains login.personaHints.*; lang="en" marks them.
+ */
+const DOORS: { p: DemoPersona; icon: LucideIcon; hint: string }[] = [
+  { p: "owner", icon: LayoutDashboard, hint: "The console. Approve what the agents propose." },
+  { p: "attendee", icon: Ticket, hint: "Ticket, schedule and answers with sources" },
+  { p: "volunteer", icon: ScanLine, hint: "Gate check-in and tasks on the phone" },
+];
+/** Every other persona opens the console with a narrower role. */
+const MORE = PERSONAS.filter((p) => !DOORS.some((d) => d.p === p));
+/** Decorative role dot for the compact console roles. */
+const DOT: Partial<Record<DemoPersona, string>> = {
   program_lead: "bg-agent",
-  comms_lead: "bg-curtain",
+  comms_lead: "bg-info",
   faculty: "bg-pending",
   sponsor: "bg-danger",
   viewer: "bg-neutral",
@@ -153,7 +160,9 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
       </Field>
       {sent ? (
         <>
-          <p aria-live="polite">{t("login.codeSent", { email: email.trim() })}</p>
+          <p aria-live="polite" className="rounded-control bg-surface-sunken px-4 py-3 text-sm">
+            {t("login.codeSent", { email: email.trim() })}
+          </p>
           {demoMode ? <DemoInboxLink slug={demoEventSlug} email={email.trim()} sent={sent} /> : null}
           <Field label={t("login.code")} error={error?.field === "code" ? error.text : undefined} required>
             <Input
@@ -170,23 +179,32 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
               }}
             />
           </Field>
-          <div className="flex flex-wrap gap-3">
-            <Button type="submit" size="lg" loading={busy === "signin"}>
+          <div className="flex flex-col gap-2">
+            <Button type="submit" size="lg" loading={busy === "signin"} block>
               {t("login.signIn")}
             </Button>
-            <Button type="button" variant="ghost" onClick={() => void sendCode()} disabled={busy !== null}>
-              {t("login.resend")}
-            </Button>
-            <Button
-              type="button"
-              variant="link"
-              onClick={() => {
-                setSent(false);
-                setCode("");
-              }}
-            >
-              {t("login.changeEmail")}
-            </Button>
+            <div className="flex flex-wrap items-center justify-between gap-x-4">
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => void sendCode()}
+                disabled={busy !== null}
+              >
+                {t("login.resend")}
+              </Button>
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                onClick={() => {
+                  setSent(false);
+                  setCode("");
+                }}
+              >
+                {t("login.changeEmail")}
+              </Button>
+            </div>
           </div>
         </>
       ) : (
@@ -216,33 +234,89 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
           </h2>
           <p className="text-sm text-fg-muted">{t("login.demoIntro")}</p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-2">
-          {SHOWN.map((p) => {
+        <div className="grid gap-2">
+          {DOORS.map(({ p, icon: Icon, hint }) => {
             const lead = p === "owner";
+            const label = t(`login.personas.${p}`);
             return (
               <Button
                 key={p}
                 type="button"
                 variant={lead ? "primary" : "secondary"}
-                size={lead ? "lg" : "md"}
-                loading={busy === p}
-                disabled={busy !== null && busy !== p}
+                aria-label={label}
+                aria-describedby={`persona-${p}-hint`}
+                aria-busy={busy === p || undefined}
+                disabled={busy !== null}
                 onClick={() => void persona(p)}
-                className={lead ? "sm:col-span-2" : "justify-start text-left text-sm whitespace-normal"}
+                className={cn(
+                  "group h-auto justify-start gap-3 rounded-card! px-4 py-3 text-left whitespace-normal",
+                  lead && "py-4",
+                )}
               >
-                {busy === p ? null : <span aria-hidden className={cn("size-2 rounded-full", DOT[p])} />}
-                {t(`login.personas.${p}`)}
+                <span
+                  aria-hidden
+                  className={cn(
+                    "grid size-10 shrink-0 place-items-center rounded-full",
+                    lead ? "bg-on-curtain/15" : "bg-fg/8 group-hover:bg-bg/15",
+                  )}
+                >
+                  {busy === p ? <LoaderCircle className="animate-spin" /> : <Icon />}
+                </span>
+                <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium">
+                    {label}
+                    {lead ? (
+                      <span
+                        lang="en"
+                        className="rounded-full border border-current/40 px-2 py-0.5 font-mono text-[0.6875rem] tracking-[0.12em] uppercase"
+                      >
+                        Start here
+                      </span>
+                    ) : null}
+                  </span>
+                  <span id={`persona-${p}-hint`} lang="en" className="text-sm font-normal opacity-80">
+                    {hint}
+                  </span>
+                </span>
+                <ArrowRight
+                  aria-hidden
+                  className="motion-safe:transition-transform motion-safe:duration-200 motion-safe:group-hover:translate-x-0.5"
+                />
               </Button>
             );
           })}
         </div>
+        <div className="flex flex-col gap-2 pt-1">
+          <p lang="en" className="text-sm text-fg-muted">
+            More console roles
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {MORE.map((p) => (
+              <Button
+                key={p}
+                type="button"
+                variant="secondary"
+                size="sm"
+                loading={busy === p}
+                disabled={busy !== null && busy !== p}
+                onClick={() => void persona(p)}
+              >
+                {busy === p ? null : <span aria-hidden className={cn("size-2 rounded-full", DOT[p])} />}
+                {t(`login.personas.${p}`)}
+              </Button>
+            ))}
+          </div>
+        </div>
       </section>
-      <div className="flex items-center gap-3">
-        <span aria-hidden className="h-px flex-1 bg-border" />
-        <p lang="en" className="kicker text-fg-muted">
-          or sign in with email
-        </p>
-        <span aria-hidden className="h-px flex-1 bg-border" />
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <span aria-hidden className="h-px flex-1 bg-border" />
+          <p lang="en" className="kicker text-fg-muted">
+            or sign in with email
+          </p>
+          <span aria-hidden className="h-px flex-1 bg-border" />
+        </div>
+        <p className="text-center text-sm text-fg-muted">{t("login.intro")}</p>
       </div>
       {form}
     </div>

@@ -11,15 +11,16 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 const ROLES = [
-  "Event head: runs the console, approves what agents propose",
-  "Crew: gate check-in and tasks on the phone app",
-  "Attendees: ticket, schedule and cited answers",
+  "Event head: run the console and approve what agents propose",
+  "Volunteer: check people in at the gate from your phone",
+  "Attendee: your ticket, schedule and answers with sources",
 ];
 
 /** Shared sign-in for attendees, crew and organisers. Other areas redirect here with ?next=. */
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const [t, query] = await Promise.all([getT(), searchParams]);
   const next = safeNext(Array.isArray(query.next) ? query.next[0] : query.next);
+  const demoMode = process.env.DEMO_MODE === "true";
   return (
     <div className={styles.split}>
       <div className={styles.stage}>
@@ -29,7 +30,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <div lang="en" className={styles.copy}>
           <p className={`kicker ${styles.kicker} ${styles.reveal}`}>Backstage pass</p>
           <p className={`${styles.line} ${styles.reveal}`}>
-            The show goes on. <span className={styles.accent}>Sign in to run it.</span>
+            The show is on. <span className={styles.accent}>Take your place.</span>
           </p>
           <ul className={`${styles.bullets} ${styles.reveal} font-mono text-sm`}>
             {ROLES.map((role, i) => (
@@ -48,13 +49,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <div
           className={`${styles.card} rounded-card border border-border bg-surface-raised p-6 text-fg sm:p-10`}
         >
-          <header className="flex flex-col gap-2 pb-6">
+          <header className="flex flex-col gap-2 pb-8">
             <h1 className={`${styles.title} text-3xl md:text-4xl`}>{t("login.title")}</h1>
-            <p className="text-base text-fg-muted">{t("login.intro")}</p>
+            {/* In demo mode the form repeats this line beside the email field, where it belongs. */}
+            {demoMode ? null : <p className="text-base text-fg-muted">{t("login.intro")}</p>}
           </header>
           <LoginForm
             next={next}
-            demoMode={process.env.DEMO_MODE === "true"}
+            demoMode={demoMode}
             demoEventSlug={DEMO_EVENT_SLUG}
             turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || null}
           />
