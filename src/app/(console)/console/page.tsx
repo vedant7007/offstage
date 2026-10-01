@@ -8,7 +8,8 @@ import { getSessionInfo } from "@/server/authz";
 /** /console opens the signed-in user's active event, or their first one. The event layout checks membership. */
 export default async function ConsoleIndex() {
   const info = await getSessionInfo(await headers());
-  if (!info) redirect("/");
+  // Signed out (a demo:reset ends every session): sign in again, then come back here.
+  if (!info) redirect("/login?next=/console");
   const eventId =
     info.activeEventId ??
     (
