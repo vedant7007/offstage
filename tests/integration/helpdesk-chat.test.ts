@@ -82,6 +82,19 @@ describe("helpdesk chat", () => {
     expect(again.conversationId).toBe(mine.conversationId);
   });
 
+  it("answers small talk briefly, with no model run and no escalation", async () => {
+    for (const text of ["ok", "Okay!", "thanks", "hi"]) {
+      const [before] = await owner<{ n: number }[]>`select count(*)::int as n from agent_runs`;
+      const r = await ask(attendee("attendee"), text);
+      const [after] = await owner<{ n: number }[]>`select count(*)::int as n from agent_runs`;
+      expect(r.answer.answer).toBe("Anytime. Ask me about the schedule, food, venue or your ticket.");
+      expect(r.answer.needsEscalation).toBe(false);
+      expect(r.escalationId).toBeUndefined();
+      expect(after!.n).toBe(before!.n);
+    }
+    expect(m.chat.isSmallTalk("ok where is lunch")).toBe(false);
+  });
+
   it("answers with a pause note when the kill switch is on, without running the agent", async () => {
     await owner`update events set agents_enabled = false where id = ${E}`;
     const [before] = await owner<{ n: number }[]>`select count(*)::int as n from agent_runs`;

@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { FileText, FlaskConical, Gauge, History, Inbox, Network, Newspaper, Sparkles } from "lucide-react";
 import { AppShell, Button, EmptyState, ThemeToggle } from "@/components/ui";
+import { EmergencyBanner } from "@/components/console/emergency-banner";
 import { PersonaSwitcher } from "@/components/console/persona-switcher";
 import { RealSendsBadge } from "@/components/console/real-sends";
 import { getSessionInfo, membershipFor } from "@/server/authz";
@@ -55,6 +56,7 @@ export default async function ConsoleLayout({ children, params }: LayoutProps<"/
         </div>
       }
     >
+      <EmergencyBanner eventId={eventId} />
       {children}
     </AppShell>
   );
