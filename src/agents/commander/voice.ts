@@ -114,6 +114,9 @@ export const FILLER: Partial<Record<Intent, string>> = {
   closeout: "Pulling the close-out report.",
 };
 
+/** Said when the words were not caught or not understood: ask again rather than refuse. */
+export const SAY_AGAIN = "Sorry, say that again or type it.";
+
 export const CAPABILITIES =
   "I can read today's briefing, tell you how registrations are going, handle a cancelled speaker, lunch confusion, broken equipment, a budget overrun or a missing volunteer, run a what if, and summarise how the event went.";
 

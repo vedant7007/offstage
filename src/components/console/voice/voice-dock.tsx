@@ -200,7 +200,12 @@ export function VoiceDock({ eventId }: { eventId: string }) {
           </div>
           <ol aria-label="Voice transcript" className="flex max-h-64 flex-col gap-2 overflow-y-auto text-sm">
             {v.turns.map((t) => (
-              <li key={t.id} className="rounded-card border border-border bg-surface p-2">
+              <li
+                key={t.id}
+                data-intent={t.intent ?? ""}
+                data-latency={t.latencyMs ?? ""}
+                className="rounded-card border border-border bg-surface p-2"
+              >
                 <div className="flex flex-wrap items-center gap-1 text-xs text-fg-muted">
                   <span className="tabular-nums">{formatTime(t.at)}</span>
                   <Badge tone="neutral">{t.via === "voice" ? "Voice" : "Typed"}</Badge>

@@ -74,19 +74,21 @@ for (const c of cases) {
   await page.waitForTimeout(500);
   const turn = dock.getByRole("list", { name: "Voice transcript" }).locator("li").first();
   const text = (await turn.innerText().catch(() => "")).replace(/\s+/g, " ");
-  const intent = (
-    await turn
-      .locator("span")
-      .filter({ hasText: /^[a-z ]+$/ })
+  // The dock writes the intent on the transcript row; a failed turn shows an alert in the dock.
+  const intent = (await turn.getAttribute("data-intent", { timeout: 2000 }).catch(() => null)) ?? "";
+  const alert = (
+    await dock
+      .locator("[data-variant=warning], [data-variant=danger]")
       .first()
-      .innerText()
+      .innerText({ timeout: 500 })
       .catch(() => "")
-  ).replace(/ /g, "_");
+  ).trim();
   const latency = logs.map((l) => /end of speech to first audio: (\d+) ms/.exec(l)?.[1]).find(Boolean);
   const heard = /You: (.*?) Offstage:/.exec(text)?.[1] ?? "";
   const reply = text.split("Offstage: ").slice(1).join(" ");
   const why: string[] = [];
   if (!spoke) why.push("never spoke");
+  if (alert) why.push(`dock alert: ${alert.slice(0, 80)}`);
   if (intent !== c.intent) why.push(`intent ${intent || "none"}`);
   for (const re of c.reply) if (!re.test(reply)) why.push(`missing ${re}`);
   for (const re of c.never ?? []) if (re.test(reply)) why.push(`said ${re}`);

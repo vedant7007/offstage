@@ -14,6 +14,7 @@ import { endRun } from "@/ai/router/budget";
 import {
   CAPABILITIES,
   FILLER,
+  SAY_AGAIN,
   SCENARIOS,
   pickIntent,
   sentences,
@@ -277,7 +278,8 @@ async function* answer(
       return;
     }
     case "unknown":
-      yield say(`I can't do that yet. ${CAPABILITIES}`);
+      yield say(SAY_AGAIN);
+      yield say(CAPABILITIES);
       return;
     default:
       if ((SCENARIOS as Intent[]).includes(intent)) yield* scenario(actor, intent as Scenario, client);
