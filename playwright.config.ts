@@ -4,6 +4,8 @@ const PORT = Number(process.env.PORT ?? 3000);
 
 export default defineConfig({
   testDir: "tests/e2e",
+  // Showcase specs run against a showcase build: playwright.showcase.config.ts.
+  testIgnore: "showcase-*.spec.ts",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
