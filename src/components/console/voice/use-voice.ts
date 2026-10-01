@@ -286,6 +286,8 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
             } else if (e.type === "open") {
               const ev = new CustomEvent("offstage:open-proposal", { detail: e, cancelable: true });
               if (window.dispatchEvent(ev)) openRef.current(e.proposalId);
+              // The stream stays open until the tap, to say what was sent; the dock is free meanwhile.
+              streamDone.current = true;
             } else if (e.type === "done") update((t) => (t.costUsd.model = e.costUsd));
             else if (e.type === "error") setError(e.message);
           }

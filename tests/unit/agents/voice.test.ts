@@ -8,7 +8,9 @@ vi.mock("@/db/client", () => ({ db: {} }));
 
 describe("ruleIntent", () => {
   // "unknown" and "blocked" go through the model and the guard, not the rules.
-  for (const c of CASES.filter((c) => c.intent !== "unknown" && c.intent !== "blocked")) {
+  for (const c of CASES.filter(
+    (c) => typeof c.intent === "string" && c.intent !== "unknown" && c.intent !== "blocked",
+  )) {
     it(`routes case ${c.id}: ${c.say}`, () => expect(ruleIntent(c.say)).toBe(c.intent));
   }
 
