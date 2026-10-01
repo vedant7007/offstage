@@ -144,6 +144,79 @@ sudo docker compose --profile cloud run --rm --no-deps app pnpm demo:trigger spe
 sudo docker compose exec db pg_dump -U sutradhar sutradhar | gzip > backup.sql.gz
 ```
 
+## Preflight
+
+`pnpm demo:preflight` prints a PASS, WARN or FAIL row for everything a live demo depends on and
+exits 1 on any FAIL. On the server:
+
+```bash
+ssh -i ~/.ssh/offstage-deploy.pem ubuntu@203.0.113.10 'cd /opt/sutradhar && sudo docker compose --profile cloud exec app pnpm demo:preflight'
+```
+
+It checks the app's health through the public URL, the worker's heartbeat (written every 30 s),
+that the worker polls Telegram and had no 409 in the last minute, the real-sends switch, the Twilio
+trial cap left (counted from the account's own sends in the last 24 hours, so other machines count
+too), each team phone's last delivered WhatsApp (WARN after 72 hours: rejoin the sandbox), a signed
+and a forged test POST to the WhatsApp webhook (200 and 403), the demo clock, the demo world, the
+knowledge base, a short reply from Groq, Bedrock and Ollama with latency (a provider outside this
+profile's chain only warns), Mailpit, and SES production access.
+
+## Snapshot and restore
+
+Take a snapshot before every demo, after `demo:reset` and the rehearsal:
+
+```bash
+HOST=ubuntu@203.0.113.10 KEY=~/.ssh/offstage-deploy.pem scripts/deploy/snapshot.sh [--wait]
+```
+
+It writes a Postgres dump (`pg_dump -Fc`) to `/opt/sutradhar-backups/offstage-<time>.dump` on the
+server (outside `/opt/sutradhar`, which every deploy replaces), copies it to
+`~/offstage-backups/` on your machine and checks the copy's checksum, then takes an EBS snapshot of
+the server's disk tagged `Project=offstage`. It prints the restore command.
+
+**Restore the database** (the usual case: a demo went wrong and you want the clean world back):
+
+```bash
+HOST=ubuntu@203.0.113.10 KEY=~/.ssh/offstage-deploy.pem scripts/deploy/restore.sh offstage-<time>.dump
+```
+
+It restores into a new database `sutradhar_restore` while the site stays up (if that fails, nothing
+changed), then stops the app and the worker for a few seconds, renames the live database to
+`sutradhar_before_<time>` and the restored one to `sutradhar`, and starts them again (also when a
+step fails). A local `.dump` path is uploaded first. Real sends and the demo clock come back as they
+were in the dump. To roll back, swap the names the other way with the app and worker stopped:
+
+```bash
+sudo docker compose --profile cloud stop app worker
+sudo docker compose exec -T db psql -U sutradhar -d postgres -c "alter database sutradhar rename to sutradhar_bad" -c "alter database sutradhar_before_<time> rename to sutradhar"
+sudo docker compose --profile cloud start app worker
+```
+
+Drop old copies when you are sure: `drop database sutradhar_before_<time> with (force)`.
+
+**Restore the whole disk** (the instance itself is broken): make a volume from the snapshot and
+swap it in as the root disk. The Elastic IP and the URL stay the same.
+
+```bash
+P="--profile offstage-deploy --region ap-south-1"
+ID=i-0123456789abcdef0
+AZ=$(aws ec2 describe-instances $P --instance-ids $ID --query 'Reservations[0].Instances[0].Placement.AvailabilityZone' --output text)
+OLD=$(aws ec2 describe-instances $P --instance-ids $ID --query 'Reservations[0].Instances[0].BlockDeviceMappings[0].Ebs.VolumeId' --output text)
+NEW=$(aws ec2 create-volume $P --snapshot-id snap-<id> --availability-zone $AZ --volume-type gp3   --tag-specifications 'ResourceType=volume,Tags=[{Key=Project,Value=offstage},{Key=Name,Value=offstage}]' --query VolumeId --output text)
+aws ec2 wait volume-available $P --volume-ids $NEW
+aws ec2 stop-instances $P --instance-ids $ID && aws ec2 wait instance-stopped $P --instance-ids $ID
+aws ec2 detach-volume $P --volume-id $OLD && aws ec2 wait volume-available $P --volume-ids $OLD
+MSYS_NO_PATHCONV=1 aws ec2 attach-volume $P --volume-id $NEW --instance-id $ID --device /dev/sda1
+aws ec2 start-instances $P --instance-ids $ID
+```
+
+Compose starts every container on boot. Delete the old volume once the site works
+(`aws ec2 delete-volume $P --volume-id $OLD`).
+
+Snapshots cost about USD 0.05 per GB-month of changed data; delete old ones with
+`aws ec2 delete-snapshot $P --snapshot-id snap-<id>` (list them with
+`aws ec2 describe-snapshots $P --owner-ids self --filters Name=tag:Project,Values=offstage`).
+
 ## 6. Stop and start to save credits
 
 A stopped instance costs nothing for compute; the 30 GB disk (about USD 0.09 a day) and the Elastic IP
@@ -179,6 +252,8 @@ aws ec2 terminate-instances $P --instance-ids $ID            # the disk is delet
 aws ec2 wait instance-terminated $P --instance-ids $ID
 aws ec2 delete-security-group $P --group-name offstage-web
 aws ec2 delete-key-pair $P --key-name offstage-deploy && rm -f ~/.ssh/offstage-deploy.pem
+# Snapshots taken by scripts/deploy/snapshot.sh:
+aws ec2 describe-snapshots $P --owner-ids self --filters Name=tag:Project,Values=offstage --query 'Snapshots[].SnapshotId' --output text   | xargs -r -n1 aws ec2 delete-snapshot $P --snapshot-id
 # The Elastic IP keeps billing until it is released:
 aws ec2 describe-addresses $P --filters Name=tag:Project,Values=offstage --query 'Addresses[].AllocationId' --output text   | xargs -r -n1 aws ec2 release-address $P --allocation-id
 ```

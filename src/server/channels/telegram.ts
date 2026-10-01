@@ -11,6 +11,7 @@ import type { Tx } from "@/server/actions/types";
 import * as t from "@/db/schema";
 import type { Logger } from "pino";
 import { parseAllowlist } from "@/server/channels/allowlist";
+import { recordTelegramConflict } from "@/server/heartbeat";
 import { decrypt, encrypt, lookupHash, normalisePhone, phoneHash } from "@/server/pii";
 import { allowlistedSender, answerInbound, senderByTelegramLink } from "@/server/channels/inbound";
 
@@ -191,6 +192,8 @@ export async function pollTelegram(db: Db, log: Logger, signal: AbortSignal): Pr
       }
     } catch (err) {
       if (signal.aborted) return;
+      // 409: another poller holds the bot. Recorded for pnpm demo:preflight.
+      if (String(err).includes("getUpdates 409")) await recordTelegramConflict(db).catch(() => undefined);
       log.warn({ err: String(err) }, "telegram poll failed, retrying in 5 s");
       await new Promise((r) => setTimeout(r, 5_000));
     }

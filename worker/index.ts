@@ -12,6 +12,7 @@ import { registerDomainEventFanOut } from "./jobs/events";
 import { startOutboxDelivery } from "./jobs/outbox";
 import { db } from "@/db/client";
 import { pollTelegram } from "@/server/channels/telegram";
+import { writeHeartbeat } from "@/server/heartbeat";
 import { morningBriefings } from "@/server/services/briefings";
 
 process.env.SUTRADHAR_SERVICE ??= "worker";
@@ -61,6 +62,11 @@ async function main() {
   const polling = process.env.TELEGRAM_POLLING === "on" && Boolean(process.env.TELEGRAM_BOT_TOKEN);
   log.info(`telegram polling: ${polling ? "on" : "off"}`);
   if (polling) void pollTelegram(db, log, telegram.signal);
+  // Liveness for pnpm demo:preflight.
+  const beat = () =>
+    writeHeartbeat(db, polling).catch((err: unknown) => log.warn({ err }, "heartbeat failed"));
+  void beat();
+  const heartbeat = setInterval(beat, 30_000);
   log.info("worker started");
 
   let stopping = false;
@@ -69,6 +75,7 @@ async function main() {
     stopping = true;
     log.info({ signal }, "worker stopping");
     stopDelivery();
+    clearInterval(heartbeat);
     telegram.abort();
     await stopListening().catch(() => {});
     await boss.stop({ graceful: true, timeout: 10_000 });
