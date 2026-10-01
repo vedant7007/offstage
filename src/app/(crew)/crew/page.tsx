@@ -14,11 +14,12 @@ import {
 } from "lucide-react";
 import type { CrewShiftsResponse, CrewTasksResponse } from "@/contracts";
 import { createApiClient } from "@/lib/api-client";
-import { formatRange, formatTime } from "@/lib/time";
+import { formatRange, formatRelative, formatTime } from "@/lib/time";
 import { Alert, Badge, type Tone } from "@/components/ui";
-import { Kicker, Reveal } from "@/components/ui/motion";
+import { Kicker, LivePulse, Reveal } from "@/components/ui/motion";
 import { getMe } from "@/components/attendee/server";
 import { DeviceSyncSummary } from "@/components/crew/sync-status";
+import fx from "@/components/crew/crew.module.css";
 
 export const metadata = { title: "Crew", robots: { index: false } };
 
@@ -92,6 +93,62 @@ function Empty({ icon, title, children }: { icon: ReactNode; title: string; chil
   );
 }
 
+/**
+ * The focal card: the shift on now (with how far through it you are) or the next one to come. Times are
+ * fixed at render, from the demo clock; the gradient edge marks it as the one card to read first.
+ */
+function ShiftCard({ row, now }: { row: ShiftRow; now: number }) {
+  const start = Date.parse(row.shift.startsAt);
+  const end = Date.parse(row.shift.endsAt);
+  const onNow = start <= now;
+  const through = Math.min(1, Math.max(0, (now - start) / (end - start || 1)));
+  const status = ASSIGNMENT[row.assignment.status];
+  return (
+    <Reveal
+      as="section"
+      index={1}
+      aria-labelledby="shift-title"
+      className="edge flex flex-col gap-6 rounded-card bg-surface p-5 depth-2 md:p-6"
+    >
+      <div className="flex items-center justify-between gap-3">
+        <h2 id="shift-title" className="kicker flex items-center gap-2 text-fg-muted [&_svg]:size-4">
+          {onNow ? <LivePulse className="text-approved-text" /> : <Clock aria-hidden />}
+          {onNow ? "On shift now" : "Your next shift"}
+        </h2>
+        <Badge tone={status.tone}>{status.label}</Badge>
+      </div>
+      <div className="flex flex-col gap-2">
+        <p className="text-3xl font-medium text-balance">{row.shift.role}</p>
+        {row.roomName && !row.shift.role.includes(row.roomName) ? (
+          <p className="flex items-center gap-2 text-fg-muted">
+            <MapPin aria-hidden className="size-4 shrink-0" />
+            {row.roomName}
+          </p>
+        ) : null}
+      </div>
+      <div className="flex flex-col gap-3">
+        {onNow ? (
+          <div aria-hidden className="h-2 overflow-hidden rounded-full bg-surface-sunken">
+            <div
+              className={`h-full origin-left rounded-full bg-curtain ${fx.fill}`}
+              style={{ scale: `${through} 1` }}
+            />
+          </div>
+        ) : null}
+        <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 font-mono text-sm tabular-nums">
+          <span className="text-fg-muted">{formatRange(row.shift.startsAt, row.shift.endsAt)}</span>
+          <span className="font-medium">
+            {onNow ? `Ends ${formatRelative(end, now)}` : `Starts ${formatRelative(start, now)}`}
+          </span>
+        </div>
+        {row.assignment.checkedInAt ? (
+          <p className="text-sm text-fg-muted">Checked in at {formatTime(row.assignment.checkedInAt)}</p>
+        ) : null}
+      </div>
+    </Reveal>
+  );
+}
+
 export default async function CrewHome() {
   const me = await getMe();
   if (!me) redirect("/login?next=/crew");
@@ -106,7 +163,6 @@ export default async function CrewHome() {
     .filter((s) => s.assignment.status !== "released" && Date.parse(s.shift.endsAt) > now)
     .sort((a, b) => a.shift.startsAt.localeCompare(b.shift.startsAt));
   const shift = live[0];
-  const onNow = shift ? Date.parse(shift.shift.startsAt) <= now : false;
   const open = (tasks ?? [])
     .filter((t) => t.status === "open" || t.status === "in_progress")
     .sort((a, b) => RANK[a.priority] - RANK[b.priority] || (a.dueAt ?? "~").localeCompare(b.dueAt ?? "~"));
@@ -151,40 +207,21 @@ export default async function CrewHome() {
         </Panel>
       ) : (
         <>
-          <Panel title={onNow ? "On shift now" : "Your next shift"} icon={<Clock aria-hidden />} index={1}>
-            {shift ? (
-              <div className="flex flex-col gap-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <p className="text-xl font-medium">{shift.shift.role}</p>
-                  <Badge tone={ASSIGNMENT[shift.assignment.status].tone}>
-                    {ASSIGNMENT[shift.assignment.status].label}
-                  </Badge>
-                </div>
-                <p className="font-mono text-sm text-fg-muted tabular-nums">
-                  {formatRange(shift.shift.startsAt, shift.shift.endsAt)}
-                </p>
-                {shift.roomName ? (
-                  <p className="flex items-center gap-2 text-sm">
-                    <MapPin aria-hidden className="size-4 text-fg-muted" />
-                    {shift.roomName}
-                  </p>
-                ) : null}
-                {shift.assignment.checkedInAt ? (
-                  <p className="text-sm text-fg-muted">
-                    Checked in at {formatTime(shift.assignment.checkedInAt)}
-                  </p>
-                ) : null}
-              </div>
-            ) : shifts === null ? (
-              <Empty icon={<CalendarClock />} title="Shift times with your event head">
-                Your event head has your shift times. They appear here once the roster is live.
-              </Empty>
-            ) : (
-              <Empty icon={<CalendarClock />} title="No more shifts today">
-                That is your last one. Thank you for your time.
-              </Empty>
-            )}
-          </Panel>
+          {shift ? (
+            <ShiftCard row={shift} now={now} />
+          ) : (
+            <Panel title="Your next shift" icon={<Clock aria-hidden />} index={1}>
+              {shifts === null ? (
+                <Empty icon={<CalendarClock />} title="Shift times with your event head">
+                  Your event head has your shift times. They appear here once the roster is live.
+                </Empty>
+              ) : (
+                <Empty icon={<CalendarClock />} title="No more shifts today">
+                  That is your last one. Thank you for your time.
+                </Empty>
+              )}
+            </Panel>
+          )}
 
           <Panel title="Your tasks" icon={<ClipboardList aria-hidden />} index={2}>
             {open.length ? (

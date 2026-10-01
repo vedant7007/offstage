@@ -47,3 +47,67 @@
     translate: 0 -8px;
   }
 }
+
+/* A "no" you can see without reading: the rejected result shakes its head once. */
+.result[data-tone="danger"] {
+  animation:
+    result-in 600ms var(--spring-soft) both,
+    shake 420ms var(--ease-out) both;
+}
+@keyframes shake {
+  15% {
+    translate: -8px 0;
+  }
+  35% {
+    translate: 7px 0;
+  }
+  55% {
+    translate: -5px 0;
+  }
+  75% {
+    translate: 3px 0;
+  }
+}
+
+/* The answer icon lands with a bounce: in the flash and on the result card. */
+.pop,
+.flash svg {
+  animation: pop 720ms var(--spring-bouncy) both;
+}
+@keyframes pop {
+  from {
+    scale: 0.4;
+  }
+}
+
+/* Viewfinder: a scan line sweeping the frame. Under reduced motion it rests across the middle. */
+.sweep {
+  position: absolute;
+  inset: 0;
+  translate: 0 -50%;
+  border-bottom: 2px solid var(--curtain);
+  background: linear-gradient(
+    to bottom,
+    transparent 70%,
+    color-mix(in srgb, var(--curtain) 22%, transparent)
+  );
+  animation: sweep 2.4s var(--ease-in-out) infinite alternate;
+}
+@keyframes sweep {
+  from {
+    translate: 0 -100%;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+/* Shift progress fills to now once, as the card arrives. */
+.fill {
+  animation: fill 900ms var(--ease-out-expo) 200ms both;
+}
+@keyframes fill {
+  from {
+    scale: 0 1;
+  }
+}

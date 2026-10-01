@@ -155,10 +155,9 @@ function Camera({ onCode }: { onCode: (code: string) => void }) {
       {on ? (
         <Frame>
           <video ref={video} muted playsInline className="size-full object-cover" />
-          <span
-            aria-hidden
-            className="absolute inset-x-8 top-1/2 h-0.5 rounded-full bg-curtain shadow-[0_0_12px_2px] shadow-curtain motion-safe:animate-pulse"
-          />
+          <span aria-hidden className="pointer-events-none absolute inset-8 overflow-hidden">
+            <span className={fx.sweep} />
+          </span>
         </Frame>
       ) : null}
       <Button
@@ -206,30 +205,36 @@ function ResultPanel({ result, seq }: { result: Result | null; seq: number }) {
       {result ? (
         <div
           key={seq}
+          data-tone={result.tone}
           className={cn(
-            "flex items-start gap-4 rounded-card p-5 depth-2 [&_svg]:size-9 [&_svg]:shrink-0",
+            "flex min-h-28 items-start gap-4 rounded-card p-5 depth-2",
             fx.result,
             RESULT[result.tone].box,
           )}
         >
-          <span className="relative inline-flex">
-            {RESULT[result.tone].icon}
-            {result.tone === "approved" ? <ConfirmBurst key={seq} className="text-current" /> : null}
+          <span className="relative flex size-14 shrink-0 items-center justify-center rounded-full bg-current/12 [&_svg]:size-9">
+            <span className={cn("inline-flex", fx.pop)}>{RESULT[result.tone].icon}</span>
+            {result.tone === "approved" ? (
+              <ConfirmBurst key={seq} className="scale-150 text-current" />
+            ) : null}
           </span>
-          <div className="flex min-w-0 flex-col gap-1">
-            <p className="text-3xl font-medium">{result.title}</p>
-            <p className="text-base">{result.detail}</p>
+          <div className="flex min-w-0 flex-col gap-1 pt-1">
+            <p className="text-3xl leading-none font-medium tracking-[-0.025em]">{result.title}</p>
+            <p className="mt-1 text-base">{result.detail}</p>
           </div>
         </div>
       ) : (
-        <div className="flex items-center gap-4 rounded-card border-[1.5px] border-dashed border-border-strong px-5 py-4 text-fg-muted">
+        <div className="flex min-h-28 items-center gap-4 rounded-card border-[1.5px] border-dashed border-border-strong px-5 py-4 text-fg-muted">
           <span
             aria-hidden
-            className="flex size-10 shrink-0 items-center justify-center rounded-inner bg-curtain-soft text-curtain-soft-fg depth-1 [&_svg]:size-5"
+            className="flex size-14 shrink-0 items-center justify-center rounded-full bg-curtain-soft text-curtain-soft-fg depth-1 [&_svg]:size-7"
           >
             <ScanLine />
           </span>
-          <p className="text-base">Ready to scan. The answer shows here.</p>
+          <div className="flex min-w-0 flex-col gap-1">
+            <p className="text-lg font-medium text-fg">Ready to scan</p>
+            <p className="text-sm">Scan or paste a ticket. The answer shows here.</p>
+          </div>
         </div>
       )}
     </div>
