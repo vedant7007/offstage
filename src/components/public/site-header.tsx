@@ -1,12 +1,10 @@
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { LanguageSwitcher, ThemeToggle } from "@/components/ui";
-import { ScrollHeader, SiteMenu } from "@/components/ui/shell-bits";
+import { LanguageSwitcher, ThemeToggle, buttonVariants, vtAnchor } from "@/components/ui";
+import { ScrollHeader, SiteMenu, SiteNavLinks } from "@/components/ui/shell-bits";
+import { cn } from "@/lib/utils";
 import { getT } from "@/lib/i18n/server";
 import { CONSOLE_PATH, DEMO_EVENT_SLUG, eventPath } from "./links";
-
-const navLink =
-  "relative hidden min-h-11 items-center rounded-full px-3 font-mono text-xs font-medium tracking-[0.12em] text-fg-muted uppercase transition-colors duration-(--duration-fast) ease-out hover:text-fg md:flex";
 
 /** Wordmark with the lime cue dot. Shared by the header and footer. */
 export function Wordmark() {
@@ -18,7 +16,10 @@ export function Wordmark() {
   );
 }
 
-/** Top bar for public pages: flush at the top, solid with a hairline once the page scrolls. */
+/**
+ * Top bar for public pages: flush at the top, frosted with a hairline once the page scrolls. Anchored, so
+ * it stays still while the page below cross-fades.
+ */
 export async function SiteHeader() {
   const t = await getT();
   const links = [
@@ -27,7 +28,7 @@ export async function SiteHeader() {
   ];
   const cta = { href: CONSOLE_PATH, label: "Enter live demo" };
   return (
-    <ScrollHeader className="sticky top-0 z-(--z-appbar)">
+    <ScrollHeader {...vtAnchor("site-header")} className="sticky top-0 z-(--z-appbar)">
       <div className="mx-auto flex min-h-16 max-w-6xl items-center justify-between gap-3 px-4 md:px-8">
         <Link
           href="/"
@@ -37,16 +38,15 @@ export async function SiteHeader() {
           <Wordmark />
         </Link>
         <nav aria-label={t("nav.main")} className="flex items-center gap-1">
-          {links.map((l) => (
-            <Link key={l.href} href={l.href} className={navLink}>
-              {l.label}
-            </Link>
-          ))}
+          <SiteNavLinks links={links} />
           <LanguageSwitcher className="hidden md:inline-flex" />
           <ThemeToggle />
           <Link
             href={cta.href}
-            className="ml-1 hidden min-h-11 items-center gap-1.5 rounded-full bg-curtain px-4 text-sm font-medium text-on-curtain transition-[background-color,transform] duration-(--duration-slow) ease-out hover:bg-curtain-hover motion-safe:hover:-translate-y-0.5 sm:inline-flex"
+            className={cn(
+              buttonVariants({ size: "sm" }),
+              "ml-1 hidden min-h-11 gap-1.5 sm:inline-flex md:min-h-11",
+            )}
           >
             {cta.label}
             <ArrowUpRight aria-hidden className="size-4" />

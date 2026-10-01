@@ -131,7 +131,6 @@ export const IMPACT = [
   { n: 1, label: "session moved" },
   { n: 2, label: "human approvals" },
 ];
-export const IMPACT_CAPTION = "Illustrative, from the seeded HackNova demo";
 
 export const LAW = ["Agents propose.", "Policy decides.", "Humans approve.", "Code executes."];
 export const LAW_LINE = LAW.join(" ");

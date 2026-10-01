@@ -189,6 +189,33 @@ function Phone({ p, time, fresh, banner }: { p: Persona; time: string; fresh: Se
   );
 }
 
+/** A phone-shaped placeholder: the real frame, an app bar and two message bubbles. */
+function PhoneSkeleton({ className }: { className?: string }) {
+  const bar = "rounded-full bg-white/[0.08]";
+  return (
+    <div aria-hidden className={cn(PHONE.device, className)}>
+      <div className={PHONE.frame}>
+        <div className={PHONE.bezel}>
+          <div className={PHONE.screen}>
+            <span className={PHONE.island} />
+            <div className="mt-11 flex items-center gap-2.5 border-b border-white/10 px-4 pb-3">
+              <Skeleton className={cn("size-9", bar)} />
+              <span className="flex flex-col gap-2">
+                <Skeleton className={cn("h-3 w-24", bar)} />
+                <Skeleton className={cn("h-2.5 w-14", bar)} />
+              </span>
+            </div>
+            <div className="flex flex-col gap-2.5 px-3 pt-4">
+              <Skeleton className="h-20 rounded-2xl bg-white/[0.06]" />
+              <Skeleton className="h-16 rounded-2xl bg-white/[0.06]" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * "See what they see": the attendee, a volunteer and a speaker, as their phones would show it. Refetches
  * when the console stream says a message moved (`tick`), and polls every 3 seconds while the stream is down.
@@ -290,17 +317,11 @@ export function PersonaDock({
           }
         />
       </div>
-      <div id="phones-grid" hidden={!open} className={PHONE.grid}>
+      <div id="phones-grid" hidden={!open} aria-busy={!personas} className={PHONE.grid}>
         {personas
           ? personas.map((p) => <Phone key={p.key} p={p} time={time} fresh={fresh} banner={banners[p.key]} />)
           : [0, 1, 2].map((i) => (
-              <Skeleton
-                key={i}
-                className={cn(
-                  "h-[33rem] w-full max-w-[17.5rem] rounded-[2.9rem] bg-white/[0.06]",
-                  ["", "hidden sm:block", "hidden lg:block"][i],
-                )}
-              />
+              <PhoneSkeleton key={i} className={["", "hidden sm:block", "hidden lg:block"][i]} />
             ))}
       </div>
     </section>

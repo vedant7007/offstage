@@ -11,14 +11,17 @@ import { Tooltip as TooltipPrimitive } from "radix-ui";
 function Tooltip({
   content,
   side = "top",
+  delay,
   children,
 }: {
   content: React.ReactNode;
   side?: "top" | "bottom" | "left" | "right";
+  /** Open delay in ms. Default: the provider's 300. */
+  delay?: number;
   children: React.ReactElement;
 }) {
   return (
-    <TooltipPrimitive.Root>
+    <TooltipPrimitive.Root delayDuration={delay}>
       <TooltipPrimitive.Trigger asChild>{children}</TooltipPrimitive.Trigger>
       <TooltipPrimitive.Portal>
         <TooltipPrimitive.Content

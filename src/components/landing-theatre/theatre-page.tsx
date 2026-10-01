@@ -1,8 +1,16 @@
 "use client";
 
+import Lenis from "lenis";
+import "lenis/dist/lenis.css";
 import Link from "next/link";
-import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { CONSOLE_PATH, DEMO_EVENT_SLUG, eventPath } from "@/components/public/links";
+import en from "@/lib/i18n/en.json";
+import { useT } from "@/lib/i18n/provider";
+import type { MessageKey, Translate } from "@/lib/i18n/translate";
+import { ActCommander } from "./act-commander";
+import { ActFeatures } from "./act-features";
+import { ShowAct } from "./act-show";
 import {
   ACTS,
   BOW,
@@ -13,7 +21,6 @@ import {
   CREW,
   FEATS,
   IMPACT,
-  IMPACT_CAPTION,
   LAW,
   LAW_LINE,
   TIERS,
@@ -21,8 +28,6 @@ import {
   actLabel,
   type ActId,
   type Agent,
-  type Feature,
-  type Step,
 } from "./content";
 import { useTheatre } from "./use-theatre";
 import s from "./theatre.module.css";
@@ -37,6 +42,16 @@ const subscribe = (cb: () => void) => {
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ");
 const vars = (v: Record<string, string | number>) => v as unknown as CSSProperties;
 const nn = (i: number) => String(i + 1).padStart(2, "0");
+
+/** Translates every leaf of an en.json subtree by its dot path, keeping the tree's shape. */
+function translateTree<T>(t: Translate, tree: T, path: string): T {
+  return Object.fromEntries(
+    Object.entries(tree as Record<string, unknown>).map(([k, v]) => [
+      k,
+      typeof v === "string" ? t(`${path}.${k}` as MessageKey) : translateTree(t, v, `${path}.${k}`),
+    ]),
+  ) as T;
+}
 
 /** The kicker and h2 of a cue, from the one label each act uses everywhere. */
 function CueHead({
@@ -56,19 +71,6 @@ function CueHead({
       <p className={cx(s.cueKicker, s.mono)}>{act?.cue ? `Cue ${act.cue}` : act?.label}</p>
       {children}
     </header>
-  );
-}
-
-function Node({ i, item }: { i: number; item: Step | Feature }) {
-  return (
-    <li className={s.tnode}>
-      <div className={s.tnodeCard}>
-        <span className={cx(s.tnodeN, s.mono)}>{nn(i)}</span>
-        <p className={s.tnodeT}>{item.t}</p>
-        {"d" in item ? <p className={s.tnodeD}>{item.d}</p> : null}
-        {"a" in item ? <span className={cx(s.tnodeA, s.mono)}>{item.a}</span> : null}
-      </div>
-    </li>
   );
 }
 
@@ -141,9 +143,28 @@ export function TheatrePage() {
   );
   const film = !reduced;
   useTheatre(rootRef, film);
+  const t = useT();
+  const copy = useMemo(() => translateTree(t, en.theatre, "theatre"), [t]);
 
-  const goTo = (id: string) =>
-    document.getElementById(id)?.scrollIntoView({ behavior: film ? "smooth" : "auto" });
+  // Smooth wheel scrolling on this page only. It moves the real window scroll, so the theatre's
+  // scroll listener keeps working; destroyed on unmount so other routes scroll natively.
+  const lenisRef = useRef<Lenis | null>(null);
+  useEffect(() => {
+    if (!film) return;
+    const lenis = new Lenis({ autoRaf: true, lerp: 0.1, smoothWheel: true, syncTouch: false, anchors: true });
+    lenisRef.current = lenis;
+    return () => {
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, [film]);
+
+  const goTo = (id: string) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (lenisRef.current) lenisRef.current.scrollTo(el);
+    else el.scrollIntoView();
+  };
 
   return (
     <div ref={rootRef} className={s.root} data-mode={film ? "film" : "poster"}>
@@ -158,7 +179,7 @@ export function TheatrePage() {
 
       <div className={s.progress} data-t="progress" aria-hidden />
 
-      <header className={s.nav}>
+      <header className={s.nav} data-t="nav">
         <a className={s.brand} href="#opening">
           <span className={s.mark} aria-hidden />
           OFFSTAGE
@@ -194,7 +215,7 @@ export function TheatrePage() {
           id="opening"
           data-act="opening"
           className={cx(s.act, s.dark)}
-          style={vars({ "--acth": "250vh" })}
+          style={vars({ "--acth": "200vh" })}
         >
           <div className={cx(s.stage, s.stageHero, s.persp)}>
             <div className={s.hero} data-t="hero">
@@ -226,7 +247,7 @@ export function TheatrePage() {
           id="chaos"
           data-act="chaos"
           className={cx(s.act, s.light)}
-          style={vars({ "--acth": "230vh" })}
+          style={vars({ "--acth": "200vh" })}
         >
           <div className={cx(s.stage, s.stageChaos)}>
             <CueHead id="chaos">
@@ -265,28 +286,25 @@ export function TheatrePage() {
           id="commander"
           data-act="commander"
           className={cx(s.act, s.dark)}
-          style={vars({ "--acth": "250vh" })}
+          style={vars({ "--acth": "220vh" })}
         >
-          <div className={cx(s.stage, s.stageTunnel, s.persp)}>
-            <div className={s.floor} aria-hidden />
-            <CueHead id="commander" sticky>
-              <h2 className={s.cueTitle}>
-                <span className={s.line}>Enter the</span> <span className={s.line}>Commander</span>
-              </h2>
-            </CueHead>
-            <ol className={s.tunnel} data-t="cmd">
-              {CMD.map((step, i) => (
-                <Node key={step.t} i={i} item={step} />
-              ))}
-            </ol>
-            <div className={s.converge} data-t="converge">
-              <p className={s.convergeT}>One shared source of truth.</p>
-            </div>
-          </div>
+          <ActCommander
+            steps={CMD}
+            agents={[COMMANDER, ...CREW]}
+            copy={copy.commander}
+            film={film}
+            head={
+              <CueHead id="commander">
+                <h2 className={s.cueTitle}>
+                  <span className={s.line}>Enter the</span> <span className={s.line}>Commander</span>
+                </h2>
+              </CueHead>
+            }
+          />
         </section>
 
         {/* Cue 03: the crew */}
-        <section id="crew" data-act="crew" className={cx(s.act, s.dark)} style={vars({ "--acth": "320vh" })}>
+        <section id="crew" data-act="crew" className={cx(s.act, s.dark)} style={vars({ "--acth": "260vh" })}>
           <div className={cx(s.stage, s.stageCrew, s.persp)}>
             <div className={s.crewSpot} aria-hidden />
             <CueHead id="crew" sticky>
@@ -309,42 +327,25 @@ export function TheatrePage() {
         </section>
 
         {/* Cue 04: the show must go on */}
-        <section id="show" data-act="show" className={cx(s.act, s.dark)} style={vars({ "--acth": "360vh" })}>
-          <div className={cx(s.stage, s.stageTunnel, s.persp)}>
-            <div className={s.floor} aria-hidden />
-            <CueHead id="show" sticky>
-              <h2 className={s.cueTitle}>
-                <span className={s.line}>The show</span> <span className={s.line}>must go on</span>
-              </h2>
-            </CueHead>
-            <p className={cx(s.boom, s.mono)} data-t="boom">
-              <b>2:03 PM.</b> The keynote speaker cancels.
-            </p>
-            <ol className={s.tunnel} data-t="show">
-              {CHAIN.map((step, i) => (
-                <Node key={step.t} i={i} item={step} />
-              ))}
-            </ol>
-            <div className={s.impact} data-t="impact">
-              <ul className={s.impactList}>
-                {IMPACT.map((m) => (
-                  <li key={m.label}>
-                    <b>{m.n}</b>
-                    <span>{m.label}</span>
-                  </li>
-                ))}
-              </ul>
-              <p className={cx(s.impactCap, s.mono)}>{IMPACT_CAPTION}</p>
-            </div>
-            <p className={cx(s.impactEnd, s.mono)} data-t="impactEnd">
-              The event continues.
-            </p>
-          </div>
+        <section id="show" data-act="show" className={cx(s.act, s.dark)} style={vars({ "--acth": "280vh" })}>
+          <ShowAct
+            chain={CHAIN}
+            impact={IMPACT}
+            text={copy.show}
+            film={film}
+            head={
+              <CueHead id="show">
+                <h2 className={s.cueTitle}>
+                  <span className={s.line}>The show</span> <span className={s.line}>must go on</span>
+                </h2>
+              </CueHead>
+            }
+          />
         </section>
 
         {/* Cue 05: the rule */}
         <section id="rule" data-act="rule" className={cx(s.act, s.light, s.actTail)}>
-          <div className={s.scroll} data-scroll="" style={vars({ "--scrollh": "220vh" })}>
+          <div className={s.scroll} data-scroll="" style={vars({ "--scrollh": "180vh" })}>
             <div className={cx(s.stage, s.stageRule)}>
               <CueHead id="rule">
                 <h2 className={s.cueTitle}>The rule</h2>
@@ -380,25 +381,25 @@ export function TheatrePage() {
           id="features"
           data-act="features"
           className={cx(s.act, s.light)}
-          style={vars({ "--acth": "280vh" })}
+          style={vars({ "--acth": "220vh" })}
         >
-          <div className={cx(s.stage, s.stageTunnel, s.stageLight, s.persp)}>
-            <CueHead id="features" sticky>
-              <h2 className={s.cueTitle}>
-                <span className={s.line}>What runs</span> <span className={s.line}>backstage</span>
-              </h2>
-            </CueHead>
-            <ol className={s.tunnel} data-t="feat">
-              {FEATS.map((f, i) => (
-                <Node key={f.t} i={i} item={f} />
-              ))}
-            </ol>
-          </div>
+          <ActFeatures
+            feats={FEATS}
+            copy={copy.features}
+            film={film}
+            head={
+              <CueHead id="features">
+                <h2 className={s.cueTitle}>
+                  <span className={s.line}>What runs</span> <span className={s.line}>backstage</span>
+                </h2>
+              </CueHead>
+            }
+          />
         </section>
 
         {/* Cue 07: trust */}
         <section id="trust" data-act="trust" className={cx(s.act, s.light, s.actTail)}>
-          <div className={s.scroll} data-scroll="" style={vars({ "--scrollh": "150vh" })}>
+          <div className={s.scroll} data-scroll="" style={vars({ "--scrollh": "120vh" })}>
             <div className={cx(s.stage, s.stageTrust)}>
               <CueHead id="trust">
                 <h2 className={s.cueTitle}>
@@ -427,7 +428,7 @@ export function TheatrePage() {
           id="final"
           data-act="final"
           className={cx(s.act, s.dark)}
-          style={vars({ "--acth": "300vh" })}
+          style={vars({ "--acth": "240vh" })}
         >
           <div className={cx(s.stage, s.stageFinal, s.persp)}>
             <div className={s.floor} aria-hidden />

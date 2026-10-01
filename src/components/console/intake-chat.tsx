@@ -90,7 +90,7 @@ export function IntakeChat() {
                 className={
                   t.who === "you"
                     ? "max-w-[85%] self-end rounded-card rounded-br-[4px] bg-curtain px-4 py-3 text-on-curtain"
-                    : "flex max-w-[85%] flex-col gap-1 self-start rounded-card rounded-tl-[4px] border border-border bg-surface px-4 py-3 shadow-card"
+                    : "flex max-w-[85%] flex-col gap-1 self-start rounded-card rounded-tl-[4px] border border-border bg-surface px-4 py-3 depth-2"
                 }
               >
                 {t.who === "you" ? null : (
@@ -127,7 +127,7 @@ export function IntakeChat() {
             </Button>
           ) : (
             <form
-              className="flex flex-col gap-2 rounded-card border border-border bg-surface p-3 shadow-card"
+              className="flex flex-col gap-2 rounded-card border border-border bg-surface p-3 depth-2"
               onSubmit={(e) => {
                 e.preventDefault();
                 send(text);

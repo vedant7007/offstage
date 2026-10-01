@@ -27,7 +27,7 @@ function Group({
   return (
     <section
       aria-label={title}
-      className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 shadow-card"
+      className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 depth-2"
     >
       <h3 className="flex items-center gap-2 text-sm font-medium [&_svg]:size-4 [&_svg]:text-curtain-text">
         {icon}

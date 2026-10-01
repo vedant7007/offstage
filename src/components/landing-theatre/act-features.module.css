@@ -1,0 +1,762 @@
+/*
+ * Cue 06, "Bento backstage". A paper stage with six tiles, two large and four small. Colours and
+ * tokens come from .root in theatre.module.css. Micro-visuals loop only while the act carries
+ * data-on; .still (reduced motion) shows every tile assembled and every visual as a still frame.
+ */
+
+.stage {
+  justify-content: flex-start;
+}
+
+/* Pans up with --fp only when the grid is taller than the stage; otherwise min() gives 0. */
+.track {
+  margin-block: auto;
+  transform: translateY(calc(var(--fp, 0) * min(0px, 100svh - var(--pad-top) - var(--pad) - 100%)));
+  will-change: transform;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: clamp(0.75rem, 1.2vw, 1.125rem);
+  margin-top: clamp(0.5rem, 2vh, 1.5rem);
+}
+
+.tile {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding: clamp(1.1rem, 1.6vw, 1.5rem);
+  border: 1px solid rgb(0 0 0 / 0.08);
+  border-radius: var(--r-card);
+  background: var(--white);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.9),
+    0 1px 2px rgb(11 20 26 / 0.06),
+    0 22px 44px -22px rgb(11 20 26 / 0.3);
+  will-change: transform, opacity;
+}
+
+.big {
+  grid-column: span 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: clamp(1rem, 2.5vw, 2.5rem);
+  background:
+    radial-gradient(70% 90% at 85% 50%, color-mix(in srgb, var(--blue) 9%, transparent), transparent 70%),
+    var(--white);
+}
+
+.big .viz {
+  grid-column: 2;
+  grid-row: 1;
+  height: auto;
+}
+
+.big .text {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.ink {
+  border-color: color-mix(in srgb, var(--blue) 45%, transparent);
+  background:
+    radial-gradient(
+      80% 100% at 90% 0%,
+      color-mix(in srgb, var(--blue-dark) 55%, transparent),
+      transparent 70%
+    ),
+    var(--ink);
+  color: var(--paper);
+  box-shadow: 0 26px 52px -22px rgb(7 27 223 / 0.45);
+}
+
+.viz {
+  display: flex;
+  align-items: center;
+  height: 4.75rem;
+}
+
+.viz > * {
+  width: 100%;
+}
+
+.text {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.text .n {
+  font-size: 0.75rem;
+  color: var(--blue-dark);
+}
+
+.ink .text .n {
+  color: var(--lime);
+}
+
+.t {
+  font-size: clamp(1.125rem, 1.45vw, 1.375rem);
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.big .t {
+  font-size: clamp(1.375rem, 2.1vw, 1.875rem);
+}
+
+.d {
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--ink) 72%, var(--white));
+}
+
+.ink .d {
+  color: color-mix(in srgb, var(--paper) 80%, var(--ink));
+}
+
+/* Small mono captions inside the visuals: 11px, so they keep at least 4.5:1. */
+.viz span {
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  color: color-mix(in srgb, var(--ink) 62%, var(--white));
+}
+
+.ink .viz span {
+  color: color-mix(in srgb, var(--paper) 74%, var(--ink));
+}
+
+.svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ----- 01 Ripple view: rings spread from one dot and light everything they touch ----- */
+
+.ripLine {
+  stroke: color-mix(in srgb, var(--ink) 10%, transparent);
+  stroke-width: 1;
+}
+
+.ripRing {
+  fill: none;
+  stroke: var(--blue-dark);
+  stroke-width: 1.5;
+  vector-effect: non-scaling-stroke;
+  transform-box: fill-box;
+  transform-origin: center;
+  transform: scale(calc(0.45 + 0.45 * var(--i)));
+  opacity: calc(0.45 - 0.25 * var(--i));
+  animation: rip 3s linear infinite;
+  animation-delay: calc(var(--i) * -1.5s);
+}
+
+.ripSat {
+  fill: color-mix(in srgb, var(--ink) 22%, var(--white));
+}
+
+.ripHit {
+  fill: var(--purple);
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: hit 1.5s var(--ease) infinite;
+  animation-delay: calc(var(--d) * 1s);
+}
+
+.ripCore {
+  fill: var(--blue-dark);
+}
+
+@keyframes rip {
+  from {
+    transform: scale(0.06);
+    opacity: 0.8;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes hit {
+  0% {
+    transform: scale(1.7);
+    opacity: 1;
+  }
+  55%,
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+/* ----- 02 Glass-box: tokens and cost tick up as a step runs ----- */
+
+@property --ftok {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 1840;
+}
+
+@property --fpaise {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 38;
+}
+
+.glass {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: baseline;
+  gap: 0.2rem 0.75rem;
+}
+
+.tok,
+.cost {
+  justify-self: end;
+  font-size: 1.375rem;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+.tok {
+  counter-reset: ftok var(--ftok);
+  animation: ftok 6s linear infinite;
+}
+
+.tok::after {
+  content: counter(ftok);
+}
+
+.cost {
+  counter-reset: fpaise var(--fpaise);
+  animation: fpaise 6s linear infinite;
+}
+
+.cost::after {
+  content: "\20B9 0." counter(fpaise, decimal-leading-zero);
+}
+
+.glassBar {
+  grid-column: 1 / -1;
+  height: 3px;
+  margin-top: 0.35rem;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--blue-dark), var(--purple));
+  transform-origin: 0 50%;
+  animation: grow 6s linear infinite;
+}
+
+@keyframes ftok {
+  0% {
+    --ftok: 412;
+  }
+  80%,
+  100% {
+    --ftok: 1840;
+  }
+}
+
+@keyframes fpaise {
+  0% {
+    --fpaise: 9;
+  }
+  80%,
+  100% {
+    --fpaise: 38;
+  }
+}
+
+@keyframes grow {
+  0% {
+    transform: scaleX(0.2);
+  }
+  80%,
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+/* ----- 03 Offline check-in: scans queue while offline, then sync down to 0 ----- */
+
+@property --fq {
+  syntax: "<integer>";
+  inherits: false;
+  initial-value: 0;
+}
+
+.off {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 0.5rem 0.6rem;
+}
+
+.queue {
+  font-size: 2rem;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  counter-reset: fq var(--fq);
+  animation: fq 7s linear infinite;
+}
+
+.queue::after {
+  content: counter(fq);
+}
+
+.pill {
+  display: inline-grid;
+}
+
+.viz .pill > span {
+  grid-area: 1 / 1;
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--r-pill);
+  text-align: center;
+}
+
+.viz .pillOff {
+  box-shadow: inset 0 0 0 1.5px var(--error);
+  color: var(--error);
+  opacity: 0;
+  animation: pillOff 7s linear infinite;
+}
+
+.viz .pillOn {
+  background: var(--lime);
+  color: var(--ink);
+  animation: pillOn 7s linear infinite;
+}
+
+.pips {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 4px;
+}
+
+.pips i {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--ink) 10%, var(--white));
+}
+
+.pips i::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: var(--blue-dark);
+  opacity: 0;
+  animation: pip 7s linear infinite;
+  animation-delay: calc(var(--i) * 0.3s);
+}
+
+@keyframes fq {
+  0% {
+    --fq: 0;
+  }
+  30%,
+  55% {
+    --fq: 7;
+  }
+  85%,
+  100% {
+    --fq: 0;
+  }
+}
+
+@keyframes pillOff {
+  0%,
+  54% {
+    opacity: 1;
+  }
+  58%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes pillOn {
+  0%,
+  54% {
+    opacity: 0;
+  }
+  58%,
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes pip {
+  0% {
+    opacity: 0;
+  }
+  3%,
+  55% {
+    opacity: 1;
+  }
+  58%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ----- 04 Confusion Radar: a quiet line, then one sharp spike ----- */
+
+.radar {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem;
+}
+
+.radar .svg {
+  grid-column: 1 / -1;
+}
+
+.viz .radarTag {
+  color: var(--error);
+}
+
+.spark {
+  fill: none;
+  stroke: var(--blue-dark);
+  stroke-width: 2;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: draw 5s var(--ease) infinite;
+}
+
+.spikeDot,
+.spikeHalo {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+.spikeDot {
+  fill: var(--error);
+  animation: dot 5s var(--ease) infinite;
+}
+
+.spikeHalo {
+  fill: none;
+  stroke: var(--error);
+  stroke-width: 1.5;
+  opacity: 0;
+  animation: halo 5s ease-out infinite;
+}
+
+@keyframes draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 1;
+  }
+  55%,
+  88% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes dot {
+  0%,
+  36% {
+    transform: scale(0);
+  }
+  42% {
+    transform: scale(1.5);
+  }
+  48%,
+  88% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0;
+  }
+}
+
+@keyframes halo {
+  0%,
+  40% {
+    transform: scale(1);
+    opacity: 0;
+  }
+  42% {
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    transform: scale(3.2);
+    opacity: 0;
+  }
+}
+
+/* ----- 05 Indian colleges: a certificate gets its verify tick ----- */
+
+.certWrap {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+}
+
+.cert {
+  display: grid;
+  gap: 5px;
+  width: 7rem;
+  padding: 0.55rem 0.7rem 0.65rem;
+  border: 1.5px solid color-mix(in srgb, var(--blue-dark) 28%, transparent);
+  border-radius: 6px;
+  background: var(--paper-2);
+  transform: rotate(-3deg);
+}
+
+.viz .cert span {
+  font-size: 0.5625rem;
+  color: var(--blue-dark);
+}
+
+.cert i {
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--ink) 16%, var(--white));
+}
+
+.cert i:last-child {
+  width: 60%;
+}
+
+.viz .verify {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--blue-dark);
+}
+
+.verify svg {
+  width: 1.75rem;
+  height: 1.75rem;
+  animation: stamp 4s var(--ease) infinite;
+}
+
+.verify circle {
+  fill: var(--lime);
+}
+
+.verify path {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+  animation: tick 4s var(--ease) infinite;
+}
+
+@keyframes stamp {
+  0%,
+  10% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  20% {
+    transform: scale(1.15);
+    opacity: 1;
+  }
+  28%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes tick {
+  0%,
+  22% {
+    stroke-dashoffset: 1;
+  }
+  40%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* ----- 06 What-if: drag headcount up, the food count follows ----- */
+
+.wi {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 0.75rem 1rem;
+}
+
+.viz .wiChip {
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 0.2rem 0.65rem;
+  border-radius: var(--r-pill);
+  box-shadow: inset 0 0 0 1.5px color-mix(in srgb, var(--lime) 60%, transparent);
+  color: var(--lime);
+}
+
+.wiTrack {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--paper) 16%, transparent);
+}
+
+.wiSlide {
+  height: 6px;
+}
+
+.wiFill,
+.wiBar,
+.wiThumbRail {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  animation: 5s ease-in-out infinite;
+}
+
+.wiFill,
+.wiBar {
+  transform-origin: 0 50%;
+}
+
+.wiFill {
+  background: var(--lime);
+  transform: scaleX(0.7);
+  animation-name: wiFill;
+}
+
+.wiThumbRail {
+  transform: translateX(70%);
+  animation-name: wiThumb;
+}
+
+.wiThumbRail i {
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  border-radius: 50%;
+  background: var(--white);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--lime) 30%, transparent);
+}
+
+.wiBar {
+  background: linear-gradient(90deg, var(--gold), var(--lime));
+  transform: scaleX(0.85);
+  animation-name: wiBar;
+}
+
+@keyframes wiFill {
+  0%,
+  12%,
+  100% {
+    transform: scaleX(0.2);
+  }
+  45%,
+  62% {
+    transform: scaleX(0.7);
+  }
+}
+
+@keyframes wiThumb {
+  0%,
+  12%,
+  100% {
+    transform: translateX(20%);
+  }
+  45%,
+  62% {
+    transform: translateX(70%);
+  }
+}
+
+@keyframes wiBar {
+  0%,
+  16%,
+  100% {
+    transform: scaleX(0.5);
+  }
+  50%,
+  66% {
+    transform: scaleX(0.85);
+  }
+}
+
+/* Every loop is paused until the act is on screen. Last, so it beats the shorthands above. */
+.tile .viz *,
+.tile .viz *::after {
+  animation-play-state: paused;
+}
+
+[data-on] .tile .viz *,
+[data-on] .tile .viz *::after {
+  animation-play-state: running;
+}
+
+/* ----- responsive ----- */
+
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .big {
+    grid-column: auto;
+    display: flex;
+  }
+
+  .big .viz {
+    width: min(100%, 300px);
+  }
+}
+
+/* ----- still: reduced motion shows the assembled board with every visual at rest ----- */
+
+.still .track,
+.still .tile {
+  transform: none !important;
+  opacity: 1 !important;
+}
+
+.still .viz *,
+.still .viz *::after {
+  animation: none !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viz *,
+  .viz *::after {
+    animation: none !important;
+  }
+}

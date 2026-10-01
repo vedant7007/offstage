@@ -237,20 +237,6 @@
   }
 }
 
-/* Page enter for pages not yet wrapped in PageTransition: each page under the app chrome rises in
-   once. Zero specificity, so a page's own animation wins. translate with a backwards fill, so nothing
-   stays transformed afterwards and fixed overlays are never trapped. Pages wrapped in PageTransition
-   (data-vt-page) animate through view transitions instead. Delete once every area wraps its pages. */
-@keyframes shell-enter {
-  from {
-    opacity: 0;
-    translate: 0 6px;
-  }
-}
-:where([data-shell-main] > :not([data-vt-page], :has([data-vt-page]))) {
-  animation: shell-enter var(--duration-slower) var(--ease-out) backwards;
-}
-
 /* Static grain on any surface (a hero band, a stage). Needs a positioned parent. Uses ::before. */
 @utility grain {
   &::before {
@@ -497,7 +483,7 @@
 }
 
 /* Cross-document navigations (full page loads) crossfade too. In-app routes use React ViewTransition
-   (src/components/ui/motion/page-transition.tsx); its CSS lives in motion.css. */
+   (src/components/ui/motion/transitions.tsx, mounted by each area's template.tsx); its CSS lives in motion.css. */
 @view-transition {
   navigation: auto;
 }

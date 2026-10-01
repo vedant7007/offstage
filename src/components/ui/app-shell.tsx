@@ -1,11 +1,13 @@
 "use client";
 
 import * as React from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Ellipsis, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/provider";
+import { prefersReducedMotion, vtAnchor } from "./motion";
 import { ScrollHeader } from "./shell-bits";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "./sheet";
 import { Tooltip } from "./tooltip";
@@ -68,6 +70,24 @@ function subscribeCollapsed(onChange: () => void) {
   };
 }
 
+/**
+ * Collapses or expands the sidebar in one layout pass: the browser snapshots the sidebar and the main
+ * column and glides between the two layouts (motion.css, data-vt="sidebar"), instead of animating width
+ * frame by frame. Instant without View Transitions support or under reduced motion.
+ */
+function toggleCollapsed(next: boolean) {
+  if (typeof document.startViewTransition !== "function" || prefersReducedMotion()) {
+    writeCollapsed(next);
+    return;
+  }
+  const root = document.documentElement;
+  root.dataset.vt = "sidebar";
+  const done = () => {
+    if (root.dataset.vt === "sidebar") delete root.dataset.vt;
+  };
+  document.startViewTransition(() => flushSync(() => writeCollapsed(next))).finished.then(done, done);
+}
+
 /** Slides one highlight to whichever item is marked data-active. Runs after every render; it is cheap. */
 function useIndicator(axis: "x" | "y") {
   const list = React.useRef<HTMLDivElement>(null);
@@ -84,6 +104,7 @@ function useIndicator(axis: "x" | "y") {
       }
       b.style.opacity = "1";
       if (axis === "y") {
+        // Height is set, never animated: only the transform glides.
         b.style.height = `${active.offsetHeight}px`;
         b.style.transform = `translateY(${active.offsetTop}px)`;
       } else {
@@ -139,7 +160,8 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
       href={homeHref}
       className="flex min-h-11 min-w-0 items-center gap-2.5 text-lg font-medium tracking-[-0.03em]"
     >
-      <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-curtain" />
+      {/* The lime cue dot, same as the public wordmark */}
+      <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-[#c1ff00] ring-1 ring-black/40" />
       <span className={cn("truncate", hasSidebar && collapsed && "md:sr-only")}>{title}</span>
     </Link>
   );
@@ -153,11 +175,11 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
         data-active={active}
         aria-current={active ? "page" : undefined}
         className={cn(
-          "relative z-10 flex min-h-11 items-center gap-3 rounded-full px-3.5 text-[0.9375rem] [&_svg]:size-[1.125rem] [&_svg]:shrink-0",
+          "relative z-10 flex min-h-11 items-center gap-3 rounded-full px-3.5 text-sm [&_svg]:size-[1.125rem] [&_svg]:shrink-0",
           "transition-colors duration-(--duration-fast) ease-out",
           active
             ? "font-medium text-fg [&_svg]:text-curtain-text"
-            : "text-fg-muted hover:bg-surface-sunken/70 hover:text-fg",
+            : "text-fg-muted hover:bg-surface-sunken/60 hover:text-fg",
           collapsed && "justify-center px-0",
         )}
       >
@@ -167,7 +189,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
       </Link>
     );
     return collapsed ? (
-      <Tooltip key={item.href} content={item.label} side="right">
+      <Tooltip key={item.href} content={item.label} side="right" delay={400}>
         {link}
       </Tooltip>
     ) : (
@@ -185,8 +207,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
 
   const tabClass = (active: boolean) =>
     cn(
-      "relative z-10 flex flex-1 flex-col items-center gap-1 px-1 pt-2 pb-2 text-[0.6875rem] leading-4 [&_svg]:size-5 [&_svg]:shrink-0",
-      "transition-colors duration-(--duration-fast) ease-out",
+      "press relative z-10 flex min-h-14 flex-1 flex-col items-center gap-1 px-1 pt-2 pb-2 text-xs leading-4 [&_svg]:size-5 [&_svg]:shrink-0",
       active ? "font-medium text-fg [&_svg]:text-curtain-soft-fg" : "text-fg-muted hover:text-fg",
     );
 
@@ -232,9 +253,10 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
 
       {hasSidebar ? (
         <div
+          // Anchored: it stays still while pages cross-fade. No blur: nothing scrolls behind it.
+          {...(preview ? {} : vtAnchor("app-sidebar"))}
           className={cn(
-            "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-surface/55 backdrop-blur-sm md:flex",
-            "transition-[width] duration-(--duration-slower) ease-out",
+            "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-surface/75 md:flex",
             collapsed ? "w-[4.75rem]" : "w-64",
             preview && "h-auto",
           )}
@@ -247,7 +269,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
               <span
                 ref={sideBarRef}
                 aria-hidden
-                className="absolute inset-x-0 top-0 rounded-full bg-surface-raised opacity-0 shadow-card ring-1 ring-border data-ready:transition-[transform,height,opacity] data-ready:duration-(--duration-slower) data-ready:ease-out"
+                className="absolute inset-x-0 top-0 rounded-full border border-border bg-surface-raised opacity-0 depth-1 data-ready:transition-[transform,opacity] data-ready:duration-300 data-ready:ease-(--ease-in-out)"
               />
               {groups.map((group, i) => (
                 <div key={`${group.label ?? ""}-${i}`} className="flex flex-col gap-0.5">
@@ -266,7 +288,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
               <button
                 type="button"
                 aria-expanded={!collapsed}
-                onClick={() => writeCollapsed(!collapsed)}
+                onClick={() => toggleCollapsed(!collapsed)}
                 className={cn(
                   "flex min-h-11 items-center gap-3 rounded-full px-3.5 text-sm text-fg-muted transition-colors duration-(--duration-fast) ease-out hover:bg-surface-sunken/70 hover:text-fg [&_svg]:size-[1.125rem]",
                   collapsed ? "w-11 justify-center px-0" : "w-full",
@@ -282,12 +304,15 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
         </div>
       ) : null}
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <ScrollHeader className="sticky top-0 z-(--z-appbar) pt-[env(safe-area-inset-top)]">
+      <div data-shell-column className="flex min-w-0 flex-1 flex-col">
+        <ScrollHeader
+          {...(preview ? {} : vtAnchor("app-topbar"))}
+          className="sticky top-0 z-(--z-appbar) pt-[env(safe-area-inset-top)]"
+        >
           <div className="flex min-h-14 items-center justify-between gap-3 px-4 md:min-h-16 md:px-8">
             <div className={cn("min-w-0", hasSidebar && "md:hidden")}>{brand}</div>
             {hasSidebar ? (
-              <p className="hidden min-w-0 items-center gap-2 truncate text-[0.9375rem] md:flex">
+              <p className="hidden min-w-0 items-center gap-2 truncate text-sm md:flex">
                 {current?.group ? (
                   <>
                     <span className="text-fg-muted">{current.group}</span>
@@ -300,7 +325,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
               </p>
             ) : null}
             <div className="flex shrink-0 items-center gap-1">
-              {status ? <div className="hidden sm:flex">{status}</div> : null}
+              {status ? <div className="mr-2 hidden sm:flex">{status}</div> : null}
               {actions}
             </div>
           </div>
@@ -321,8 +346,11 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
       {hasTabs ? (
         <nav
           aria-label={navLabel}
+          // A solid dock with a lit top edge and a soft upward shadow. No blur: the top bar owns the
+          // one backdrop-filter on the screen.
+          {...(preview ? {} : vtAnchor("app-tabbar"))}
           className={cn(
-            "z-(--z-appbar) border-t border-border bg-bg/85 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl backdrop-saturate-150 md:hidden",
+            "z-(--z-appbar) border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_var(--highlight),0_-12px_32px_-16px_rgb(var(--shadow-ink)/0.2)] md:hidden",
             preview ? "absolute inset-x-0 bottom-0" : "fixed inset-x-0 bottom-0",
           )}
         >
@@ -330,7 +358,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
             <span
               ref={tabBarRef}
               aria-hidden
-              className="absolute top-2 left-0 h-8 w-14 rounded-full bg-curtain-soft opacity-0 data-ready:transition-[transform,opacity] data-ready:duration-(--duration-slower) data-ready:ease-out"
+              className="absolute top-2 left-0 h-8 w-14 rounded-full bg-curtain-soft opacity-0 data-ready:transition-[transform,opacity] data-ready:duration-300 data-ready:ease-(--ease-in-out)"
             />
             {primary.map(tabLink)}
             {overflow ? (
@@ -353,7 +381,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
                             href={item.href}
                             aria-current={active ? "page" : undefined}
                             className={cn(
-                              "flex min-h-14 items-center gap-4 rounded-[0.875rem] px-4 text-base [&_svg]:size-5 [&_svg]:shrink-0",
+                              "flex min-h-14 items-center gap-4 rounded-inner px-4 text-base [&_svg]:size-5 [&_svg]:shrink-0",
                               "transition-colors duration-(--duration-fast) ease-out",
                               active
                                 ? "bg-curtain-soft font-medium text-curtain-soft-fg"

@@ -22,7 +22,7 @@ export function DemoScenarios() {
   return (
     <section
       aria-labelledby="demo-scenarios"
-      className="flex flex-col gap-3 rounded-card border border-dashed border-agent/70 bg-surface px-4 py-4 shadow-card sm:px-5"
+      className="flex flex-col gap-3 rounded-card border border-dashed border-agent/70 bg-surface px-4 py-4 depth-2 sm:px-5"
     >
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <Kicker className="text-agent-text">Demo only</Kicker>

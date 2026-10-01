@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { Briefing } from "@/contracts";
+import { SkeletonCard } from "@/components/ui/motion";
 import { Newspaper } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { formatDate, formatTime } from "@/lib/time";
@@ -15,7 +16,6 @@ import {
   CardTitle,
   EmptyState,
   PageHeader,
-  Skeleton,
 } from "@/components/ui";
 
 /**
@@ -74,9 +74,9 @@ export function BriefingView({ eventId }: { eventId: string }) {
         </Alert>
       ) : null}
       {briefing === undefined && !error ? (
-        <div aria-hidden className="grid gap-4 md:grid-cols-2">
+        <div aria-busy className="grid gap-4 md:grid-cols-2">
           {[0, 1, 2, 3].map((i) => (
-            <Skeleton key={i} className="h-56 rounded-card" />
+            <SkeletonCard key={i} className="h-56" />
           ))}
         </div>
       ) : null}

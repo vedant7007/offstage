@@ -5,7 +5,8 @@ import Link from "next/link";
 import type { ProposalResponse, Ripple, ScheduleOption } from "@/contracts";
 import { api } from "@/lib/api-client";
 import { ArrowLeft } from "lucide-react";
-import { Alert, PageHeader, ProposalCard, Section, Skeleton } from "@/components/ui";
+import { Alert, Button, PageHeader, ProposalCard, Section } from "@/components/ui";
+import { Morph, SkeletonCard, SkeletonText } from "@/components/ui/motion";
 import { agentOf, ApproveButton, metaOf, RejectButton } from "./proposal-bits";
 import { PlanPreview, type PlanPayload } from "./plan-preview";
 import { OptionCards, RippleView } from "./ripple-view";
@@ -49,18 +50,34 @@ export function ProposalDetail({ eventId, proposalId }: { eventId: string; propo
   if (error)
     return (
       <Alert variant="danger" title="Could not load the proposal">
-        {error}
+        <span className="flex flex-wrap items-center gap-3">
+          {error}
+          <Button size="sm" variant="secondary" onClick={() => void load()}>
+            Retry
+          </Button>
+        </span>
       </Alert>
     );
-  if (!data) return <Skeleton className="h-64" />;
+  if (!data)
+    return (
+      <div aria-busy className="flex flex-col gap-8">
+        <div aria-hidden className="flex flex-col gap-3 pt-14">
+          <span className="h-3 w-28 rounded-full bg-[color-mix(in_srgb,var(--fg)_9%,transparent)]" />
+          <span className="h-9 w-80 max-w-full rounded-full bg-[color-mix(in_srgb,var(--fg)_9%,transparent)]" />
+          <SkeletonText lines={1} className="w-96 max-w-full" />
+        </div>
+        <SkeletonCard className="h-80" />
+      </div>
+    );
 
   const p = data.proposal;
   const bundle = p.kind === "plan.bundle" ? (p.payload as unknown as BundlePayload) : null;
   const plan = p.kind === "plan.create" ? (p.payload as unknown as PlanPayload) : null;
   const actions = data.canApprove ? (
     <>
-      <ApproveButton eventId={eventId} proposal={p} onDone={load} />
-      <RejectButton eventId={eventId} proposal={p} onDone={load} />
+      {/* The one decision on this page: the big Approve is the magnetic primary. */}
+      <ApproveButton eventId={eventId} proposal={p} onDone={() => void load()} size="lg" magnetic />
+      <RejectButton eventId={eventId} proposal={p} onDone={load} size="lg" />
     </>
   ) : undefined;
 
@@ -87,19 +104,22 @@ export function ProposalDetail({ eventId, proposalId }: { eventId: string; propo
         }
       />
 
-      <ProposalCard
-        agent={agentOf(p)}
-        summary={sentence(p.summary)}
-        rationale={p.rationale}
-        status={p.status}
-        tier={p.riskTier}
-        evidence={p.evidence}
-        impact={p.impact}
-        diff={bundle || plan ? undefined : p.diff}
-        meta={metaOf(p)}
-        actions={actions}
-        headingLevel="h2"
-      />
+      <Morph name={`proposal-${p.id}`}>
+        <ProposalCard
+          className="edge"
+          agent={agentOf(p)}
+          summary={sentence(p.summary)}
+          rationale={p.rationale}
+          status={p.status}
+          tier={p.riskTier}
+          evidence={p.evidence}
+          impact={p.impact}
+          diff={bundle || plan ? undefined : p.diff}
+          meta={metaOf(p)}
+          actions={actions}
+          headingLevel="h2"
+        />
+      </Morph>
 
       {plan ? <PlanPreview plan={plan} /> : null}
 
@@ -146,7 +166,7 @@ export function ProposalDetail({ eventId, proposalId }: { eventId: string; propo
               {bundle.children.map((c, i) => (
                 <li
                   key={i}
-                  className="flex items-baseline gap-3 rounded-card border border-border bg-surface px-4 py-3 shadow-card"
+                  className="flex items-baseline gap-3 rounded-card border border-border bg-surface px-4 py-3 depth-1"
                 >
                   <span aria-hidden className="font-mono text-xs text-fg-muted tabular-nums">
                     {String(i + 1).padStart(2, "0")}

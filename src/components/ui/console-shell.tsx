@@ -6,6 +6,8 @@ import type { OverviewResponse } from "@/contracts/api";
 import { api } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 import { AppShell, type NavItem } from "./app-shell";
+import { Skeleton } from "./feedback";
+import { LivePulse } from "./motion";
 
 const STATUS: Record<OverviewResponse["event"]["status"], { label: string; live: boolean }> = {
   live: { label: "Live", live: true },
@@ -34,21 +36,18 @@ function useOverview(eventId: string) {
   return overview;
 }
 
+const pill = "flex min-h-9 max-w-64 items-center gap-2 rounded-full border border-border px-3.5 text-sm";
+
+/** Event status in the top bar: a lime pulse and the word Live while the show runs, then the event name. */
 function StatusPill({ overview }: { overview: OverviewResponse }) {
   const s = STATUS[overview.event.status];
   return (
-    <p className="flex min-h-9 max-w-64 items-center gap-2 rounded-full border border-border bg-surface/70 px-3.5 text-sm">
-      <span aria-hidden className="relative flex size-2 shrink-0">
-        {s.live ? (
-          <span className="absolute inset-0 rounded-full bg-[#c1ff00] motion-safe:animate-ping" />
-        ) : null}
-        <span
-          className={cn(
-            "relative size-2 rounded-full",
-            s.live ? "bg-[#c1ff00] ring-1 ring-black/30" : "bg-neutral",
-          )}
-        />
-      </span>
+    <p className={cn(pill, "bg-surface/80 depth-1 animate-in fade-in-0 duration-(--duration-base)")}>
+      {s.live ? (
+        <LivePulse className="text-[#c1ff00] ring-1 ring-black/30" />
+      ) : (
+        <span aria-hidden className="size-2 shrink-0 rounded-full bg-neutral" />
+      )}
       <span className="font-mono text-xs font-medium tracking-[0.08em] uppercase">{s.label}</span>
       <span aria-hidden className="text-border-strong">
         /
@@ -96,7 +95,14 @@ export function ConsoleShell({
       }
       homeHref={base}
       nav={nav}
-      status={overview ? <StatusPill overview={overview} /> : null}
+      status={
+        overview ? (
+          <StatusPill overview={overview} />
+        ) : (
+          // Same box while the first overview loads, so nothing in the top bar jumps
+          <Skeleton className={cn(pill, "w-52 border-transparent")} />
+        )
+      }
       actions={actions}
     >
       {children}

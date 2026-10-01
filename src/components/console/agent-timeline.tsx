@@ -6,8 +6,6 @@ import { api } from "@/lib/api-client";
 import { Alert, AgentAvatar, Badge, EmptyState, PageHeader, Skeleton } from "@/components/ui";
 import { ChevronDown, History } from "lucide-react";
 import { formatDateTime } from "@/lib/time";
-import { cn } from "@/lib/utils";
-import { SPOT, spotlight } from "./fx";
 import { duration, humanize } from "./text";
 
 const usd = (n: number) => `$${n.toFixed(n < 0.01 ? 5 : 3)}`;
@@ -94,7 +92,24 @@ export function AgentTimeline({ eventId }: { eventId: string }) {
           {error}
         </Alert>
       ) : null}
-      {!runs && !error ? <Skeleton className="h-40" /> : null}
+      {!runs && !error ? (
+        <ul aria-busy className="flex flex-col gap-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <li
+              key={i}
+              aria-hidden
+              className="flex min-h-[4.625rem] items-center gap-3 rounded-card border border-border bg-surface p-4 depth-1"
+            >
+              <Skeleton className="size-7 rounded-full" />
+              <span className="flex flex-1 flex-col gap-2">
+                <Skeleton className="h-3 w-28 rounded-full" />
+                <Skeleton className="h-2.5 w-56 max-w-full rounded-full" />
+              </span>
+              <Skeleton className="hidden h-2.5 w-48 rounded-full sm:block" />
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {runs && !runs.length ? (
         <EmptyState
           icon={<History />}
@@ -106,8 +121,8 @@ export function AgentTimeline({ eventId }: { eventId: string }) {
         {(runs ?? []).map((r) => (
           <li
             key={r.id}
-            {...spotlight}
-            className={cn(SPOT, "rounded-card border border-border bg-surface shadow-card")}
+            // Off-screen rows skip layout and paint; a closed row is about 74px tall.
+            className="spot lift rounded-card border border-border bg-surface depth-2 [contain-intrinsic-size:auto_4.625rem] [content-visibility:auto]"
           >
             <details className="group">
               <summary className="flex min-h-14 cursor-pointer list-none flex-wrap items-center gap-3 rounded-card p-4 [&::-webkit-details-marker]:hidden">

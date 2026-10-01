@@ -18,11 +18,10 @@ import {
   EmptyState,
   KeyValueList,
   PageHeader,
-  Skeleton,
   TierBadge,
   toast,
 } from "@/components/ui";
-import { CountUp } from "./fx";
+import { CountUp, PageSkeleton } from "./fx";
 import { channelName } from "./text";
 
 // Printing (Save as PDF) shows the report alone, without the console around it.
@@ -53,8 +52,13 @@ export function CloseoutView({ eventId }: { eventId: string }) {
     api.call("closeout", { params: { eventId } }).then(setR, () => setError(true));
   }, [eventId]);
 
-  if (error) return <Alert variant="danger" title="The report could not be loaded." />;
-  if (!r) return <Skeleton className="h-96" />;
+  if (error)
+    return (
+      <Alert variant="danger" title="The report could not be loaded.">
+        Check your connection, then reload the page.
+      </Alert>
+    );
+  if (!r) return <PageSkeleton />;
   const a = r.attendance;
   const headline = [
     { label: "Attended", node: <CountUp to={a.attended} /> },
@@ -94,7 +98,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
         {headline.map((h) => (
           <div
             key={h.label}
-            className="flex flex-col-reverse gap-1 rounded-card border border-border bg-surface p-4 shadow-card break-inside-avoid"
+            className="flex flex-col-reverse gap-1 rounded-card border border-border bg-surface p-4 depth-2 break-inside-avoid"
           >
             <dt className="kicker text-fg-muted">{h.label}</dt>
             <dd className="font-mono text-4xl font-medium tracking-[-0.02em]">{h.node}</dd>

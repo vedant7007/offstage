@@ -624,5 +624,58 @@
   "demoInbox": {
     "link": "Demo inbox: open the code we sent",
     "hint": "Demo mode only, for demo accounts."
+  },
+  "theatre": {
+    "commander": {
+      "transcript": "Intake interview",
+      "plan": "Event plan",
+      "timeline": "Timeline",
+      "timelineStart": "Kickoff",
+      "timelineEnd": "Event day",
+      "barRegistrations": "Registrations",
+      "barSponsors": "Sponsors and budget",
+      "barSpeakers": "Speakers and sessions",
+      "barVolunteers": "Volunteer shifts",
+      "barEvent": "Event days",
+      "team": "Agent team",
+      "teamNote": "Each one reports to a human lead",
+      "handoff": "Next: the crew",
+      "closing": "One shared source of truth."
+    },
+    "show": {
+      "board": "Live ops board",
+      "pm": "PM",
+      "clockSr": "Event clock, from 2:03 PM to 2:11 PM",
+      "boom": "The keynote speaker cancels.",
+      "end": "The event continues.",
+      "graph": "The Commander at the centre, linked to the Scheduler, Speaker Liaison, Crew Chief, Herald and Helpdesk.",
+      "log": "Event log",
+      "stats": "Impact of the change",
+      "caption": "Illustrative, from the seeded HackNova demo",
+      "policy": "Policy T3",
+      "node": {
+        "input": "Keynote",
+        "commander": "Commander",
+        "scheduler": "Scheduler",
+        "liaison": "Speaker Liaison",
+        "crew": "Crew Chief",
+        "herald": "Herald",
+        "helpdesk": "Helpdesk"
+      }
+    },
+    "features": {
+      "tokens": "Tokens",
+      "cost": "Cost",
+      "queued": "Queued",
+      "offline": "Offline",
+      "synced": "Synced",
+      "question": "Same question",
+      "spike": "8 in 10 min",
+      "certificate": "Certificate",
+      "verified": "Verified",
+      "headcount": "Headcount",
+      "foodCount": "Food count",
+      "sandbox": "Sandbox"
+    }
   }
 }

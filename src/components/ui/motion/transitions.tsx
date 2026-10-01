@@ -12,8 +12,10 @@ const PAGE = { "nav-forward": "nav-forward", "nav-back": "nav-back", default: "p
 /**
  * Route crossfade: the old page leaves in 120ms, the new one rises in over 240ms. Links tagged with
  * NAV_FORWARD or NAV_BACK slide sideways instead. Put it where a new instance mounts per route: at the
- * root of a page, or in a template.tsx. Refreshes of the same page never animate. Instant under reduced
- * motion. Never put an overlay inside it.
+ * root of a page, or in a template.tsx. The public site, /me, /crew and /console/[eventId] already mount
+ * it in their template.tsx, so pages there need nothing (a nested one is harmless: only the outer one
+ * animates). Refreshes of the same page never animate. Instant under reduced motion. Never put an
+ * overlay inside it.
  */
 function PageTransition({ children, className }: { children: React.ReactNode; className?: string }) {
   return (

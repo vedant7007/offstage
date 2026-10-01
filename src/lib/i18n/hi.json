@@ -523,5 +523,58 @@
   "demoInbox": {
     "link": "डेमो इनबॉक्स: भेजा गया कोड खोलें",
     "hint": "केवल डेमो मोड में, डेमो खातों के लिए।"
+  },
+  "theatre": {
+    "commander": {
+      "transcript": "शुरुआती बातचीत",
+      "plan": "इवेंट योजना",
+      "timeline": "टाइमलाइन",
+      "timelineStart": "शुरुआत",
+      "timelineEnd": "इवेंट का दिन",
+      "barRegistrations": "रजिस्ट्रेशन",
+      "barSponsors": "स्पॉन्सर और बजट",
+      "barSpeakers": "स्पीकर और सेशन",
+      "barVolunteers": "वॉलंटियर शिफ़्ट",
+      "barEvent": "इवेंट के दिन",
+      "team": "एजेंट टीम",
+      "teamNote": "हर एजेंट एक इंसानी लीड को रिपोर्ट करता है",
+      "handoff": "आगे: क्रू",
+      "closing": "सच का एक साझा स्रोत।"
+    },
+    "show": {
+      "board": "लाइव ऑप्स बोर्ड",
+      "pm": "PM",
+      "clockSr": "इवेंट की घड़ी, 2:03 PM से 2:11 PM तक",
+      "boom": "कीनोट स्पीकर ने आना रद्द कर दिया।",
+      "end": "इवेंट चलता रहता है।",
+      "graph": "बीच में Commander, जो Scheduler, Speaker Liaison, Crew Chief, Herald और Helpdesk से जुड़ा है।",
+      "log": "इवेंट लॉग",
+      "stats": "बदलाव का असर",
+      "caption": "उदाहरण के लिए, HackNova डेमो के नमूना डेटा से",
+      "policy": "पॉलिसी T3",
+      "node": {
+        "input": "कीनोट",
+        "commander": "Commander",
+        "scheduler": "Scheduler",
+        "liaison": "Speaker Liaison",
+        "crew": "Crew Chief",
+        "herald": "Herald",
+        "helpdesk": "Helpdesk"
+      }
+    },
+    "features": {
+      "tokens": "टोकन",
+      "cost": "लागत",
+      "queued": "कतार में",
+      "offline": "ऑफ़लाइन",
+      "synced": "सिंक हुआ",
+      "question": "एक ही सवाल",
+      "spike": "10 मिनट में 8",
+      "certificate": "प्रमाणपत्र",
+      "verified": "सत्यापित",
+      "headcount": "लोगों की संख्या",
+      "foodCount": "खाने की गिनती",
+      "sandbox": "सैंडबॉक्स"
+    }
   }
 }

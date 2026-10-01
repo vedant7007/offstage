@@ -14,9 +14,33 @@ function show(el: Element) {
   callbacks.delete(el);
 }
 
+// Only the first commit (hydration of server-rendered content) can race the failsafe; later mounts skip
+// the check, so it never forces a style flush per element on client navigations.
+let firstCommit = true;
+
+/** True once the CSS failsafe (motion.css, reveal-failsafe) has started showing this element or its words. */
+function shownByFailsafe(el: Element) {
+  return el.getAnimations({ subtree: true }).some(
+    (a) =>
+      typeof CSSAnimation !== "undefined" &&
+      a instanceof CSSAnimation &&
+      a.animationName === "reveal-failsafe" &&
+      // Past its 1 s delay: showing or shown
+      Number(a.currentTime) >= 1000,
+  );
+}
+
 /** Marks `el` with data-in the first time it enters the viewport, then calls `onEnter`. Returns a cleanup. */
 export function observeOnce(el: Element, onEnter?: () => void): () => void {
-  if (prefersReducedMotion() || typeof IntersectionObserver === "undefined") {
+  // Hydrated: hand over from the CSS failsafe to the observer. If the failsafe already showed it (slow
+  // hydration), keep it shown rather than hiding it again.
+  let failsafeShown = false;
+  if (firstCommit) {
+    setTimeout(() => (firstCommit = false));
+    failsafeShown = performance.now() > 1000 && shownByFailsafe(el);
+  }
+  el.setAttribute("data-armed", "");
+  if (failsafeShown || prefersReducedMotion() || typeof IntersectionObserver === "undefined") {
     if (onEnter) callbacks.set(el, onEnter);
     show(el);
     return () => {};

@@ -19,11 +19,26 @@
     [data-reveal]:not([data-in]) {
       opacity: 0;
     }
+    /* Failsafe: if hydration is slow or fails, show everything after 1 s anyway. Once hydrated, the
+       observer arms the element (data-armed) and takes over; observe.ts keeps already shown ones shown. */
+    [data-reveal]:not([data-in], [data-armed]),
+    [data-text-reveal]:not([data-in], [data-armed]) .tr-inner {
+      animation: reveal-failsafe var(--duration-slow) var(--ease-out) 1s forwards;
+    }
     [data-reveal="rise"]:not([data-in]) {
       translate: 0 12px;
     }
     [data-reveal="scale"]:not([data-in]) {
       scale: 0.97;
+    }
+  }
+
+  @keyframes reveal-failsafe {
+    to {
+      opacity: 1;
+      translate: none;
+      scale: none;
+      filter: none;
     }
   }
 
@@ -221,7 +236,7 @@
     }
   }
 
-  /* ---------- View transitions (React <ViewTransition>, see page-transition.tsx) ---------- */
+  /* ---------- View transitions (React <ViewTransition>, see transitions.tsx) ---------- */
   ::view-transition {
     pointer-events: none;
   }
@@ -320,15 +335,43 @@
   }
 
   /* Anchored chrome (vtAnchor): sidebar, top bar, site header, bottom bar, voice orb never move */
-  ::view-transition-group(.anchor) {
+  :root:not([data-vt="sidebar"])::view-transition-group(.anchor) {
     animation: none;
     z-index: 100;
   }
-  ::view-transition-old(.anchor) {
+  :root:not([data-vt="sidebar"])::view-transition-old(.anchor) {
     display: none;
   }
-  ::view-transition-new(.anchor) {
+  :root:not([data-vt="sidebar"])::view-transition-new(.anchor) {
     animation: none;
+  }
+
+  /* Sidebar collapse (AppShell sets data-vt="sidebar" around one layout change): the sidebar and the
+     main column glide to their new boxes as snapshots. Snapshots keep their natural size and are
+     clipped by their box, so text never stretches; labels are cut off by the narrowing rail. */
+  :root[data-vt="sidebar"] [data-shell-column] {
+    view-transition-name: app-main;
+  }
+  :root[data-vt="sidebar"]::view-transition-group(*) {
+    animation-duration: 300ms;
+    animation-timing-function: var(--ease-in-out);
+  }
+  :root[data-vt="sidebar"]::view-transition-group(app-sidebar),
+  :root[data-vt="sidebar"]::view-transition-group(app-main),
+  :root[data-vt="sidebar"]::view-transition-group(app-topbar) {
+    overflow: clip;
+  }
+  :root[data-vt="sidebar"]::view-transition-group(app-sidebar) {
+    z-index: 2;
+  }
+  :root[data-vt="sidebar"]::view-transition-group(app-topbar) {
+    z-index: 1;
+  }
+  :root[data-vt="sidebar"]::view-transition-old(*),
+  :root[data-vt="sidebar"]::view-transition-new(*) {
+    inline-size: auto;
+    block-size: auto;
+    animation-duration: 200ms;
   }
 
   /* ---------- Reduced motion: everything visible and still ---------- */

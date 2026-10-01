@@ -2,6 +2,7 @@
 
 import type { MetricsSnapshot } from "@/contracts";
 import { Badge } from "@/components/ui";
+import { NumberTicker } from "@/components/ui/motion";
 import { cn } from "@/lib/utils";
 import { humanize } from "../text";
 import { NODE_STATE } from "./theme";
@@ -130,7 +131,9 @@ export function RadarPanel({
                 style={{ background: s.color }}
               />
               <dt className="min-w-0 flex-1 truncate text-fg-muted">{s.label}</dt>
-              <dd className="font-mono tabular-nums">{s.value.toLocaleString("en-IN")}</dd>
+              <dd className="font-mono">
+                <NumberTicker mode="roll" value={s.value} />
+              </dd>
             </div>
           ))}
         </dl>

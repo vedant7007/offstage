@@ -1,19 +1,29 @@
 "use client";
 
 import { useEffect, type RefObject } from "react";
+import { collectCommander, updateCommander } from "./act-commander";
+import { collectFeatures, updateFeatures } from "./act-features";
+import { collectShow, updateShow } from "./act-show";
 import { CHAOS, actLabel } from "./content";
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const easeOut = (t: number) => 1 - (1 - t) ** 3;
-const smooth = (t: number) => t * t * (3 - 2 * t);
 const TAU = Math.PI * 2;
 
+/**
+ * How fast each act's eased progress follows the scroll, per 60 Hz frame. Lenis already smooths
+ * the wheel, so this only rounds off native jumps (scrollbar drag, keys, touch). Measured under a
+ * scripted wheel scroll at 1440x900: 0.11 trailed the scroll by 38px on average (95px on a fast
+ * flick) and floated up to 370ms after it stopped; 0.3 trails by 9px (23px on a flick) and
+ * settles within a frame of the scroll.
+ */
+const DP_LERP = 0.3;
+
 /** Acts that keep a slow drift while on screen. While one is visible the loop keeps running. */
-const AMBIENT = new Set(["chaos", "commander", "crew", "show", "features"]);
+const AMBIENT = new Set(["chaos", "crew"]);
 
 type Act = { id: string; el: HTMLElement; sc: HTMLElement; p: number; dp: number; on: boolean };
-type Sway = (i: number, t: number, d: number) => number;
 
 const tf = (el: HTMLElement | null | undefined, v: string) => {
   if (el) el.style.transform = v;
@@ -47,6 +57,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
     }));
 
     const $ = {
+      nav: one("nav"),
       progress: one("progress"),
       cue: one("cue"),
       rail: Array.from(root.querySelectorAll<HTMLElement>("[data-rail]")),
@@ -56,13 +67,6 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
       hint: one("hint"),
       chaos: kids("chaos"),
       chaosOut: one("chaosOut"),
-      cmd: kids("cmd"),
-      converge: one("converge"),
-      show: kids("show"),
-      boom: one("boom"),
-      impact: one("impact"),
-      impactEnd: one("impactEnd"),
-      feat: kids("feat"),
       ring: kids("ring"),
       plates: kids("plates"),
       emerg: one("emerg"),
@@ -73,37 +77,22 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
       finL: one("finL"),
       finR: one("finR"),
     };
+    // The three scene acts own their markup and scenes; they are found once per render.
+    const cmd = collectCommander(root);
+    const show = collectShow(root);
+    const feat = collectFeatures(root);
 
     // Depth scale for narrow screens, read on resize, not every frame.
     let D = 1;
     let RY = 210; // how far the front of the crew ring drops below the Commander
     const measure = () => {
+      // Stuck cue heads and stage padding clear the fixed nav by this much.
+      if ($.nav) root.style.setProperty("--nav-h", `${$.nav.offsetHeight}px`);
       const w = window.innerWidth;
       D = w <= 560 ? 0.45 : w <= 860 ? 0.6 : 1;
       RY = Math.min(210, window.innerHeight * 0.24);
     };
     measure();
-
-    /*
-     * Generic fly-through: node i reaches the camera at p = end * i / (n - 1), so the last node
-     * has flown past before the act's closing beat plays. Each node holds still at the camera for
-     * the first part of its step, so it can be read, then flies on. It fades fast as it passes,
-     * and only the next two wait in the fog, so no text sits behind a half-transparent card.
-     */
-    const fly = (nodes: HTMLElement[], p: number, spread: number, sway: Sway, t: number, end = 1) => {
-      const n = nodes.length;
-      const sp = spread * D;
-      const raw = (p / end) * (n - 1);
-      const step = Math.floor(raw);
-      const at = step + smooth(clamp((raw - step - 0.35) / 0.65));
-      nodes.forEach((node, i) => {
-        const z = (at - i) * sp;
-        tf(node, `translate(-50%,-50%) translate3d(${sway(i, t, D)}px,0,${z}px)`);
-        const pass = clamp(1 - (z - 0.12 * sp) / (0.26 * sp)); // flew past the camera
-        const fog = clamp(1 - (-z - sp) / (1.4 * sp)); // still out in the wings
-        op(node, pass * fog);
-      });
-    };
 
     const update: Record<string, (dp: number, t: number) => void> = {
       opening(dp) {
@@ -130,19 +119,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
         });
         $.chaosOut?.toggleAttribute("data-on", dp > 0.55);
       },
-      commander(dp, t) {
-        fly(
-          $.cmd,
-          dp,
-          740,
-          (i, t, d) => ((i % 2 ? 1 : -1) * (120 + (i % 3) * 40) + Math.sin(t * 0.9 + i) * 10) * d,
-          t,
-          0.7,
-        );
-        const c = clamp((dp - 0.86) / 0.12);
-        op($.converge, c);
-        tf($.converge, `translate(-50%,-50%) scale(${lerp(0.6, 1, easeOut(c))})`);
-      },
+      commander: (dp, t) => updateCommander(cmd, dp, t),
       crew(dp, t) {
         // One tilted ring around the Commander: the front sits low and close, the back high and
         // far, so the Commander in the middle is never covered. Each agent turns to the front once.
@@ -160,19 +137,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
           el.toggleAttribute("data-front", c > Math.cos(Math.PI / n));
         });
       },
-      show(dp, t) {
-        fly(
-          $.show,
-          dp,
-          620,
-          (i, t, d) => ((i % 2 ? 1 : -1) * (120 + (i % 3) * 40) + Math.sin(t * 0.8 + i * 1.4) * 8) * d,
-          t,
-          0.78,
-        );
-        op($.boom, clamp(1 - dp / 0.1));
-        $.impact?.toggleAttribute("data-on", dp > 0.84);
-        $.impactEnd?.toggleAttribute("data-on", dp > 0.93);
-      },
+      show: (dp, t) => updateShow(show, dp, t),
       rule(dp) {
         // The four lines arrive one after another out of the dark, then hold still to be read.
         $.plates.forEach((el, i) => {
@@ -183,16 +148,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
         });
         $.emerg?.toggleAttribute("data-on", dp > 0.6);
       },
-      features(dp, t) {
-        fly(
-          $.feat,
-          dp,
-          690,
-          (i, t, d) => ((i % 2 ? 1 : -1) * (120 + (i % 3) * 40) + Math.sin(t * 0.7 + i) * 12) * d,
-          t,
-          0.92,
-        );
-      },
+      features: (dp, t) => updateFeatures(feat, dp, t),
       final(dp) {
         $.bow.forEach((li, i) => li.toggleAttribute("data-on", dp > 0.16 + i * 0.07));
         const m = easeOut(clamp((dp - 0.42) / 0.26));
@@ -216,12 +172,14 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
     let raf = 0;
     let last = 0;
     let current = -1;
+    let lastY = window.scrollY;
+    let navHidden = false;
 
     const frame = (now: number) => {
       raf = 0;
       const dt = last ? Math.min(0.1, (now - last) / 1000) : 1 / 60;
       last = now;
-      const k = 1 - (1 - 0.11) ** (dt * 60); // the same easing at 60 Hz and 120 Hz
+      const k = 1 - (1 - DP_LERP) ** (dt * 60); // the same easing at 60 Hz and 120 Hz
       const t = now / 1000;
       const vh = window.innerHeight;
       let busy = false;
@@ -263,8 +221,22 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
           i === cur ? b.setAttribute("aria-current", "step") : b.removeAttribute("aria-current"),
         );
       }
+      const y = window.scrollY;
       const max = document.documentElement.scrollHeight - vh;
-      tf($.progress, `scaleX(${clamp(window.scrollY / Math.max(1, max))})`);
+      tf($.progress, `scaleX(${clamp(y / Math.max(1, max))})`);
+
+      // The nav slides away while reading down and comes back on any scroll up. It stays put over
+      // the first screen and the curtain call.
+      const dy = y - lastY;
+      lastY = y;
+      let hide = navHidden;
+      if (y < vh || cur === acts.length - 1) hide = false;
+      else if (dy > 1) hide = true;
+      else if (dy < -1) hide = false;
+      if (hide !== navHidden) {
+        navHidden = hide;
+        root.toggleAttribute("data-navhide", hide);
+      }
 
       if (busy) raf = requestAnimationFrame(frame);
       else last = 0;
@@ -305,17 +277,13 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
         $.curtR,
         $.hero,
         $.hint,
-        $.converge,
-        $.boom,
         $.finalMsg,
         $.team,
         $.cta,
         $.finL,
         $.finR,
         ...$.chaos,
-        ...$.cmd,
-        ...$.show,
-        ...$.feat,
+        ...feat.tiles,
         ...$.ring,
         ...$.plates,
       ];
@@ -323,6 +291,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
       for (const el of moved) el?.style.removeProperty("opacity");
       for (const el of $.ring) el.removeAttribute("data-front");
       root.removeAttribute("data-curtain");
+      root.removeAttribute("data-navhide");
       $.cta?.style.removeProperty("pointer-events");
     };
   }, [rootRef, film]);

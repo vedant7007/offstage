@@ -523,5 +523,58 @@
   "demoInbox": {
     "link": "Demo inbox: bheja gaya code kholiye",
     "hint": "Sirf demo mode mein, demo accounts ke liye."
+  },
+  "theatre": {
+    "commander": {
+      "transcript": "Intake interview",
+      "plan": "Event plan",
+      "timeline": "Timeline",
+      "timelineStart": "Shuruaat",
+      "timelineEnd": "Event ka din",
+      "barRegistrations": "Registrations",
+      "barSponsors": "Sponsors aur budget",
+      "barSpeakers": "Speakers aur sessions",
+      "barVolunteers": "Volunteer shifts",
+      "barEvent": "Event ke din",
+      "team": "Agent team",
+      "teamNote": "Har agent ek human lead ko report karta hai",
+      "handoff": "Aage: crew",
+      "closing": "Sach ka ek shared source."
+    },
+    "show": {
+      "board": "Live ops board",
+      "pm": "PM",
+      "clockSr": "Event ki ghadi, 2:03 PM se 2:11 PM tak",
+      "boom": "Keynote speaker cancel kar deta hai.",
+      "end": "Event chalta rehta hai.",
+      "graph": "Beech mein Commander, jo Scheduler, Speaker Liaison, Crew Chief, Herald aur Helpdesk se juda hai.",
+      "log": "Event log",
+      "stats": "Badlaav ka asar",
+      "caption": "Sirf udaharan, seeded HackNova demo se",
+      "policy": "Policy T3",
+      "node": {
+        "input": "Keynote",
+        "commander": "Commander",
+        "scheduler": "Scheduler",
+        "liaison": "Speaker Liaison",
+        "crew": "Crew Chief",
+        "herald": "Herald",
+        "helpdesk": "Helpdesk"
+      }
+    },
+    "features": {
+      "tokens": "Tokens",
+      "cost": "Cost",
+      "queued": "Queue mein",
+      "offline": "Offline",
+      "synced": "Sync ho gaya",
+      "question": "Same sawaal",
+      "spike": "10 min mein 8",
+      "certificate": "Certificate",
+      "verified": "Verified",
+      "headcount": "Headcount",
+      "foodCount": "Food count",
+      "sandbox": "Sandbox"
+    }
   }
 }

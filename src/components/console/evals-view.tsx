@@ -15,10 +15,9 @@ import {
   DataTable,
   EmptyState,
   PageHeader,
-  Skeleton,
   toast,
 } from "@/components/ui";
-import { CountUp, Kicker } from "./fx";
+import { CountUp, Kicker, PageSkeleton } from "./fx";
 import { duration } from "./text";
 
 const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
@@ -64,8 +63,13 @@ export function EvalsView({ eventId }: { eventId: string }) {
     return () => clearInterval(id);
   }, [running, load]);
 
-  if (failed) return <Alert variant="danger" title="The evals could not be loaded." />;
-  if (!e) return <Skeleton className="h-96" />;
+  if (failed)
+    return (
+      <Alert variant="danger" title="The evals could not be loaded.">
+        Check your connection, then reload the page.
+      </Alert>
+    );
+  if (!e) return <PageSkeleton tiles={3} />;
   const g = e.golden;
   const live = e.live;
   const runs = live.agents.reduce((s, a) => s + a.runs, 0);
@@ -153,7 +157,7 @@ export function EvalsView({ eventId }: { eventId: string }) {
         />
       )}
       {g?.misses.length ? (
-        <details className="rounded-card border border-border bg-surface p-4 text-sm shadow-card">
+        <details className="rounded-card border border-border bg-surface p-4 text-sm depth-2">
           <summary className="cursor-pointer font-medium">What missed ({g.misses.length})</summary>
           <ul className="mt-2 flex flex-col gap-1 font-mono text-xs">
             {g.misses.map((m) => (

@@ -63,7 +63,7 @@ export function WhatIfView({ eventId }: { eventId: string }) {
         description="Try a scenario on a copy of the event. The agents re-plan in the sandbox and nothing real changes."
       />
       <form
-        className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5 shadow-card"
+        className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5 depth-2"
         onSubmit={(e) => {
           e.preventDefault();
           run(scenario);

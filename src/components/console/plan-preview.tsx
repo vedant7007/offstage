@@ -31,7 +31,7 @@ export function PlanPreview({ plan }: { plan: PlanPayload }) {
           {plan.agentTeam.map((a) => (
             <li
               key={a.agent}
-              className={`flex flex-col gap-2.5 rounded-card border border-border bg-surface p-4 shadow-card ${a.enabled ? "" : "opacity-60"}`}
+              className={`flex flex-col gap-2.5 rounded-card border border-border bg-surface p-4 depth-2 ${a.enabled ? "" : "opacity-60"}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <AgentAvatar agent={a.agent} showName />
@@ -83,7 +83,7 @@ export function PlanPreview({ plan }: { plan: PlanPayload }) {
             {plan.risks.map((r) => (
               <li
                 key={r.title}
-                className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-4 shadow-card"
+                className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-4 depth-2"
               >
                 <span className="font-medium">{r.title}</span>
                 <span className="font-mono text-xs text-fg-muted">

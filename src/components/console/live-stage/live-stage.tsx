@@ -2,7 +2,8 @@
 
 import * as React from "react";
 import { Activity } from "lucide-react";
-import { AgentAvatar, Badge, PageHeader } from "@/components/ui";
+import { AgentAvatar, Badge, PageHeader, Skeleton } from "@/components/ui";
+import { Backdrop, LivePulse, NumberTicker } from "@/components/ui/motion";
 import { formatTime } from "@/lib/time";
 import { GlassBox } from "./glass-box";
 import { PersonaDock } from "./persona-dock";
@@ -25,6 +26,37 @@ const CHANNELS = [
   ["telegram", "Telegram"],
   ["sms", "SMS"],
 ] as const;
+
+/** One telemetry cell: a mono label over a rolling number. Numbers come straight from the feed. */
+function Telemetry({
+  label,
+  value,
+  of,
+  tone,
+}: {
+  label: string;
+  value: number | null;
+  of?: string;
+  tone?: string;
+}) {
+  return (
+    <div className="flex min-w-0 flex-col gap-1.5 bg-surface px-4 py-3 md:px-5 md:py-4">
+      <dt className="kicker truncate text-fg-muted">{label}</dt>
+      <dd className="flex items-baseline gap-1.5">
+        {value === null ? (
+          <Skeleton className="h-6 w-12 rounded-full md:h-7" />
+        ) : (
+          <NumberTicker
+            mode="roll"
+            value={value}
+            className={`text-2xl leading-none font-medium tracking-[-0.04em] md:text-3xl ${tone ?? ""}`}
+          />
+        )}
+        {of ? <span className="truncate font-mono text-xs text-fg-muted">{of}</span> : null}
+      </dd>
+    </div>
+  );
+}
 
 /** The Live Stage: the Commander and its agents at work, from real runs and proposals, as they happen. */
 export function LiveStage({ eventId, demo }: { eventId: string; demo?: React.ReactNode }) {
@@ -80,24 +112,50 @@ export function LiveStage({ eventId, demo }: { eventId: string; demo?: React.Rea
     }),
   };
 
+  const atWork = s.agents.filter((a) => {
+    const st = s.stateOf(a);
+    return st === "thinking" || st === "proposing";
+  }).length;
+  const sent = s.delivery.reduce((n, c) => n + c.real + c.mock, 0);
+
   return (
     <div className="flex flex-col gap-4">
+      <Backdrop stage />
       <PageHeader
         className="pb-4"
         eyebrow="Console, live"
         title="Live stage"
         description="The Commander and thirteen agents, live. Click any node to see what it did and why."
         actions={
-          <Badge tone={s.connected ? "approved" : "pending"} className="gap-1.5 font-mono uppercase">
-            <span
-              aria-hidden
-              className={`size-1.5 rounded-full bg-current ${s.connected ? "motion-safe:animate-pulse" : ""}`}
-            />
+          <Badge tone={s.connected ? "approved" : "pending"} className="gap-2 font-mono uppercase">
+            {s.connected ? (
+              <LivePulse className="size-1.5 text-current" />
+            ) : (
+              <span aria-hidden className="size-1.5 rounded-full bg-current" />
+            )}
             {s.connected ? "Live feed" : "Connecting"}
           </Badge>
         }
       />
       {demo}
+      {/* The control room's instrument strip, read off the same feed as the stage below. */}
+      <dl
+        aria-label="Right now"
+        className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border depth-2 md:grid-cols-4"
+      >
+        <Telemetry
+          label="Checked in"
+          value={s.metrics ? s.metrics.checkins.count : null}
+          of={s.metrics ? `of ${s.metrics.registrations.confirmed.toLocaleString("en-IN")}` : undefined}
+        />
+        <Telemetry
+          label="Waiting for you"
+          value={needsPerson}
+          tone={needsPerson ? "text-pending-text" : undefined}
+        />
+        <Telemetry label="Agents at work" value={atWork} of={`of ${s.agents.length}`} />
+        <Telemetry label="Messages sent" value={sent} />
+      </dl>
       <StageCanvas
         agents={s.agents}
         stateOf={s.stateOf}
@@ -116,7 +174,7 @@ export function LiveStage({ eventId, demo }: { eventId: string; demo?: React.Rea
               <li key={a}>
                 <button
                   type="button"
-                  className="flex min-h-11 w-full items-center gap-2 rounded-card border border-border bg-surface px-3 py-2 text-start text-sm shadow-card transition-colors duration-200 hover:border-border-strong"
+                  className="press flex min-h-11 w-full items-center gap-2 rounded-card border border-border bg-surface px-3 py-2 text-start text-sm depth-1 hover:border-border-strong"
                   onClick={() => setOpen(`agent:${a}`)}
                 >
                   <span aria-hidden className="contents">
@@ -138,14 +196,14 @@ export function LiveStage({ eventId, demo }: { eventId: string; demo?: React.Rea
         <RadarPanel state={s.stateOf("radar")} metrics={s.metrics} onOpen={() => setOpen("agent:radar")} />
         <section
           aria-labelledby="stage-log"
-          className="flex flex-col overflow-hidden rounded-card border border-border bg-surface shadow-[0_18px_40px_-28px_rgb(0_0_0/0.35)]"
+          className="flex flex-col overflow-hidden rounded-card border border-border bg-surface depth-2"
         >
           <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
             <h2 id="stage-log" className="text-sm font-medium tracking-[-0.01em]">
               What is happening
             </h2>
-            <span className="kicker text-fg-muted">
-              <span className="tabular-nums">{s.log.length}</span> cues
+            <span className="kicker flex items-baseline gap-1 text-fg-muted">
+              <NumberTicker mode="roll" value={s.log.length} /> cues
             </span>
           </div>
           {/* Newest first; the hook keeps at most 200 lines. Beside the radar it fills the row's height. */}
@@ -156,14 +214,18 @@ export function LiveStage({ eventId, demo }: { eventId: string; demo?: React.Rea
             >
               {s.log.length ? (
                 [...s.log].reverse().map((l) => (
-                  <li key={l.id} className={`flex gap-3 py-0.5 ${TONE[l.tone ?? "system"]}`}>
+                  // A new cue drops in from above (@starting-style); older ones just shift down.
+                  <li
+                    key={l.id}
+                    className={`flex gap-3 py-0.5 transition-[opacity,translate] duration-(--duration-slow) ease-(--ease-out-expo) starting:-translate-y-1.5 starting:opacity-0 ${TONE[l.tone ?? "system"]}`}
+                  >
                     <span className="shrink-0 text-fg-muted tabular-nums">{formatTime(l.at)}</span>
                     <span>{l.text}</span>
                   </li>
                 ))
               ) : (
                 <li className="flex h-full flex-col items-center justify-center gap-2 text-center font-sans">
-                  <span className="flex size-10 items-center justify-center rounded-full bg-surface-sunken text-fg-muted">
+                  <span className="flex size-10 items-center justify-center rounded-[0.75rem] bg-surface-sunken text-fg-muted">
                     <Activity aria-hidden className="size-5" />
                   </span>
                   <span className="text-sm font-medium text-fg">Quiet for now</span>

@@ -10,7 +10,7 @@ const link =
 export async function SiteFooter() {
   const t = await getT();
   return (
-    <footer className="dark mt-20 bg-bg text-fg">
+    <footer className="dark mt-24 bg-bg text-fg">
       <div className="mx-auto flex max-w-6xl flex-col gap-8 px-4 py-12 md:px-8">
         <p className="kicker text-curtain-text">{t("site.law")}</p>
         <div className="flex flex-col gap-4 border-t border-border pt-6 md:flex-row md:items-center md:justify-between">

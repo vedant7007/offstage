@@ -26,20 +26,36 @@ const NOT_CAUGHT = "(not caught)";
 const usd = (x: number) => `$${x.toFixed(4)}`;
 const ms = (x: number) => (x < 1000 ? `${x} ms` : `${(x / 1000).toFixed(1)} s`);
 /** Safe, read-only questions for the empty state: each one answers from event data and changes nothing. */
-const SUGGESTIONS = ["What is on today?", "How are registrations going?", "What if 30 percent more people come?"];
+const SUGGESTIONS = [
+  "What is on today?",
+  "How are registrations going?",
+  "What if 30 percent more people come?",
+];
 const FOCUSABLE = "button:not(:disabled), input:not(:disabled), a[href], [tabindex]:not([tabindex='-1'])";
 
 type Phase = "closed" | "opening" | "open" | "closing";
 
-/** The orb: a glossy sphere with a halo. It breathes when idle, ripples while listening, and swells with --amp. */
+/**
+ * The orb: a glass sphere with plasma turning inside and a halo around it, tinted by the state. It breathes when
+ * idle, ripples while listening, churns while thinking, and swells and blooms with --amp.
+ */
 function Orb({ mode, size, children }: { mode: Mode; size: string; children: React.ReactNode }) {
   return (
-    <span className={css.orb} data-mode={mode} style={{ "--size": size } as React.CSSProperties}>
+    <span
+      className={`${css.orb} ${css.tone}`}
+      data-mode={mode}
+      style={{ "--size": size } as React.CSSProperties}
+    >
       <span aria-hidden className={css.halo} />
       <span aria-hidden className={css.ripple} />
       <span aria-hidden className={css.ripple} />
       <span aria-hidden className={css.spin} />
-      <span className={css.core}>{children}</span>
+      <span className={css.core}>
+        <span aria-hidden className={css.plasma} />
+        <span aria-hidden className={css.plasma} />
+        <span aria-hidden className={css.gloss} />
+        <span className={css.icon}>{children}</span>
+      </span>
     </span>
   );
 }
@@ -119,7 +135,18 @@ function Toggle({ on, onClick, children }: { on: boolean; onClick: () => void; c
 }
 
 /** One exchange in voice mode: your words on the right, Offstage's reply below, and any question it asked back. */
-function Exchange({ t, latest, thinking }: { t: Turn; latest: boolean; thinking: boolean }) {
+function Exchange({
+  t,
+  latest,
+  thinking,
+  saying,
+}: {
+  t: Turn;
+  latest: boolean;
+  thinking: boolean;
+  /** The sentence being spoken right now, if any. */
+  saying: string;
+}) {
   const replies = t.replies.filter((r) => r.text !== t.followUp);
   return (
     <li className={`${css.turn} flex flex-col gap-3`}>
@@ -141,7 +168,12 @@ function Exchange({ t, latest, thinking }: { t: Turn; latest: boolean; thinking:
         >
           <span className="sr-only">Offstage: </span>
           {replies.map((r, i) => (
-            <span key={i} className={`${css.chunk} ${r.kind === "filler" ? "text-fg-muted" : ""}`}>
+            <span
+              key={i}
+              className={`${css.chunk} ${r.kind === "filler" ? "text-fg-muted" : ""} ${
+                saying ? (r.text === saying ? css.saying : css.said) : ""
+              }`}
+            >
               {r.text}{" "}
             </span>
           ))}
@@ -322,7 +354,10 @@ export function VoiceDock({ eventId }: { eventId: string }) {
       // The beam starts at the orb's centre and grows to cover the screen from there.
       o.style.setProperty("--ox", `${b.left + b.width / 2}px`);
       o.style.setProperty("--oy", `${b.top + b.height / 2}px`);
-      o.style.setProperty("--r", `${Math.ceil(Math.hypot(window.innerWidth, window.innerHeight))}px`);
+      const r = Math.ceil(Math.hypot(window.innerWidth, window.innerHeight));
+      o.style.setProperty("--r", `${r}px`);
+      // The ring of light on the beam's edge is 240px wide; this scale takes it out to --r.
+      o.style.setProperty("--rs", String(r / 120));
     }
     setPhase("opening");
     if (!busy) void v.talk();
@@ -404,10 +439,16 @@ export function VoiceDock({ eventId }: { eventId: string }) {
         aria-hidden={isOpen ? undefined : true}
         inert={!isOpen}
         data-open={isOpen}
+        data-mode={v.mode}
         onKeyDown={trap}
         className={`${css.overlay} dark fixed inset-0 overflow-hidden text-fg ${phase === "closed" ? "hidden" : ""}`}
       >
         <div aria-hidden className={css.backdrop} />
+        <div aria-hidden className={css.tint} data-tone="listening" />
+        <div aria-hidden className={css.tint} data-tone="thinking" />
+        <div aria-hidden className={css.tint} data-tone="speaking" />
+        <div aria-hidden className="grain pointer-events-none absolute inset-0" />
+        <div aria-hidden className={css.wave} />
         <div aria-hidden className={css.rays} />
         <div aria-hidden className={css.flash} />
 
@@ -440,7 +481,7 @@ export function VoiceDock({ eventId }: { eventId: string }) {
           <div className="flex min-h-0 flex-1">
             <div className={`min-w-0 flex-1 flex-col items-center ${panel ? "hidden md:flex" : "flex"}`}>
               <div className="flex shrink-0 flex-col items-center gap-2">
-                <div className={`${css.stage} ${css.rise}`}>
+                <div className={`${css.stage} ${css.tone} ${css.rise}`} data-mode={v.mode}>
                   <span aria-hidden className={css.ring} />
                   <span aria-hidden className={css.ring} />
                   <span aria-hidden className={css.ring} />
@@ -465,7 +506,9 @@ export function VoiceDock({ eventId }: { eventId: string }) {
                     className="flex items-center gap-2 font-mono text-xs tracking-[0.12em] text-fg-muted uppercase"
                   >
                     <span className={`size-1.5 rounded-full ${s.dot}`} />
-                    {hearing && asking ? "Listening for your answer" : s.label}
+                    <span key={s.label} className={css.swap}>
+                      {hearing && asking ? "Listening for your answer" : s.label}
+                    </span>
                   </p>
                   {hearing && !v.handsFree ? (
                     <Button variant="secondary" size="sm" onClick={v.stop}>
@@ -486,7 +529,13 @@ export function VoiceDock({ eventId }: { eventId: string }) {
                 {convo.length ? (
                   <ol aria-label="Conversation" className="flex flex-col gap-6 pt-8 pb-4">
                     {convo.map((t) => (
-                      <Exchange key={t.id} t={t} latest={t === latest} thinking={v.mode === "thinking"} />
+                      <Exchange
+                        key={t.id}
+                        t={t}
+                        latest={t === latest}
+                        thinking={v.mode === "thinking"}
+                        saying={t === latest && v.mode === "speaking" ? v.caption.offstage : ""}
+                      />
                     ))}
                   </ol>
                 ) : (
