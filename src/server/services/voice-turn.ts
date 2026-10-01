@@ -12,15 +12,31 @@ import type { ActionProposal, UserActor, VoiceEvent, VoiceStep } from "@/contrac
 import { screen } from "@/ai/guard";
 import { endRun } from "@/ai/router/budget";
 import {
-  CAPABILITIES,
   FILLER,
   SAY_AGAIN,
   SCENARIOS,
-  pickIntent,
+  THINKING,
+  route,
+  ruleRoute,
   sentences,
+  type Args,
+  type HistoryTurn,
   type Intent,
+  type Route,
   type Scenario,
 } from "@/agents/commander/voice";
+import {
+  announce,
+  attention,
+  firstName,
+  moveSession,
+  remindMember,
+  remindUnconfirmed,
+  sentLine,
+  tomorrow,
+  unconfirmedSpeakers,
+  type Entities,
+} from "@/server/services/voice-actions";
 import { closeoutRulesSummary } from "@/agents/chronicler/logic";
 import { db as defaultDb, type Db } from "@/db/client";
 import * as t from "@/db/schema";
@@ -36,6 +52,24 @@ import { getProposalDetail } from "@/server/services/proposals";
 import { runWhatIf } from "@/server/services/whatif";
 
 const log = logger.child({ module: "voice" });
+
+// Conversation memory: the last 10 turns per person and event, so "and tomorrow?" and "remind them" make sense.
+// ponytail: in process memory, one web process; a restart forgets, which only costs a follow-up its context.
+type Memory = { turns: HistoryTurn[]; entities: Entities; at: number };
+const mem = globalThis as typeof globalThis & { __sutradharVoiceMemory?: Map<string, Memory> };
+const memories = (mem.__sutradharVoiceMemory ??= new Map<string, Memory>());
+const MEMORY_TURNS = 10;
+const MEMORY_IDLE_MS = 2 * 3600_000;
+function memoryOf(actor: UserActor): Memory {
+  const key = `${actor.eventId}:${actor.userId}`;
+  let m = memories.get(key);
+  if (!m || Date.now() - m.at > MEMORY_IDLE_MS)
+    memories.set(key, (m = { turns: [], entities: {}, at: Date.now() }));
+  m.at = Date.now();
+  return m;
+}
+/** Waiting for the organiser's tap after a voice proposal, to say what was sent. */
+const APPROVAL_WAIT_MS = 120_000;
 const WATCH_MS = 45_000;
 const QUIET_MS = 5_000;
 const NAME: Record<string, string> = {
@@ -203,9 +237,72 @@ async function* answer(
   actor: UserActor,
   intent: Intent,
   text: string,
+  args: Args,
+  ctx: { turnId: string; memory: Memory; opened: (id: string) => void },
   client: Db,
 ): AsyncGenerator<VoiceEvent> {
   switch (intent) {
+    case "greeting":
+      yield say(`Hi ${await firstName(actor, client)}. Want today's briefing, or what needs your attention?`);
+      return;
+    case "smalltalk":
+      yield say(args.reply?.trim() || "Sure. When you're ready, ask me what needs your attention.");
+      return;
+    case "attention":
+      yield* attention(actor, say, client);
+      return;
+    case "briefing_tomorrow":
+      yield* tomorrow(actor, say, client);
+      return;
+    case "unconfirmed": {
+      const s = await unconfirmedSpeakers(actor, client);
+      ctx.memory.entities.unconfirmedSpeakerIds = s.map((x) => x.id);
+      if (!s.length) yield say("Every speaker has confirmed.");
+      else {
+        yield say(
+          `${s.length === 1 ? "One speaker hasn't" : `${s.length} speakers haven't`} confirmed: ${s
+            .slice(0, 4)
+            .map((x) => x.name)
+            .join(", ")}.`,
+        );
+        yield say("Want me to remind them?");
+      }
+      return;
+    }
+    case "remind_unconfirmed": {
+      const id = yield* remindUnconfirmed(
+        actor,
+        ctx.memory.entities.unconfirmedSpeakerIds,
+        ctx.turnId,
+        say,
+        client,
+      );
+      if (id) ctx.opened(id);
+      return;
+    }
+    case "announce":
+    case "message_volunteers": {
+      const id = yield* announce(
+        actor,
+        args,
+        ctx.turnId,
+        say,
+        intent === "announce" ? "all" : "volunteers",
+        client,
+      );
+      if (id) ctx.opened(id);
+      return;
+    }
+    case "remind_member": {
+      const id = yield* remindMember(actor, args, ctx.turnId, say, client);
+      if (id) ctx.opened(id);
+      return;
+    }
+    case "move_session": {
+      const id = yield* moveSession(actor, args, ctx.turnId, say, client);
+      if (id) ctx.opened(id);
+      return;
+    }
     case "briefing": {
       requirePermission(actor, "event.read", { eventId: actor.eventId });
       const b =
@@ -278,8 +375,10 @@ async function* answer(
       return;
     }
     case "unknown":
-      yield say(SAY_AGAIN);
-      yield say(CAPABILITIES);
+      // One line, never the whole capabilities list.
+      yield say(
+        args.reply?.trim() || `${SAY_AGAIN} You can ask what's on today or what needs your attention.`,
+      );
       return;
     default:
       if ((SCENARIOS as Intent[]).includes(intent)) yield* scenario(actor, intent as Scenario, client);
@@ -294,13 +393,16 @@ export async function* voiceTurn(
   requirePermission(actor, "agents.command", { eventId: actor.eventId });
   const runId = `voice:${input.turnId}:${randomUUID().slice(0, 8)}`;
   const t0 = performance.now();
+  const memory = memoryOf(actor);
+  let routed: Route | null = null;
+  const said: string[] = [];
+  let opened: string | undefined;
   try {
-    // The guard and the intent run side by side; nothing is said or done before the guard's verdict.
-    const [verdict, picked] = await Promise.all([
-      screen(input.text, { source: "voice", runId }),
-      pickIntent(input.text, runId),
-    ]);
-    const ms = Math.round(performance.now() - t0);
+    // The guard and the intent run side by side; nothing is said or done before the guard's verdict. Rules answer
+    // at once; the model (with the conversation) only when they miss, and "Let me think." covers a slow model.
+    const instant = ruleRoute(input.text, memory.turns);
+    const routing = instant ? Promise.resolve(instant) : route(input.text, memory.turns, runId);
+    const verdict = await screen(input.text, { source: "voice", runId });
     if (verdict.verdict === "block") {
       await audit(client, {
         eventId: actor.eventId,
@@ -310,18 +412,58 @@ export async function* voiceTurn(
         entityId: input.turnId,
         after: { via: input.via, by: verdict.by, reasons: verdict.reasons.slice(0, 3) },
       });
-      yield { type: "intent", intent: "blocked", by: "guard", ms };
+      yield { type: "intent", intent: "blocked", by: "guard", ms: Math.round(performance.now() - t0) };
       yield say("I can only help with running this event, and that request is outside it. I've logged it.");
       return;
     }
-    yield { type: "intent", intent: picked.intent, by: picked.by, ms };
-    const filler = FILLER[picked.intent];
+    const slow = Symbol("slow");
+    const first = await Promise.race([
+      routing,
+      new Promise<typeof slow>((r) => setTimeout(() => r(slow), 350)),
+    ]);
+    if (first === slow) yield say(THINKING, "filler");
+    routed = first === slow ? await routing : first;
+    yield { type: "intent", intent: routed.intent, by: routed.by, ms: Math.round(performance.now() - t0) };
+    const filler = FILLER[routed.intent];
     if (filler) yield say(filler, "filler");
-    yield* answer(actor, picked.intent, input.text, client);
+    const ctx = { turnId: input.turnId, memory, opened: (id: string) => (opened = id) };
+    for await (const e of answer(actor, routed.intent, input.text, routed.args, ctx, client)) {
+      if (e.type === "say" && e.kind !== "filler") said.push(e.text);
+      yield e;
+    }
+    // A proposal made by voice: wait for the tap in the console, then say what was sent.
+    if (opened) {
+      memory.entities.lastProposalId = opened;
+      const end = Date.now() + APPROVAL_WAIT_MS;
+      const q = busQueue(actor.eventId);
+      try {
+        while (Date.now() < end) {
+          const item = await q.next(1000);
+          if (!item || item.k !== "event" || !/^proposal\.(executed|rejected)$/.test(item.n.type)) continue;
+          const line = await sentLine(opened, client);
+          if (line) {
+            yield stage("approve", "done", "Approved and run", ["gate:head"]);
+            yield say(line, "narration");
+            said.push(line);
+            break;
+          }
+        }
+      } finally {
+        q.close();
+      }
+    }
   } catch (err) {
     log.warn({ err, intent: "voice" }, "voice turn failed");
     yield say("Something went wrong on my side. The console still works; try the same thing there.");
   } finally {
     endRun(runId);
+    if (routed) {
+      memory.turns.push({
+        you: input.text.slice(0, 300),
+        intent: routed.intent,
+        said: said.join(" ").slice(0, 300),
+      });
+      if (memory.turns.length > MEMORY_TURNS) memory.turns.splice(0, memory.turns.length - MEMORY_TURNS);
+    }
   }
 }

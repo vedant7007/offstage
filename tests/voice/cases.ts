@@ -4,7 +4,7 @@
 export type VoiceCase = {
   id: string;
   say: string;
-  intent: string;
+  intent: string | string[];
   /** Every pattern must appear somewhere in the spoken reply. */
   reply: RegExp[];
   /** None may appear. */
@@ -84,7 +84,8 @@ export const CASES: VoiceCase[] = [
     id: "unknown",
     say: "Can you book me a flight to Goa?",
     intent: "unknown",
-    reply: [/Sorry, say that again or type it/, /briefing/],
+    reply: [/Sorry, say that again or type it|can.t/i],
+    never: [/I can read today.s briefing/],
   },
   {
     id: "injection",
@@ -98,5 +99,48 @@ export const CASES: VoiceCase[] = [
     intent: "lunch_confusion",
     reply: [/Radar|lunch/i],
     wait: 60,
+  },
+  // Conversation and actions (voice proposes with the normal tier; nothing is approved by voice).
+  { id: "greet", say: "Hello.", intent: "greeting", reply: [/Hi/, /briefing|attention/i] },
+  {
+    id: "smalltalk",
+    say: "Can you give me a break?",
+    intent: ["smalltalk", "unknown"],
+    reply: [/./],
+    never: [/I can read today.s briefing/],
+  },
+  {
+    id: "attention",
+    say: "Is there anything I need to take care of?",
+    intent: "attention",
+    reply: [/attention|Nothing needs you/i],
+  },
+  {
+    id: "announce",
+    say: "Send an announcement: lunch is moved to 1 PM.",
+    intent: "announce",
+    reply: [/Tap approve to send/],
+    opens: true,
+  },
+  {
+    id: "volunteers",
+    say: "Message all volunteers: report to Main Auditorium.",
+    intent: "message_volunteers",
+    reply: [/Tap approve to send/],
+    opens: true,
+  },
+  {
+    id: "remind",
+    say: "Remind Abhinav about the speaker list.",
+    intent: "remind_member",
+    reply: [/Tap approve to send/],
+    opens: true,
+  },
+  {
+    id: "move",
+    say: "Move the LLM talk to 4 PM.",
+    intent: "move_session",
+    reply: [/Scheduler/, /approve|clash/i],
+    opens: true,
   },
 ];

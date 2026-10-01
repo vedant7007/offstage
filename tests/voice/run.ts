@@ -90,7 +90,8 @@ for (const c of cases) {
   const why: string[] = [];
   if (!spoke) why.push("never spoke");
   if (alert) why.push(`dock alert: ${alert.slice(0, 80)}`);
-  if (intent !== c.intent) why.push(`intent ${intent || "none"}`);
+  if (!(Array.isArray(c.intent) ? c.intent : [c.intent]).includes(intent))
+    why.push(`intent ${intent || "none"}`);
   for (const re of c.reply) if (!re.test(reply)) why.push(`missing ${re}`);
   for (const re of c.never ?? []) if (re.test(reply)) why.push(`said ${re}`);
   if (c.opens && !(page.url().includes("/approvals/") || (await page.getByRole("dialog").count()) > 0))

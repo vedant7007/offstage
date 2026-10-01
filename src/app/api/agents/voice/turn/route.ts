@@ -20,23 +20,37 @@ export const POST = route(async (req) => {
   const t0 = performance.now();
   // ponytail: spend delta over the turn, so a turn that overlaps another counts a little of both.
   const spentBefore = spentToday().usd;
+  // The client may go away (a new turn, barge-in, a closed tab): then stop the turn, including its approval wait.
+  let gone = false;
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
+      const send = (e: VoiceEvent) => {
+        if (gone) return;
+        try {
+          controller.enqueue(line(e));
+        } catch {
+          gone = true;
+        }
+      };
       try {
-        for await (const e of voiceTurn(actor, body)) controller.enqueue(line(e));
+        for await (const e of voiceTurn(actor, body)) {
+          if (gone) break;
+          send(e);
+        }
       } catch (err) {
         log.warn({ err }, "voice turn stream failed");
-        controller.enqueue(line({ type: "error", message: "The turn failed" }));
+        send({ type: "error", message: "The turn failed" });
       } finally {
-        controller.enqueue(
-          line({
-            type: "done",
-            costUsd: Math.max(0, spentToday().usd - spentBefore),
-            ms: Math.round(performance.now() - t0),
-          }),
-        );
-        controller.close();
+        send({
+          type: "done",
+          costUsd: Math.max(0, spentToday().usd - spentBefore),
+          ms: Math.round(performance.now() - t0),
+        });
+        if (!gone) controller.close();
       }
+    },
+    cancel() {
+      gone = true;
     },
   });
   return new Response(stream, {

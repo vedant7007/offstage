@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { FILLER, ruleIntent, sentences } from "@/agents/commander/voice";
+import { FILLER, ruleIntent, ruleRoute, sentences } from "@/agents/commander/voice";
 import { narrateProposal } from "@/server/services/voice-turn";
 import { CASES } from "../../voice/cases";
 
@@ -8,7 +8,9 @@ vi.mock("@/db/client", () => ({ db: {} }));
 
 describe("ruleIntent", () => {
   // "unknown" and "blocked" go through the model and the guard, not the rules.
-  for (const c of CASES.filter((c) => c.intent !== "unknown" && c.intent !== "blocked")) {
+  for (const c of CASES.filter(
+    (c) => typeof c.intent === "string" && c.intent !== "unknown" && c.intent !== "blocked",
+  )) {
     it(`routes case ${c.id}: ${c.say}`, () => expect(ruleIntent(c.say)).toBe(c.intent));
   }
 
@@ -85,5 +87,23 @@ describe("narrateProposal", () => {
     const lines = narrateProposal(p as never, []);
     expect(lines).toHaveLength(1);
     expect(lines[0]).toMatch(/^Herald proposes: /);
+  });
+});
+
+describe("voice actions routing", () => {
+  it("keeps whisper's misspelling of remind on the reminder path", () => {
+    expect(ruleRoute("Remynd Abhinav about the speaker list.")).toMatchObject({
+      intent: "remind_member",
+      args: { person: "Abhinav" },
+    });
+  });
+  it("reads the session and the time out of a move", () => {
+    expect(ruleRoute("Move the LLM talk to 4pm.")).toMatchObject({
+      intent: "move_session",
+      args: { session: "LLM talk", time: "4pm" },
+    });
+  });
+  it("is an announcement, not lunch confusion, when it starts with send an announcement", () => {
+    expect(ruleRoute("Send an announcement: lunch is moved to 1 PM")?.intent).toBe("announce");
   });
 });

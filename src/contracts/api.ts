@@ -258,6 +258,16 @@ export type PersonaFeedResponse = z.infer<typeof PersonaFeedResponse>;
 // ---------------------------------------------------------------------------
 
 export const VoiceIntent = z.enum([
+  "greeting",
+  "smalltalk",
+  "attention",
+  "briefing_tomorrow",
+  "unconfirmed",
+  "remind_unconfirmed",
+  "announce",
+  "message_volunteers",
+  "remind_member",
+  "move_session",
   "briefing",
   "registrations",
   "speaker_cancel",
