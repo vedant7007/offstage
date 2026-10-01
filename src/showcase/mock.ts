@@ -12,6 +12,7 @@ import type {
   DemoPersona,
   EndpointName,
   MeResponse,
+  MyRegistrationResponse,
   MyScheduleResponse,
   ProposalResponse,
 } from "@/contracts/api";
@@ -105,11 +106,8 @@ async function doApprove(c: Ctx, a: Args) {
     throw forbidden(
       `This needs ${rule.roles.map((r) => LABEL[r] ?? r).join(" and ")}. Switch persona to approve it.`,
     );
-  const { done } = await approve(d.proposal, persona);
-  const recorded = done
-    ? c.map.get(responseKey("approveProposal", { params: { eventId, proposalId } }))
-    : undefined;
-  if (recorded) return recorded;
+  // The follow-up phase (if any) lands its own snapshot a moment later; until then it reads as approved.
+  await approve(d.proposal, persona);
   const after = await responsesFor(getLedger());
   return {
     proposal: (await findProposal({ ...c, l: getLedger(), map: after }, eventId, proposalId)).proposal,
@@ -120,7 +118,12 @@ function checkin(c: Ctx, s: CheckinRequest): CheckinResult {
   const t = tickets.tickets.find((x) => x.token === `${s.ticketPayload}.${s.signature}`);
   if (!t) return { clientId: s.clientId, status: "invalid" };
   const registration = { id: t.registrationId, name: t.name, college: t.college };
-  const first = getLedger().checkins[t.ticketId];
+  // A check-in already in the recording (Sneha came in at 9:12) counts as the first scan.
+  const recorded = (c.map.get(personaKey("attendee", "myRegistration")) as MyRegistrationResponse | undefined)
+    ?.registration;
+  const first =
+    getLedger().checkins[t.ticketId] ??
+    (recorded?.id === t.registrationId ? recorded.checkedInAt : undefined);
   if (first)
     return {
       clientId: s.clientId,
@@ -181,10 +184,17 @@ export async function showcaseCall(name: EndpointName, a: Args, cookie?: string)
         c.map.get(personaKey("owner", name, keyArgs(a)))
       );
     case "overview": {
-      const o = c.map.get(key) as { metrics: { at: string } } | undefined;
+      const o = c.map.get(key) as { metrics: { at: string; pendingApprovals: number } } | undefined;
       if (!o) return undefined;
       const at = new Date(Date.now() + clockOffset(l, WORLD.demoClock)).toISOString();
-      return { ...o, metrics: { ...o.metrics, at } };
+      // Approved or rejected here but still pending in the recording: no longer waiting.
+      const pending = c.map.get(
+        responseKey("listProposals", { params: a.params, query: { limit: 100, status: "pending" } }),
+      ) as { items: ActionProposal[] } | undefined;
+      const patched = await Promise.all((pending?.items ?? []).map((x) => patchProposal(c, x)));
+      const settled = patched.filter((x) => x.status !== "pending").length;
+      const pendingApprovals = Math.max(0, o.metrics.pendingApprovals - settled);
+      return { ...o, metrics: { ...o.metrics, at, pendingApprovals } };
     }
     case "realSends":
     case "setRealSends":
