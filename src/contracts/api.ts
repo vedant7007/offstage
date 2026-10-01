@@ -278,6 +278,8 @@ export const VoiceIntent = z.enum([
   "whatif",
   "closeout",
   "approve",
+  "ask",
+  "chat",
   "unknown",
   "blocked",
 ]);
@@ -299,6 +301,11 @@ export const VoiceTurnRequest = z.object({
   turnId: z.string().min(8).max(64),
   text: z.string().trim().min(1).max(1000),
   via: z.enum(["voice", "keyboard"]),
+  conversationId: z
+    .string()
+    .regex(/^[\w-]{8,64}$/)
+    .optional()
+    .describe("Keeps a multi-turn conversation; the server makes one when absent and returns it on done"),
 });
 export type VoiceTurnRequest = z.infer<typeof VoiceTurnRequest>;
 export const VoiceEvent = z.discriminatedUnion("type", [
@@ -321,7 +328,22 @@ export const VoiceEvent = z.discriminatedUnion("type", [
     nodes: z.array(z.string().max(40)).max(8).describe("Live Stage node ids to light, e.g. agent:scheduler"),
   }),
   z.object({ type: z.literal("open"), proposalId: Id, tier: RiskTier }),
-  z.object({ type: z.literal("done"), costUsd: z.number().nonnegative(), ms: z.int().nonnegative() }),
+  z.object({
+    type: z.literal("done"),
+    costUsd: z.number().nonnegative(),
+    ms: z.int().nonnegative(),
+    conversationId: z.string().max(64).optional().describe("Send it back on the next turn"),
+    followUp: z
+      .string()
+      .max(300)
+      .optional()
+      .describe("The Commander asked a question; the next turn is taken as the answer, so reopen the mic"),
+    sources: z
+      .array(z.object({ ref: z.string().max(200), label: z.string().max(160) }))
+      .max(8)
+      .optional()
+      .describe("What the answer was read from, for the transcript"),
+  }),
   z.object({ type: z.literal("error"), message: z.string().max(300) }),
 ]);
 export type VoiceEvent = z.infer<typeof VoiceEvent>;

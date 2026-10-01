@@ -23,9 +23,13 @@ export { EmptyState, Timeline, KeyValueList, PageHeader, Section, type TimelineI
 export { Avatar } from "./avatar";
 export { Tooltip, TooltipProvider } from "./tooltip";
 export { AppShell, type NavItem } from "./app-shell";
+export { ScrollHeader, SignOutButton, SiteMenu } from "./shell-bits";
 export { ThemeToggle } from "./theme-toggle";
 export { LanguageSwitcher } from "./language-switcher";
 export { Providers } from "./providers";
+
+// Premium kit (also importable from "@/components/ui/motion")
+export * from "./motion";
 
 // Composites
 export { ProposalCard, type Evidence } from "./proposal-card";

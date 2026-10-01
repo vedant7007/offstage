@@ -46,7 +46,7 @@ function ChoiceRow({ id, label, description, control, disabled, reverse }: RowPr
 }
 
 const boxBase = cn(
-  "peer shrink-0 border-2 border-border-strong bg-surface transition-colors duration-(--duration-fast) ease-out",
+  "peer shrink-0 border-2 border-border-strong bg-surface-raised transition-colors duration-(--duration-fast) ease-out hover:border-fg",
   "disabled:cursor-not-allowed aria-invalid:border-danger",
 );
 
@@ -70,7 +70,7 @@ function Checkbox({ label, description, id, className, ...props }: CheckboxProps
           aria-describedby={description ? `${controlId}-desc` : undefined}
           className={cn(
             boxBase,
-            "size-5 rounded-sm data-checked:border-curtain data-checked:bg-curtain",
+            "size-5 rounded-control data-checked:border-curtain data-checked:bg-curtain",
             className,
           )}
           {...props}
@@ -87,16 +87,22 @@ function Checkbox({ label, description, id, className, ...props }: CheckboxProps
 type RadioGroupProps = React.ComponentProps<typeof RadioPrimitive.Root> & {
   /** Visible group label, announced as the group name. */
   legend: React.ReactNode;
+  /** Extra classes for the list of items, for example a grid of cards. */
+  itemsClassName?: string;
 };
 
-function RadioGroup({ legend, className, children, ...props }: RadioGroupProps) {
+function RadioGroup({ legend, className, itemsClassName, children, ...props }: RadioGroupProps) {
   const legendId = React.useId();
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <p id={legendId} className="text-sm font-medium text-fg">
         {legend}
       </p>
-      <RadioPrimitive.Root aria-labelledby={legendId} className="flex flex-col" {...props}>
+      <RadioPrimitive.Root
+        aria-labelledby={legendId}
+        className={cn("flex flex-col", itemsClassName)}
+        {...props}
+      >
         {children}
       </RadioPrimitive.Root>
     </div>

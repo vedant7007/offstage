@@ -6,13 +6,17 @@ import { Progress as ProgressPrimitive } from "radix-ui";
 import { Check } from "lucide-react";
 import { useT } from "@/lib/i18n/provider";
 
-/** Placeholder shape while content loads. Put aria-busy on the region it stands in for. */
+/**
+ * Placeholder shape while content loads. Put aria-busy on the region it stands in for. A soft band sweeps
+ * across it, and it stays invisible for the first 300ms so fast loads never flash (motion.css).
+ * For content-shaped placeholders use SkeletonText, SkeletonCard and SkeletonRow.
+ */
 function Skeleton({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
       aria-hidden
       data-slot="skeleton"
-      className={cn("animate-pulse rounded-control bg-border", className)}
+      className={cn("rounded-control bg-[color-mix(in_srgb,var(--fg)_9%,transparent)]", className)}
       {...props}
     />
   );
@@ -50,8 +54,11 @@ function Progress({ label, value, max = 100, showValue = true, tone = "curtain",
         className="h-2.5 w-full overflow-hidden rounded-full border border-border-strong bg-surface-sunken"
       >
         <ProgressPrimitive.Indicator
-          className={cn("h-full transition-[width] duration-(--duration-slow) ease-out", barTone[tone])}
-          style={{ width: `${percent}%` }}
+          className={cn(
+            "h-full w-full rounded-full transition-[translate] duration-(--duration-slower) ease-(--ease-in-out)",
+            barTone[tone],
+          )}
+          style={{ translate: `${percent - 100}% 0` }}
         />
       </ProgressPrimitive.Root>
     </div>
@@ -87,10 +94,15 @@ function Stepper({ steps, current, className }: StepperProps) {
               aria-current={state === "current" ? "step" : undefined}
               className="flex flex-1 flex-col gap-1.5"
             >
-              <span
-                className={cn("h-1.5 rounded-full", state === "upcoming" ? "bg-border" : "bg-curtain")}
-                aria-hidden
-              />
+              {/* The fill grows from the left as the step is reached (scale only, no width animation) */}
+              <span className="h-1.5 overflow-hidden rounded-full bg-border" aria-hidden>
+                <span
+                  className={cn(
+                    "block h-full origin-left rounded-full bg-curtain transition-[scale] duration-(--duration-slower) ease-(--ease-in-out)",
+                    state === "upcoming" ? "scale-x-0" : "scale-x-100",
+                  )}
+                />
+              </span>
               <span className="flex items-center gap-1.5 text-xs">
                 <span
                   aria-hidden

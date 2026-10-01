@@ -4,7 +4,7 @@ import { Check } from "lucide-react";
 import { toneClass, type Tone } from "./badge";
 
 const chipBase = cn(
-  "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium whitespace-nowrap md:min-h-9",
+  "inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border-[1.5px] px-4 text-sm font-medium whitespace-nowrap md:min-h-9",
   "[&_svg]:size-4 [&_svg]:shrink-0",
 );
 
@@ -24,17 +24,19 @@ function Chip({ selected = false, icon, count, className, children, ...props }: 
       aria-pressed={selected}
       className={cn(
         chipBase,
-        "transition-colors duration-(--duration-fast) ease-out",
+        "press",
         selected
-          ? "border-curtain bg-curtain-soft text-curtain-soft-fg"
-          : "border-border-strong bg-surface text-fg hover:bg-surface-sunken",
+          ? "border-fg bg-fg text-bg"
+          : "border-border-strong bg-transparent text-fg hover:border-fg hover:bg-surface-raised",
         className,
       )}
       {...props}
     >
       {selected ? <Check aria-hidden /> : icon}
       {children}
-      {count !== undefined ? <span className="text-xs tabular-nums opacity-80">{count}</span> : null}
+      {count !== undefined ? (
+        <span className="font-mono text-xs tabular-nums opacity-80">{count}</span>
+      ) : null}
     </button>
   );
 }

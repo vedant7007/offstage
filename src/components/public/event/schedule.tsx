@@ -1,10 +1,12 @@
 import Link from "next/link";
-import { Check, DoorOpen, Layers, Users } from "lucide-react";
+import { DoorOpen, Layers, Users } from "lucide-react";
 import type { PublicEventResponse, SessionStatus } from "@/contracts";
 import { Badge, Button, EmptyState, TimeRange, type Tone } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import { formatDayShort, istDateKey } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { Reveal, SlidingIndicator } from "@/components/ui/motion";
+import { SectionHead } from "@/components/public/event/section-head";
 
 type PublicSession = PublicEventResponse["sessions"][number];
 
@@ -25,13 +27,14 @@ type Props = {
   data: PublicEventResponse;
   day: string;
   track: string | null;
+  cue: string;
 };
 
 /**
  * Day tabs and track filter are plain links with query parameters, so the schedule works with
  * JavaScript turned off and every filtered view has its own URL.
  */
-export async function Schedule({ data, day, track }: Props) {
+export async function Schedule({ data, day, track, cue }: Props) {
   const t = await getT();
   const base = `/e/${data.event.slug}`;
   const days = eventDays(data.sessions);
@@ -48,68 +51,73 @@ export async function Schedule({ data, day, track }: Props) {
     .filter((s) => istDateKey(s.startsAt) === day && (!track || s.trackId === track))
     .sort((a, b) => a.startsAt.localeCompare(b.startsAt) || a.title.localeCompare(b.title));
 
+  // Filter pills. The active fill is a separate span that glides to the new pill when the filter
+  // changes (a view transition on the navigation); without support it simply moves.
   const pill = (active: boolean) =>
     cn(
-      "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap md:min-h-9",
-      active
-        ? "border-curtain bg-curtain-soft text-curtain-soft-fg"
-        : "border-border-strong bg-surface text-fg hover:bg-surface-sunken",
+      "press relative isolate inline-flex min-h-11 items-center rounded-full border-[1.5px] px-4 text-sm font-medium whitespace-nowrap md:min-h-9",
+      active ? "border-transparent text-on-curtain" : "border-border-strong text-fg hover:bg-surface",
     );
+  const fill = (name: string) => (
+    <SlidingIndicator name={name} className="absolute -inset-[1.5px] -z-10 rounded-full bg-curtain" />
+  );
 
   return (
-    <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-4 flex-col gap-4">
-      <h2 id="schedule-title" className="text-2xl font-semibold">
+    <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-20 flex-col gap-8">
+      <SectionHead cue={cue} id="schedule-title">
         {t("event.scheduleTitle")}
-      </h2>
+      </SectionHead>
 
-      <nav aria-label={t("event.dayNav")}>
-        <ul className="flex gap-2 overflow-x-auto pb-1">
-          {days.map((d) => {
-            const first = data.sessions.find((s) => istDateKey(s.startsAt) === d);
-            const active = d === day;
-            return (
-              <li key={d}>
-                <Link
-                  href={href(d, track)}
-                  aria-current={active ? "true" : undefined}
-                  className={pill(active)}
-                >
-                  {active ? <Check aria-hidden className="size-4" /> : null}
-                  {first ? formatDayShort(first.startsAt) : d}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      {data.tracks.length ? (
-        <nav aria-label={t("event.trackFilter")}>
-          <ul className="flex flex-wrap gap-2">
-            {[null, ...data.tracks.map((tr) => tr.id)].map((id) => {
-              const active = id === track;
+      <div className="flex flex-col gap-3">
+        <nav aria-label={t("event.dayNav")}>
+          <ul className="flex gap-2 overflow-x-auto pb-1">
+            {days.map((d) => {
+              const first = data.sessions.find((s) => istDateKey(s.startsAt) === d);
+              const active = d === day;
               return (
-                <li key={id ?? "all"}>
+                <li key={d}>
                   <Link
-                    href={href(day, id)}
+                    href={href(d, track)}
                     aria-current={active ? "true" : undefined}
                     className={pill(active)}
                   >
-                    {active ? <Check aria-hidden className="size-4" /> : null}
-                    {id ? tracks.get(id)?.name : t("event.allTracks")}
+                    {active ? fill("schedule-day") : null}
+                    {first ? formatDayShort(first.startsAt) : d}
                   </Link>
                 </li>
               );
             })}
           </ul>
         </nav>
-      ) : null}
+
+        {data.tracks.length ? (
+          <nav aria-label={t("event.trackFilter")}>
+            <ul className="flex flex-wrap gap-2">
+              {[null, ...data.tracks.map((tr) => tr.id)].map((id) => {
+                const active = id === track;
+                return (
+                  <li key={id ?? "all"}>
+                    <Link
+                      href={href(day, id)}
+                      aria-current={active ? "true" : undefined}
+                      className={pill(active)}
+                    >
+                      {active ? fill("schedule-track") : null}
+                      {id ? tracks.get(id)?.name : t("event.allTracks")}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        ) : null}
+      </div>
 
       {sessions.length === 0 ? (
         <EmptyState title={t("event.noSessions")} />
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
-          {sessions.map((s) => {
+        <ul className="grid gap-4 md:grid-cols-2 md:gap-6">
+          {sessions.map((s, i) => {
             const room = rooms.get(s.roomId);
             const tr = s.trackId ? tracks.get(s.trackId) : undefined;
             const names = s.speakerIds.map((id) => speakers.get(id)?.name).filter(Boolean);
@@ -119,22 +127,27 @@ export async function Schedule({ data, day, track }: Props) {
             const titleId = `session-${s.id}`;
             const hintId = `${titleId}-hint`;
             return (
-              <li key={s.id}>
+              <Reveal as="li" key={s.id} index={i % 2}>
                 <article
                   aria-labelledby={titleId}
                   className={cn(
-                    "flex h-full flex-col gap-3 rounded-card border bg-surface p-4",
+                    "spot spot-edge lift flex h-full flex-col gap-3 rounded-card border bg-surface p-5 depth-2 md:p-6",
                     s.status === "delayed" ? "border-pending" : "border-border",
+                    (s.status === "done" || s.status === "cancelled") && "bg-surface/60",
                   )}
                 >
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <TimeRange start={s.startsAt} end={s.endsAt} className="font-semibold" />
+                    <TimeRange
+                      start={s.startsAt}
+                      end={s.endsAt}
+                      className="font-mono text-xs font-medium tracking-[0.04em] text-curtain-text tabular-nums"
+                    />
                     <Badge tone="outline">{t(`event.sessionKind.${s.kind}`)}</Badge>
                     {tone ? <Badge tone={tone}>{t(`event.sessionStatus.${s.status}`)}</Badge> : null}
                   </div>
                   <h3
                     id={titleId}
-                    className={cn("text-lg font-semibold", s.status === "cancelled" && "line-through")}
+                    className={cn("text-xl text-balance", s.status === "cancelled" && "line-through")}
                   >
                     {s.title}
                   </h3>
@@ -164,8 +177,8 @@ export async function Schedule({ data, day, track }: Props) {
                       </li>
                     ) : null}
                   </ul>
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
-                    <p className="text-sm text-fg-muted">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4">
+                    <p className="font-mono text-xs text-fg-muted tabular-nums">
                       {t("event.seatsSession", { registered: s.registeredCount, capacity: s.capacity })}
                       {full ? (
                         <Badge tone="pending" className="ml-2">
@@ -190,7 +203,7 @@ export async function Schedule({ data, day, track }: Props) {
                     ) : null}
                   </div>
                 </article>
-              </li>
+              </Reveal>
             );
           })}
         </ul>

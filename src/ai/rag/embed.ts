@@ -12,7 +12,11 @@ let extractor: Promise<FeatureExtractionPipeline> | undefined;
 
 export async function embed(texts: string[], opts: { query?: boolean } = {}): Promise<number[][]> {
   if (!texts.length) return [];
-  extractor ??= pipeline("feature-extraction", EMBED_MODEL, { dtype: "q8" });
+  // A failed load is not kept, so one bad start does not leave the process without retrieval until a restart.
+  extractor ??= pipeline("feature-extraction", EMBED_MODEL, { dtype: "q8" }).catch((err: unknown) => {
+    extractor = undefined;
+    throw err;
+  });
   const fe = await extractor;
   const input = opts.query ? texts.map((t) => QUERY_PREFIX + t) : texts;
   const out = await fe(input, { pooling: "cls", normalize: true });

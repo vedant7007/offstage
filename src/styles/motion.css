@@ -1,0 +1,405 @@
+/*
+ * Premium kit motion: the CSS half of src/components/ui/motion. Transforms and opacity only.
+ * Every rule here goes still under prefers-reduced-motion (the global rule in theme.css plus the
+ * explicit overrides at the bottom of this file).
+ */
+
+/* In the components layer, so a Tailwind utility on the same element (absolute, opacity-50) wins. */
+@layer components {
+  /* ---------- Reveal: fade or rise once on enter (one shared IntersectionObserver) ---------- */
+  [data-reveal] {
+    transition:
+      opacity var(--duration-slower) var(--ease-out-expo),
+      translate var(--duration-slower) var(--ease-out-expo),
+      scale var(--duration-slower) var(--ease-out-expo);
+    transition-delay: calc(var(--reveal-delay, 0ms) + min(var(--i, 0), 8) * var(--stagger));
+  }
+  /* Hidden only when scripts run, so content is never invisible without JS */
+  @media (scripting: enabled) {
+    [data-reveal]:not([data-in]) {
+      opacity: 0;
+    }
+    /* Failsafe: if hydration is slow or fails, show everything after 1 s anyway. Once hydrated, the
+       observer arms the element (data-armed) and takes over; observe.ts keeps already shown ones shown. */
+    [data-reveal]:not([data-in], [data-armed]),
+    [data-text-reveal]:not([data-in], [data-armed]) .tr-inner {
+      animation: reveal-failsafe var(--duration-slow) var(--ease-out) 1s forwards;
+    }
+    [data-reveal="rise"]:not([data-in]) {
+      translate: 0 12px;
+    }
+    [data-reveal="scale"]:not([data-in]) {
+      scale: 0.97;
+    }
+  }
+
+  @keyframes reveal-failsafe {
+    to {
+      opacity: 1;
+      translate: none;
+      scale: none;
+      filter: none;
+    }
+  }
+
+  /* ---------- TextReveal: words rise out of a mask, 30 ms apart ---------- */
+  .tr-word {
+    display: inline-block;
+    overflow: clip;
+    padding-block: 0.12em;
+    margin-block: -0.12em;
+    vertical-align: top;
+  }
+  :lang(hi):not(:lang(hi-Latn)) .tr-word {
+    padding-block: 0.2em;
+    margin-block: -0.2em;
+  }
+  .tr-inner {
+    display: inline-block;
+    transition: translate var(--duration-reveal) var(--ease-out-expo);
+    transition-delay: calc(var(--w, 0) * 30ms);
+  }
+  [data-text-reveal="blur"] .tr-inner {
+    transition-property: translate, opacity, filter;
+  }
+  @media (scripting: enabled) {
+    [data-text-reveal]:not([data-in]) .tr-inner {
+      translate: 0 105%;
+    }
+    [data-text-reveal="blur"]:not([data-in]) .tr-inner {
+      opacity: 0;
+      filter: blur(6px);
+    }
+  }
+
+  /* ---------- Magnetic pull (PointerFx writes --tx and --ty while the mouse is over it) ---------- */
+  [data-magnetic] {
+    translate: var(--tx) var(--ty);
+  }
+  [data-magnetic]:not(.press) {
+    transition: translate var(--mag-duration, 400ms) var(--mag-ease, var(--spring-snappy));
+  }
+  [data-magnetic][data-fx-active] {
+    --mag-duration: var(--duration-fast);
+    --mag-ease: var(--ease-out);
+    will-change: translate;
+  }
+
+  /* ---------- Tilt: a pass that leans toward the cursor, with a soft glare ---------- */
+  [data-tilt] {
+    position: relative;
+    isolation: isolate;
+    transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    transition: transform 600ms var(--spring-soft);
+  }
+  [data-tilt][data-fx-active] {
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-out);
+    will-change: transform;
+  }
+  [data-tilt]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    mix-blend-mode: soft-light;
+    background: radial-gradient(
+      circle at var(--gx, 50%) var(--gy, 0%),
+      rgb(255 255 255 / 0.22),
+      transparent 55%
+    );
+    transition: opacity var(--duration-slow) var(--ease-out);
+  }
+  [data-tilt][data-fx-active]::after {
+    opacity: 1;
+  }
+  /* Touch: no tilt, one diagonal sheen sweep on first view instead */
+  @media (hover: none) {
+    [data-tilt]::after {
+      opacity: 1;
+      mix-blend-mode: normal;
+      background: linear-gradient(115deg, transparent 35%, rgb(255 255 255 / 0.18) 50%, transparent 65%) 100%
+        0 / 300% 100% no-repeat;
+      animation: tilt-sheen 1.2s var(--ease-in-out) 400ms 1 both;
+    }
+  }
+  @keyframes tilt-sheen {
+    to {
+      background-position: 0 0;
+      opacity: 0;
+    }
+  }
+
+  /* ---------- NumberTicker roll: each digit is a 0 to 9 column that slides ---------- */
+  .ticker-col {
+    display: inline-block;
+    height: 1lh;
+    overflow: clip;
+    vertical-align: top;
+  }
+  .ticker-strip {
+    display: flex;
+    flex-direction: column;
+    translate: 0 calc(var(--d, 0) * -10%);
+    transition: translate 500ms var(--spring-snappy);
+  }
+
+  /* ---------- LivePulse: a dot with an expanding ring. Always paired with the word "Live". ---------- */
+  .live-pulse {
+    position: relative;
+    display: inline-block;
+    width: 0.5rem;
+    height: 0.5rem;
+    flex-shrink: 0;
+    border-radius: 999px;
+    background: currentColor;
+  }
+  .live-pulse::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: currentColor;
+    animation: live-pulse 1.6s var(--ease-out) infinite;
+  }
+  @keyframes live-pulse {
+    from {
+      scale: 1;
+      opacity: 0.6;
+    }
+    to {
+      scale: 2.4;
+      opacity: 0;
+    }
+  }
+
+  /* ---------- ConfirmBurst: 8 (or 4) rays from the centre, once ---------- */
+  .burst {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    pointer-events: none;
+    color: var(--approved);
+  }
+  .burst-ray {
+    grid-area: 1 / 1;
+    width: 2px;
+    height: 0.625rem;
+    border-radius: 999px;
+    background: currentColor;
+    rotate: calc(var(--r) * 1deg);
+    transform-origin: 50% 50%;
+    animation: burst-ray 420ms var(--ease-out-expo) both;
+  }
+  @keyframes burst-ray {
+    from {
+      transform: translateY(-0.5rem) scaleY(0);
+      opacity: 1;
+    }
+    to {
+      transform: translateY(-1.75rem) scaleY(1);
+      opacity: 0;
+    }
+  }
+
+  /* ---------- Skeleton: shimmer band, and nothing at all for fast loads under 300 ms ---------- */
+  [data-slot="skeleton"] {
+    position: relative;
+    overflow: hidden;
+    animation: skeleton-in var(--duration-base) var(--ease-out) 300ms both;
+  }
+  [data-slot="skeleton"]::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    translate: -100% 0;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      color-mix(in srgb, var(--fg) 6%, transparent),
+      transparent
+    );
+    animation: skeleton-shimmer 1.4s linear infinite;
+  }
+  @keyframes skeleton-in {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes skeleton-shimmer {
+    to {
+      translate: 100% 0;
+    }
+  }
+
+  /* ---------- View transitions (React <ViewTransition>, see transitions.tsx) ---------- */
+  ::view-transition {
+    pointer-events: none;
+  }
+
+  /* Page crossfade: exit fast, enter a touch later and slower */
+  ::view-transition-old(.page) {
+    animation: 120ms var(--ease-in) both vt-out;
+  }
+  ::view-transition-new(.page) {
+    animation: 240ms var(--ease-out-expo) 60ms both vt-in;
+  }
+  @keyframes vt-out {
+    to {
+      opacity: 0;
+      translate: 0 -4px;
+    }
+  }
+  @keyframes vt-in {
+    from {
+      opacity: 0;
+      translate: 0 8px;
+    }
+  }
+
+  /* Directional navigation: Link transitionTypes={["nav-forward"]} or ["nav-back"] */
+  ::view-transition-old(.nav-forward) {
+    --slide-offset: -60px;
+    animation:
+      150ms var(--ease-in) both vt-fade reverse,
+      400ms var(--ease-in-out) both vt-slide reverse;
+  }
+  ::view-transition-new(.nav-forward) {
+    --slide-offset: 60px;
+    animation:
+      210ms var(--ease-out) 150ms both vt-fade,
+      400ms var(--ease-in-out) both vt-slide;
+  }
+  ::view-transition-old(.nav-back) {
+    --slide-offset: 60px;
+    animation:
+      150ms var(--ease-in) both vt-fade reverse,
+      400ms var(--ease-in-out) both vt-slide reverse;
+  }
+  ::view-transition-new(.nav-back) {
+    --slide-offset: -60px;
+    animation:
+      210ms var(--ease-out) 150ms both vt-fade,
+      400ms var(--ease-in-out) both vt-slide;
+  }
+  @keyframes vt-fade {
+    from {
+      opacity: 0;
+    }
+  }
+  @keyframes vt-slide {
+    from {
+      translate: var(--slide-offset);
+    }
+  }
+
+  /* Suspense reveal: the skeleton slides down and out, the content slides up and in */
+  ::view-transition-old(.slide-down) {
+    animation:
+      150ms var(--ease-out) both vt-fade reverse,
+      150ms var(--ease-out) both vt-rise reverse;
+  }
+  ::view-transition-new(.slide-up) {
+    animation:
+      210ms var(--ease-out) 150ms both vt-fade,
+      400ms var(--ease-out-expo) both vt-rise;
+  }
+  @keyframes vt-rise {
+    from {
+      translate: 0 10px;
+    }
+  }
+
+  /* Shared element morph, softened mid-flight */
+  ::view-transition-group(.morph) {
+    animation-duration: 400ms;
+    animation-timing-function: var(--ease-in-out);
+  }
+  ::view-transition-image-pair(.morph) {
+    animation-name: vt-via-blur;
+  }
+  @keyframes vt-via-blur {
+    30% {
+      filter: blur(3px);
+    }
+  }
+
+  /* SlidingIndicator: the active pill or underline glides between items */
+  ::view-transition-group(.indicator) {
+    animation-duration: 300ms;
+    animation-timing-function: var(--ease-in-out);
+  }
+
+  /* Anchored chrome (vtAnchor): sidebar, top bar, site header, bottom bar, voice orb never move */
+  :root:not([data-vt="sidebar"])::view-transition-group(.anchor) {
+    animation: none;
+    z-index: 100;
+  }
+  :root:not([data-vt="sidebar"])::view-transition-old(.anchor) {
+    display: none;
+  }
+  :root:not([data-vt="sidebar"])::view-transition-new(.anchor) {
+    animation: none;
+  }
+
+  /* Sidebar collapse (AppShell sets data-vt="sidebar" around one layout change): the sidebar and the
+     main column glide to their new boxes as snapshots. Snapshots keep their natural size and are
+     clipped by their box, so text never stretches; labels are cut off by the narrowing rail. */
+  :root[data-vt="sidebar"] [data-shell-column] {
+    view-transition-name: app-main;
+  }
+  :root[data-vt="sidebar"]::view-transition-group(*) {
+    animation-duration: 300ms;
+    animation-timing-function: var(--ease-in-out);
+  }
+  :root[data-vt="sidebar"]::view-transition-group(app-sidebar),
+  :root[data-vt="sidebar"]::view-transition-group(app-main),
+  :root[data-vt="sidebar"]::view-transition-group(app-topbar) {
+    overflow: clip;
+  }
+  :root[data-vt="sidebar"]::view-transition-group(app-sidebar) {
+    z-index: 2;
+  }
+  :root[data-vt="sidebar"]::view-transition-group(app-topbar) {
+    z-index: 1;
+  }
+  :root[data-vt="sidebar"]::view-transition-old(*),
+  :root[data-vt="sidebar"]::view-transition-new(*) {
+    inline-size: auto;
+    block-size: auto;
+    animation-duration: 200ms;
+  }
+
+  /* ---------- Reduced motion: everything visible and still ---------- */
+  @media (prefers-reduced-motion: reduce) {
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation-duration: 0s !important;
+      animation-delay: 0s !important;
+    }
+    [data-reveal],
+    [data-text-reveal] .tr-inner {
+      opacity: 1 !important;
+      translate: none !important;
+      scale: none !important;
+      filter: none !important;
+    }
+    [data-magnetic] {
+      translate: none;
+    }
+    [data-tilt] {
+      transform: none;
+    }
+    [data-tilt]::after,
+    .live-pulse::after,
+    .burst,
+    [data-slot="skeleton"]::after {
+      display: none;
+    }
+  }
+}

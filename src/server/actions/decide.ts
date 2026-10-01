@@ -7,6 +7,7 @@ import { ActionPayloads, type ActionKind, type ActionProposal, type UserActor } 
 import { db as defaultDb, type Db } from "@/db/client";
 import * as t from "@/db/schema";
 import { nowUtc } from "@/lib/time";
+import { demoModeOn } from "@/server/auth/personas";
 import { requirePermission } from "@/server/authz";
 import { publish } from "@/server/events/bus";
 import { HttpError, notFound } from "@/server/http";
@@ -89,7 +90,8 @@ export async function approve(
     await tx
       .insert(t.proposalApprovals)
       .values({ eventId: row.eventId, proposalId: row.id, userId: actor.userId, role: actor.role, diffHash });
-    const done = count >= row.requiredApprovals;
+    // DEMO_MODE only: the event head's approval is final, so one click runs the plan on stage.
+    const done = count >= row.requiredApprovals || (demoModeOn() && actor.role === "owner");
     if (done) {
       await tx.update(t.proposals).set({ status: "approved" }).where(eq(t.proposals.id, row.id));
       await tx.update(t.proposals).set({ status: "approved" }).where(eq(t.proposals.parentId, row.id));

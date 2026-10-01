@@ -26,7 +26,7 @@ for (const [label, path] of [
   }
 }
 
-test("shows now and next for every room, with the helpdesk link", async ({ page }) => {
+test("shows now and next for every room, with the helpdesk link", async ({ page, isMobile }) => {
   await page.goto(STATUS);
   for (const room of ["Main Auditorium", "Lab 204", "Lab 101", "Seminar Hall 3"]) {
     await expect(page.getByRole("heading", { name: room })).toBeVisible();
@@ -35,7 +35,9 @@ test("shows now and next for every room, with the helpdesk link", async ({ page 
   await expect(lab204).toContainText("Workshop: Fine-tuning small language models");
   await expect(page.getByRole("status")).toHaveText("Live");
   await expect(page.getByRole("link", { name: "Ask the helpdesk" })).toHaveAttribute("href", "/me/chat");
-  await expect(page.getByRole("link", { name: "Projector view" })).toBeVisible();
+  // A projector is driven from a laptop, so the link is hidden on phones.
+  const projector = page.getByRole("link", { name: "Projector view" });
+  await (isMobile ? expect(projector).toBeHidden() : expect(projector).toBeVisible());
 });
 
 test("projector view has no chrome and prints the helpdesk address", async ({ page }) => {

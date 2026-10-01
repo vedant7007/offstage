@@ -35,7 +35,7 @@ test("drafted announcements carry the drafted-by label", async ({ page }) => {
   await page.goto(EVENT);
   const updates = page.getByRole("region", { name: "Live updates" });
   await expect(
-    updates.getByText("Drafted by Sutradhar, approved by", { exact: false }).first(),
+    updates.getByText("Drafted by the OFFSTAGE assistant, approved by", { exact: false }).first(),
   ).toBeVisible();
 });
 
@@ -58,7 +58,9 @@ test("day and track filters narrow the schedule", async ({ page }) => {
 });
 
 test.describe("with JavaScript turned off", () => {
-  test.use({ javaScriptEnabled: false });
+  // Reduced motion also turns off the cross-document crossfade: headless Chromium in CI can leave a
+  // full-page view transition hanging, and every click then lands on <html>.
+  test.use({ javaScriptEnabled: false, reducedMotion: "reduce" });
   test("the schedule, filters and FAQ still work", async ({ page }) => {
     await page.goto(EVENT);
     const schedule = page.locator("#schedule");

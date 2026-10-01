@@ -1,14 +1,7 @@
 import { CalendarClock, DoorOpen, FileText, Megaphone, UserRound, Users } from "lucide-react";
 import type { Ripple, ScheduleOption } from "@/contracts";
 import { Badge, Card, CardContent, CardHeader, CardTitle, InfoChip } from "@/components/ui";
-
-const CHANNEL: Record<string, string> = {
-  in_app: "In app",
-  email: "Email",
-  telegram: "Telegram",
-  whatsapp: "WhatsApp",
-  sms: "SMS",
-};
+import { channelName, sentence } from "./text";
 
 const METRIC: Record<string, string> = {
   movedSessions: "Sessions moved",
@@ -32,8 +25,11 @@ function Group({
   children: React.ReactNode;
 }) {
   return (
-    <section aria-label={title} className="flex flex-col gap-2">
-      <h3 className="flex items-center gap-2 text-sm font-semibold [&_svg]:size-4 [&_svg]:text-fg-muted">
+    <section
+      aria-label={title}
+      className="flex flex-col gap-3 rounded-card border border-border bg-surface p-4 depth-2"
+    >
+      <h3 className="flex items-center gap-2 text-sm font-medium [&_svg]:size-4 [&_svg]:text-curtain-text">
         {icon}
         {title}
         <Badge tone="neutral">{count}</Badge>
@@ -50,7 +46,7 @@ export function RippleView({ ripple }: { ripple: Ripple }) {
       <Group icon={<CalendarClock aria-hidden />} title="Sessions" count={ripple.sessions.length}>
         <ul className="flex flex-col gap-1.5">
           {ripple.sessions.map((s) => (
-            <li key={s.id} className="rounded-control border border-border p-2.5">
+            <li key={s.id} className="rounded-[10px] border border-border bg-surface-raised p-2.5">
               <p className="font-medium">{s.title}</p>
               <p className="text-sm text-fg-muted">{s.change}</p>
             </li>
@@ -99,7 +95,7 @@ export function RippleView({ ripple }: { ripple: Ripple }) {
               </span>
               {a.channels.map((c) => (
                 <InfoChip key={c} tone="outline">
-                  {CHANNEL[c] ?? c}
+                  {channelName(c)}
                 </InfoChip>
               ))}
             </li>
@@ -141,9 +137,15 @@ export function OptionCards({ options }: { options: ScheduleOption[] }) {
     <ul className="grid gap-3 md:grid-cols-3">
       {options.map((o) => (
         <li key={o.id}>
-          <Card className={o.chosen ? "border-2 border-curtain" : undefined}>
+          <Card
+            className={
+              o.chosen
+                ? "h-full border-curtain shadow-[0_0_0_1px_var(--curtain),var(--shadow-card)]"
+                : "h-full"
+            }
+          >
             <CardHeader>
-              <CardTitle className="text-base">{o.label}</CardTitle>
+              <CardTitle className="text-base">{sentence(o.label)}</CardTitle>
               {o.chosen ? <Badge tone="approved">Proposed</Badge> : <Badge tone="neutral">Considered</Badge>}
             </CardHeader>
             <CardContent>
@@ -151,7 +153,7 @@ export function OptionCards({ options }: { options: ScheduleOption[] }) {
                 {Object.entries(o.metrics).map(([k, v]) => (
                   <div key={k} className="contents">
                     <dt className="text-fg-muted">{METRIC[k] ?? k}</dt>
-                    <dd className="text-right tabular-nums">{v}</dd>
+                    <dd className="text-right font-mono tabular-nums">{v}</dd>
                   </div>
                 ))}
               </dl>

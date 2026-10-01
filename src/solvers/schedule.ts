@@ -288,8 +288,11 @@ export function replanOptions(state: ScheduleState, change: Change, k: Constrain
     if (!s) return [];
     const notBefore =
       change.type === "delay" ? ms(s.startsAt) + change.minutes * 60_000 : ms(change.notBefore ?? s.startsAt);
-    for (const slot of findSlots(state, s, k, notBefore))
-      candidates.push({ label: moveLabel(slot), actions: [slot] });
+    for (const slot of findSlots(state, s, k, notBefore)) {
+      const label = moveLabel(slot);
+      // Standalone option: starts a sentence, so it is capitalised (inside other labels it stays lowercase).
+      candidates.push({ label: label.charAt(0).toUpperCase() + label.slice(1), actions: [slot] });
+    }
     if (change.type === "delay") {
       // Shift the room's following sessions by the same minutes, as one option.
       const chain = state.sessions

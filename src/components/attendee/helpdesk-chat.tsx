@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Info, LifeBuoy, Send } from "lucide-react";
+import { LifeBuoy, Send, ShieldCheck } from "lucide-react";
 import type { ChatResult, ChatStreamChunk, Citation } from "@/contracts";
 import { AgentAvatar, Alert, Chip, CitationChip, IconButton, LanguageSwitcher } from "@/components/ui";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
@@ -13,7 +13,15 @@ export type KnownPassages = Record<string, { docTitle: string; section: string; 
 
 type Message =
   | { id: string; role: "user"; text: string }
-  | { id: string; role: "assistant"; text: string; result?: ChatResult; failed?: boolean };
+  | {
+      id: string;
+      role: "assistant";
+      text: string;
+      /** Streamed chunks while the answer arrives, so each new one can fade in. Gone once done. */
+      parts?: string[];
+      result?: ChatResult;
+      failed?: boolean;
+    };
 
 type Props = {
   suggestions: string[];
@@ -39,6 +47,8 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  /** True once a question has waited 8 s, so the wait reads as expected rather than stuck. */
+  const [slow, setSlow] = React.useState(false);
   const conversationId = React.useRef<string | undefined>(undefined);
   const endRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
@@ -47,19 +57,30 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
     endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages]);
 
+  React.useEffect(() => {
+    if (!busy) return;
+    const timer = setTimeout(() => setSlow(true), 8000);
+    return () => {
+      clearTimeout(timer);
+      setSlow(false);
+    };
+  }, [busy]);
+
   const patch = (id: string, change: Partial<Extract<Message, { role: "assistant" }>>) =>
     setMessages((all) => all.map((m) => (m.id === id && m.role === "assistant" ? { ...m, ...change } : m)));
 
   const stream = async (client: ReturnType<typeof createApiClient>, message: string, id: string) => {
     let text = "";
+    const parts: string[] = [];
     const body = { message, conversationId: conversationId.current, language: locale };
     for await (const chunk of client.chat(body) as AsyncGenerator<ChatStreamChunk>) {
       if (chunk.type === "delta") {
         text += chunk.text;
-        patch(id, { text });
+        parts.push(chunk.text);
+        patch(id, { text, parts: [...parts] });
       } else if (chunk.type === "done") {
         conversationId.current = chunk.result.conversationId;
-        patch(id, { text: chunk.result.answer.answer, result: chunk.result });
+        patch(id, { text: chunk.result.answer.answer, parts: undefined, result: chunk.result });
       } else {
         patch(id, { failed: true });
       }
@@ -97,58 +118,100 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
     }
   };
 
-  const citationChip = (c: Citation) => {
+  // Sources pop in one after another with a small spring once the answer is done.
+  const citationChip = (c: Citation, i: number) => {
     const known = passages[c.ref];
     return (
-      <CitationChip
+      <span
         key={c.ref}
-        document={known?.docTitle ?? c.label}
-        section={known?.section}
-        snippet={known?.snippet}
-      />
+        style={{ transitionDelay: `${Math.min(i, 8) * 60}ms` }}
+        className="inline-flex max-w-full motion-safe:transition-[scale,opacity] motion-safe:duration-400 motion-safe:ease-spring motion-safe:starting:scale-90 motion-safe:starting:opacity-0"
+      >
+        <CitationChip
+          document={known?.docTitle ?? c.label}
+          section={known?.section}
+          snippet={known?.snippet}
+          className="rounded-full px-3.5 font-mono text-xs"
+        />
+      </span>
     );
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="flex max-w-prose items-start gap-2 text-sm text-fg-muted">
-          <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
-          {t("chat.honest")}
-        </p>
-        <LanguageSwitcher />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="flex flex-1 items-start gap-3 rounded-card border border-border bg-surface p-4 depth-1">
+          <span
+            aria-hidden
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-curtain text-on-curtain [&_svg]:size-4"
+          >
+            <ShieldCheck />
+          </span>
+          <p className="text-sm text-fg-muted">{t("chat.honest")}</p>
+        </div>
+        {/* The top bar has the language menu from sm up; phones get it here. */}
+        <LanguageSwitcher className="self-start sm:hidden" />
       </div>
       {demo ? <Alert variant="info" title={t("chat.demo")} /> : null}
 
       <div role="log" aria-live="polite" aria-label={t("chat.title")} className="flex flex-col gap-4">
         {messages.map((m) =>
           m.role === "user" ? (
-            <div key={m.id} className="flex justify-end">
-              <p className="max-w-[85%] rounded-card rounded-br-sm bg-curtain px-4 py-2.5 text-on-curtain">
+            <div
+              key={m.id}
+              className="flex justify-end motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300"
+            >
+              <p className="max-w-[85%] rounded-card rounded-br-md bg-curtain px-4 py-2.5 text-on-curtain shadow-card">
                 <span className="sr-only">{t("chat.you")}: </span>
                 {m.text}
               </p>
             </div>
           ) : (
-            <div key={m.id} className="flex items-start gap-2">
+            <div
+              key={m.id}
+              className="flex items-start gap-2 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300"
+            >
               <AgentAvatar agent="helpdesk" size="sm" className="mt-1" />
               <div
                 className={cn(
-                  "flex max-w-[85%] flex-col gap-2 rounded-card rounded-tl-sm border bg-surface px-4 py-3",
+                  "flex max-w-[85%] flex-col gap-3 rounded-card rounded-tl-md border bg-surface-raised px-4 py-3 text-fg depth-2",
                   m.result?.escalationId ? "border-pending" : "border-border",
                 )}
               >
                 <span className="sr-only">{t("chat.assistant")}: </span>
                 {m.failed ? (
                   <p className="text-danger-text">{t("chat.error")}</p>
+                ) : m.parts?.length ? (
+                  // Each streamed chunk fades in on arrival; no per-letter effects.
+                  <p className="whitespace-pre-line">
+                    {m.parts.map((part, i) => (
+                      <span
+                        key={i}
+                        className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+                      >
+                        {part}
+                      </span>
+                    ))}
+                  </p>
                 ) : m.text ? (
                   <p className="whitespace-pre-line">{m.text}</p>
                 ) : (
-                  <p className="text-fg-muted">{t("chat.thinking")}</p>
+                  <p className="flex items-center gap-2 text-fg-muted">
+                    <span aria-hidden className="flex gap-1">
+                      {[0, 150, 300].map((d) => (
+                        <span
+                          key={d}
+                          style={{ animationDelay: `${d}ms` }}
+                          className="size-1.5 rounded-full bg-current motion-safe:animate-pulse"
+                        />
+                      ))}
+                    </span>
+                    {slow ? t("chat.slow") : t("chat.thinking")}
+                  </p>
                 )}
                 {m.result?.blocked ? <p className="text-sm text-fg-muted">{t("chat.blockedHint")}</p> : null}
                 {m.result?.escalationId ? (
-                  <div className="flex items-start gap-2 rounded-control bg-pending-soft px-3 py-2 text-sm text-pending-soft-fg">
+                  <div className="flex items-start gap-2 rounded-[0.75rem] border border-pending/30 bg-pending-soft/60 px-3 py-2.5 text-sm text-pending-soft-fg">
                     <LifeBuoy aria-hidden className="mt-0.5 size-4 shrink-0" />
                     <p>
                       {t("chat.escalated")}{" "}
@@ -160,14 +223,18 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
                 ) : null}
                 {m.result && m.result.answer.citations.length ? (
                   <div className="flex flex-col gap-1.5">
-                    <p className="text-xs font-semibold tracking-wide text-fg-muted uppercase">
-                      {t("chat.sources")}
-                    </p>
+                    <p className="kicker text-fg-muted">{t("chat.sources")}</p>
                     <div className="flex flex-wrap gap-2">{m.result.answer.citations.map(citationChip)}</div>
                   </div>
                 ) : null}
-                {m.result && !m.result.blocked ? (
-                  <p className="text-xs text-fg-muted">{t("chat.answeredBy")}</p>
+                {/* Only a cited answer came from the documents; an escalation or a refusal did not. */}
+                {m.result &&
+                m.result.answer.citations.length > 0 &&
+                !m.result.escalationId &&
+                !m.result.blocked ? (
+                  <p className="border-t border-border pt-2 font-mono text-xs text-fg-muted">
+                    {t("chat.answeredBy")}
+                  </p>
                 ) : null}
               </div>
             </div>
@@ -178,10 +245,15 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
 
       {suggestions.length && messages.length === 0 ? (
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">{t("chat.suggestions")}</p>
+          <p className="kicker text-fg-muted">{t("chat.suggestions")}</p>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((q) => (
-              <Chip key={q} onClick={() => void ask(q)} disabled={busy}>
+              <Chip
+                key={q}
+                onClick={() => void ask(q)}
+                disabled={busy}
+                className="h-auto py-2 text-left whitespace-normal"
+              >
                 {q}
               </Chip>
             ))}
@@ -194,7 +266,7 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
           e.preventDefault();
           void ask(input);
         }}
-        className="sticky bottom-20 flex items-end gap-2 rounded-card border border-border-strong bg-surface p-2 md:bottom-4"
+        className="sticky bottom-20 flex items-end gap-2 rounded-[1.75rem] border border-border-strong bg-surface-raised p-1.5 pl-3 depth-3 transition-colors duration-200 ease-out focus-within:border-fg md:bottom-4"
       >
         <label htmlFor="chat-input" className="sr-only">
           {t("chat.label")}

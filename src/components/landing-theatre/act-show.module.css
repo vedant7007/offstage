@@ -1,0 +1,686 @@
+/*
+ * Cue 04, the live ops board. Tokens (--ink, --lime, --mono...) come from the theatre root.
+ * Film defaults below are the dp = 0 state; updateShow writes the rest. .still is the finished
+ * board for reduced motion and overrides anything the frame loop left inline.
+ */
+
+.stage {
+  justify-content: flex-start;
+}
+
+.backdrop {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(48% 44% at 30% 60%, color-mix(in srgb, var(--blue) 24%, transparent), transparent 72%),
+    radial-gradient(
+        circle at 1px 1px,
+        color-mix(in srgb, var(--paper) 10%, transparent) 1px,
+        transparent 1.6px
+      )
+      0 0 / 28px 28px;
+  mask-image: linear-gradient(transparent, #000 16%, #000 84%, transparent);
+}
+
+.mono {
+  font-family: var(--mono);
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.board {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-areas:
+    "head clock"
+    "graph log"
+    "stats log";
+  gap: clamp(0.75rem, 2.6vh, 1.75rem) clamp(1.5rem, 4vw, 4rem);
+}
+
+/* ----- head and clock ----- */
+
+.head {
+  grid-area: head;
+  align-self: end;
+}
+
+.head h2 {
+  margin-bottom: 0;
+}
+
+.clockBox {
+  grid-area: clock;
+  justify-self: end;
+  align-self: end;
+  width: min(100%, 24rem);
+  text-align: right;
+}
+
+.boardLabel {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  font-size: 0.6875rem;
+  color: color-mix(in srgb, var(--paper) 72%, var(--ink));
+}
+
+.liveDot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 10px var(--red);
+  animation: live 1.6s var(--ease) infinite paused;
+}
+
+section[data-on] .liveDot {
+  animation-play-state: running;
+}
+
+@keyframes live {
+  50% {
+    opacity: 0.25;
+  }
+}
+
+.clock {
+  display: flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  gap: 0.6rem;
+  margin-top: 0.4rem;
+}
+
+.clockTime {
+  font: 500 clamp(3rem, min(8vw, 12vh), 6.5rem) / 0.9 var(--mono);
+  letter-spacing: -0.05em;
+  color: var(--white);
+  font-variant-numeric: tabular-nums;
+}
+
+.clockPm {
+  font-size: clamp(0.875rem, 1.4vw, 1.25rem);
+  color: var(--lime);
+}
+
+.track {
+  height: 2px;
+  margin-top: 0.85rem;
+  overflow: hidden;
+  border-radius: 2px;
+  background: color-mix(in srgb, var(--paper) 16%, transparent);
+}
+
+.trackFill {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--red), var(--gold) 55%, var(--lime));
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+.status {
+  display: grid;
+  margin-top: 0.75rem;
+}
+
+.status > * {
+  grid-area: 1 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.55rem;
+  font-size: 0.8125rem;
+}
+
+.status > ::before {
+  content: "";
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.boom {
+  color: var(--red);
+}
+
+.end {
+  color: var(--lime);
+  opacity: 0;
+}
+
+/* ----- graph ----- */
+
+.graphArea {
+  grid-area: graph;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  container-type: size;
+}
+
+.graph {
+  position: relative;
+  width: min(100cqw, 100cqh * 14 / 9);
+  aspect-ratio: 14 / 9;
+}
+
+.wires {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.wire {
+  fill: none;
+  stroke: color-mix(in srgb, var(--blue) 70%, var(--paper));
+  stroke-width: 1.5;
+  stroke-dasharray: 3 5;
+  opacity: 0.3;
+}
+
+.wireRed {
+  stroke: var(--red);
+}
+
+.pulse {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+  stroke-dasharray: 0.16 2;
+  stroke-dashoffset: 0.16;
+  opacity: 0;
+}
+
+.pulseRed {
+  stroke: var(--red);
+}
+
+.ring {
+  position: absolute;
+  width: clamp(4rem, 9vw, 6.5rem);
+  aspect-ratio: 1;
+  border: 1.5px solid var(--lime);
+  border-radius: 50%;
+  transform: translate(-50%, -50%) scale(0.6);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.node {
+  position: absolute;
+  padding: 0.45rem 0.8rem;
+  border: 1.5px solid color-mix(in srgb, var(--blue) 55%, transparent);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--ink) 86%, var(--blue-dark));
+  color: var(--paper-2);
+  font: 500 clamp(0.625rem, 0.95vw, 0.75rem) / 1.1 var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translate(-50%, -50%) scale(calc(1 + 0.07 * var(--hot, 0)));
+  opacity: 0.42;
+}
+
+.node::after {
+  content: "";
+  position: absolute;
+  inset: -1.5px;
+  border: 1.5px solid var(--lime);
+  border-radius: inherit;
+  box-shadow: 0 0 26px color-mix(in srgb, var(--lime) 45%, transparent);
+  opacity: var(--hot, 0);
+}
+
+.nodeCore {
+  z-index: 2;
+  padding: 0.75rem 1.15rem;
+  border-color: color-mix(in srgb, var(--lime) 70%, transparent);
+  background: var(--blue-dark);
+  color: var(--white);
+  font-size: clamp(0.75rem, 1.15vw, 0.9375rem);
+  box-shadow: 0 0 60px color-mix(in srgb, var(--blue) 55%, transparent);
+}
+
+.nodeInput {
+  border-color: color-mix(in srgb, var(--red) 70%, transparent);
+  color: var(--red);
+}
+
+.nodeInput::after {
+  border-color: var(--red);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--red) 50%, transparent);
+}
+
+.gate {
+  position: absolute;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.6rem;
+  border: 1px solid var(--gold);
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--gold);
+  font: 500 0.625rem / 1 var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transform: translate(-50%, -50%) translateY(8px);
+  opacity: 0;
+}
+
+.pip {
+  width: 0.55rem;
+  height: 0.55rem;
+  padding: 1px;
+  border: 1px solid var(--gold);
+  border-radius: 2px;
+}
+
+.pipFill {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 1px;
+  background: var(--gold);
+  transform: scale(0);
+}
+
+/* ----- log ----- */
+
+.log {
+  grid-area: log;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  padding-left: clamp(1rem, 2vw, 2rem);
+  border-left: 1px solid color-mix(in srgb, var(--paper) 14%, transparent);
+}
+
+.logH {
+  margin-bottom: 0.6rem;
+  font-size: 0.6875rem;
+  color: color-mix(in srgb, var(--paper) 72%, var(--ink));
+}
+
+.logWin {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+}
+
+.rows {
+  display: grid;
+  gap: 2px;
+}
+
+.row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 2.6rem 7rem minmax(0, 1fr) 1.1rem;
+  align-items: baseline;
+  gap: 0.7rem;
+  padding: clamp(0.3rem, 0.9vh, 0.55rem) 0.75rem;
+  border-radius: 10px;
+  opacity: 0;
+  transform: translateY(10px);
+}
+
+.row::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--lime) 38%, transparent);
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--blue-dark) 40%, transparent);
+  opacity: var(--hot, 0);
+}
+
+.row > * {
+  position: relative;
+}
+
+.rowTime {
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--paper) 70%, var(--ink));
+  font-variant-numeric: tabular-nums;
+}
+
+.tag {
+  justify-self: start;
+  padding: 0.18rem 0.5rem;
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--paper) 10%, transparent);
+  color: var(--paper-2);
+  font-size: 0.625rem;
+  white-space: nowrap;
+}
+
+.tagInput {
+  background: color-mix(in srgb, var(--red) 18%, transparent);
+  color: var(--red);
+}
+
+.tagCmd {
+  background: color-mix(in srgb, var(--lime) 13%, transparent);
+  color: var(--lime);
+}
+
+.tagPolicy {
+  background: color-mix(in srgb, var(--gold) 15%, transparent);
+  color: var(--gold);
+}
+
+.tagHuman {
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.rowText {
+  font-size: clamp(0.875rem, 1.05vw, 1rem);
+  line-height: 1.35;
+  color: var(--paper-2);
+}
+
+.check {
+  align-self: center;
+  width: 1.1rem;
+  height: 1.1rem;
+}
+
+.check path {
+  fill: none;
+  stroke: var(--lime);
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+}
+
+/* ----- impact ----- */
+
+.statsBox {
+  grid-area: stats;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  padding-top: 0.9rem;
+  border-top: 1px solid color-mix(in srgb, var(--paper) 14%, transparent);
+}
+
+.stats li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.statN {
+  font-size: clamp(1.75rem, min(3.6vw, 5.4vh), 3rem);
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  color: var(--lime);
+  font-variant-numeric: tabular-nums;
+}
+
+.statL {
+  font-size: 0.8125rem;
+  line-height: 1.3;
+  color: color-mix(in srgb, var(--paper) 78%, var(--ink));
+}
+
+.caption {
+  margin-top: 0.7rem;
+  font-size: 0.625rem;
+  color: color-mix(in srgb, var(--paper) 66%, var(--ink));
+}
+
+/* ----- narrow: one column, the log becomes a window that follows the newest row ----- */
+
+@media (max-width: 860px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-rows: auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "head clock"
+      "graph graph"
+      "log log"
+      "stats stats";
+    gap: 0.9rem 1.25rem;
+  }
+
+  .log {
+    --row: 3.4rem;
+    --rows-shown: 3;
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .logWin {
+    flex: none;
+    height: calc(var(--row) * var(--rows-shown));
+    overflow: hidden;
+    mask-image: linear-gradient(transparent, #000 0.6rem);
+  }
+
+  .rows {
+    gap: 0;
+    transform: translateY(calc(max(0, var(--shift, 0) - var(--rows-shown)) * var(--row) * -1));
+  }
+
+  .row {
+    height: var(--row);
+    grid-template-columns: 2.6rem auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    align-content: center;
+    gap: 0.25rem 0.6rem;
+    padding-block: 0.35rem;
+  }
+
+  .rowText {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    font-size: 0.875rem;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 1;
+    overflow: hidden;
+  }
+
+  .check {
+    grid-column: 3;
+    grid-row: 1;
+    justify-self: end;
+  }
+}
+
+@media (max-width: 560px) {
+  .board {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto;
+    grid-template-areas:
+      "head"
+      "clock"
+      "graph"
+      "log"
+      "stats";
+    gap: 0.75rem;
+  }
+
+  .clockBox {
+    justify-self: stretch;
+    width: auto;
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: end;
+    column-gap: 1rem;
+    text-align: left;
+  }
+
+  .boardLabel,
+  .track {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .boardLabel {
+    order: -1;
+  }
+
+  .clock {
+    justify-content: flex-start;
+  }
+
+  .clockTime {
+    font-size: 2.6rem;
+  }
+
+  .track {
+    order: 3;
+    margin-top: 0.5rem;
+  }
+
+  .status {
+    margin: 0 0 0.2rem;
+  }
+
+  .status > * {
+    justify-content: flex-start;
+    font-size: 0.6875rem;
+  }
+
+  .log {
+    --row: 4.4rem;
+    --rows-shown: 2;
+  }
+
+  .rowText {
+    -webkit-line-clamp: 2;
+  }
+
+  .stats {
+    gap: 0.5rem;
+    padding-top: 0.7rem;
+  }
+
+  .statN {
+    font-size: 1.75rem;
+  }
+
+  .statL {
+    font-size: 0.6875rem;
+  }
+
+  .node {
+    padding: 0.35rem 0.55rem;
+    font-size: 0.5625rem;
+    letter-spacing: 0.06em;
+  }
+
+  .nodeCore {
+    padding: 0.55rem 0.8rem;
+    font-size: 0.6875rem;
+  }
+}
+
+/* ----- still: the finished board, for reduced motion ----- */
+
+.still {
+  grid-template-rows: auto auto auto;
+}
+
+.still .graphArea {
+  container-type: normal;
+}
+
+.still .graph {
+  width: min(100%, 36rem);
+}
+
+.still .pulse,
+.still .ring {
+  display: none;
+}
+
+.still .liveDot {
+  animation: none;
+}
+
+.still .node {
+  opacity: 1 !important;
+  --hot: 0 !important;
+}
+
+.still .wire {
+  opacity: 0.8 !important;
+}
+
+.still .gate {
+  opacity: 1 !important;
+  transform: translate(-50%, -50%) !important;
+}
+
+.still :is(.pipFill, .trackFill) {
+  transform: none !important;
+}
+
+.still .check path {
+  stroke-dashoffset: 0 !important;
+}
+
+.still .status > * {
+  grid-area: auto;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
+.still .logWin {
+  height: auto;
+  overflow: visible;
+  mask-image: none;
+}
+
+.still .rows {
+  transform: none;
+}
+
+.still .row {
+  height: auto;
+  opacity: 1 !important;
+  transform: none !important;
+  --hot: 0 !important;
+}
+
+.still .rowText {
+  display: block;
+}

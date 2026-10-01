@@ -18,9 +18,11 @@ import {
   EmptyState,
   KeyValueList,
   PageHeader,
-  Skeleton,
+  TierBadge,
   toast,
 } from "@/components/ui";
+import { CountUp, PageSkeleton } from "./fx";
+import { channelName } from "./text";
 
 // Printing (Save as PDF) shows the report alone, without the console around it.
 const PRINT = `@media print {
@@ -34,7 +36,7 @@ function Block({ title, children }: { title: string; children: React.ReactNode }
   return (
     <Card className="break-inside-avoid">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle as="h2">{title}</CardTitle>
       </CardHeader>
       <CardContent>{children}</CardContent>
     </Card>
@@ -50,9 +52,23 @@ export function CloseoutView({ eventId }: { eventId: string }) {
     api.call("closeout", { params: { eventId } }).then(setR, () => setError(true));
   }, [eventId]);
 
-  if (error) return <Alert variant="danger" title="The report could not be loaded." />;
-  if (!r) return <Skeleton className="h-96" />;
+  if (error)
+    return (
+      <Alert variant="danger" title="The report could not be loaded.">
+        Check your connection, then reload the page.
+      </Alert>
+    );
+  if (!r) return <PageSkeleton />;
   const a = r.attendance;
+  const headline = [
+    { label: "Attended", node: <CountUp to={a.attended} /> },
+    { label: "Of confirmed", node: <CountUp to={a.ratePct} format={(n) => `${Math.round(n)}%`} /> },
+    { label: "Helpdesk questions", node: <CountUp to={r.helpdesk.questions} /> },
+    {
+      label: "Proposals carried out",
+      node: <CountUp to={r.approvals.reduce((s, x) => s + x.executed, 0)} />,
+    },
+  ];
   const writeSummary = () => {
     setWriting(true);
     api
@@ -65,6 +81,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
     <div id="closeout" className="flex flex-col gap-4">
       <style>{PRINT}</style>
       <PageHeader
+        eyebrow="Chronicler, close-out"
         title={`Close-out report: ${r.eventName}`}
         description={`Every number is counted from the event's records. As of ${formatDayShort(r.generatedAt)}, ${formatTime(r.generatedAt)}.`}
         actions={
@@ -76,6 +93,18 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           </div>
         }
       />
+
+      <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+        {headline.map((h) => (
+          <div
+            key={h.label}
+            className="flex flex-col-reverse gap-1 rounded-card border border-border bg-surface p-4 depth-2 break-inside-avoid"
+          >
+            <dt className="kicker text-fg-muted">{h.label}</dt>
+            <dd className="font-mono text-4xl font-medium tracking-[-0.02em]">{h.node}</dd>
+          </div>
+        ))}
+      </dl>
 
       <Block title="Summary">
         {r.summary ? (
@@ -89,8 +118,8 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           </div>
         ) : (
           <p className="text-sm text-fg-muted">
-            No summary yet, or the numbers changed since the last one. Write summary asks the Chronicler for
-            three or four sentences that only quote the numbers below.
+            No summary for these numbers yet. Write summary asks the Chronicler for three or four sentences
+            that quote only the numbers below.
           </p>
         )}
       </Block>
@@ -144,7 +173,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           rowKey={(m) => m.channel}
           rows={r.messages}
           columns={[
-            { key: "channel", header: "Channel", cell: (m) => m.channel.replace("_", " "), primary: true },
+            { key: "channel", header: "Channel", cell: (m) => channelName(m.channel), primary: true },
             { key: "real", header: "Real", cell: (m) => m.real, align: "end" },
             { key: "mock", header: "Mock", cell: (m) => m.mock, align: "end" },
             { key: "failed", header: "Failed", cell: (m) => m.failed, align: "end" },
@@ -152,7 +181,10 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           ]}
           empty={<EmptyState title="No messages sent" />}
         />
-        <p className="mt-2 text-sm text-fg-muted">In-app notifications: {r.inAppNotifications}</p>
+        <p className="mt-2 text-sm text-fg-muted">
+          Plus <span className="tabular-nums">{r.inAppNotifications.toLocaleString("en-IN")}</span> in-app
+          notifications.
+        </p>
       </Block>
 
       <Block title="Budget">
@@ -190,7 +222,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           rowKey={(x) => x.tier}
           rows={r.approvals}
           columns={[
-            { key: "tier", header: "Tier", cell: (x) => x.tier, primary: true },
+            { key: "tier", header: "Tier", cell: (x) => <TierBadge tier={x.tier} />, primary: true },
             { key: "total", header: "Proposed", cell: (x) => x.total, align: "end" },
             { key: "executed", header: "Carried out", cell: (x) => x.executed, align: "end" },
             { key: "rejected", header: "Rejected", cell: (x) => x.rejected, align: "end" },
@@ -220,7 +252,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
                 </Link>
               </>
             ) : (
-              <>, at /verify/ followed by the certificate id (none issued yet)</>
+              <>, at /verify/ plus its id. None issued yet</>
             )}
             .
           </p>
@@ -240,7 +272,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           <ul className="flex flex-col gap-2">
             {r.lessons.map((l) => (
               <li key={`${l.source}:${l.title}`}>
-                <span className="font-semibold">{l.title}.</span> {l.detail}{" "}
+                <span className="font-medium">{l.title}.</span> {l.detail}{" "}
                 <Badge tone="neutral">
                   {l.source === "incident" ? "From an incident" : "From the playbook"}
                 </Badge>

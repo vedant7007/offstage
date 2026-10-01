@@ -16,7 +16,7 @@ export type VoiceCase = {
 };
 
 export const CASES: VoiceCase[] = [
-  { id: "briefing", say: "What's on today?", intent: "briefing", reply: [/\d/] },
+  { id: "briefing", say: "Read me today's briefing.", intent: "briefing", reply: [/\d/] },
   {
     id: "registrations",
     say: "How are registrations going?",

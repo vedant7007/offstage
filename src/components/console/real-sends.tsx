@@ -39,7 +39,7 @@ export function RealSendsBadge({ eventId }: { eventId: string }) {
   if (!state?.on) return null;
   return (
     <Badge tone="danger" role="status" title="Allowlisted phones and chats receive real messages">
-      <Radio aria-hidden />
+      <Radio aria-hidden className="motion-safe:animate-pulse" />
       REAL SENDS ON
     </Badge>
   );

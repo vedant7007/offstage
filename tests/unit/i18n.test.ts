@@ -31,7 +31,9 @@ describe("t()", () => {
   const t = createTranslator(getMessages("en"));
 
   it("fills variables", () => {
-    expect(t("drafted.approvedBy", { role: "Lead" })).toBe("Drafted by Sutradhar, approved by Lead");
+    expect(t("drafted.approvedBy", { role: "Lead" })).toBe(
+      "Drafted by the OFFSTAGE assistant, approved by Lead",
+    );
   });
 
   it("uses the _one key for a count of one", () => {

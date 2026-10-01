@@ -77,6 +77,7 @@ export function IntakeChat() {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Commander, intake"
         title="Plan a new event"
         description="The Commander interviews you, then drafts the plan and the agent team for your approval."
       />
@@ -86,10 +87,19 @@ export function IntakeChat() {
             {turns.map((t, i) => (
               <li
                 key={i}
-                className={`max-w-[85%] rounded-card px-4 py-3 ${t.who === "you" ? "self-end bg-surface-sunken" : "self-start border border-border bg-surface"}`}
+                className={
+                  t.who === "you"
+                    ? "max-w-[85%] self-end rounded-card rounded-br-[4px] bg-curtain px-4 py-3 text-on-curtain"
+                    : "flex max-w-[85%] flex-col gap-1 self-start rounded-card rounded-tl-[4px] border border-border bg-surface px-4 py-3 depth-2"
+                }
               >
+                {t.who === "you" ? null : (
+                  <span aria-hidden className="kicker text-curtain-text">
+                    Commander
+                  </span>
+                )}
                 <span className="sr-only">{t.who === "you" ? "You: " : "Commander: "}</span>
-                {t.text}
+                <span className="leading-relaxed">{t.text}</span>
               </li>
             ))}
           </ol>
@@ -117,7 +127,7 @@ export function IntakeChat() {
             </Button>
           ) : (
             <form
-              className="flex flex-col gap-2"
+              className="flex flex-col gap-2 rounded-card border border-border bg-surface p-3 depth-2"
               onSubmit={(e) => {
                 e.preventDefault();
                 send(text);
@@ -138,20 +148,28 @@ export function IntakeChat() {
                   }}
                 />
               </Field>
-              <Button type="submit" loading={busy} className="self-end">
-                Send
-              </Button>
+              <div className="flex items-center justify-between gap-3">
+                <p className="hidden font-mono text-xs text-fg-muted sm:block">
+                  Enter to send, Shift and Enter for a new line
+                </p>
+                <Button type="submit" loading={busy} className="ms-auto">
+                  Send
+                </Button>
+              </div>
             </form>
           )}
           {error ? (
-            <Alert variant="danger" title="Interview">
+            <Alert variant="danger" title="The Commander could not reply">
               {error}
             </Alert>
           ) : null}
         </section>
-        <Card className="self-start">
+        <Card className="self-start lg:sticky lg:top-20">
           <CardHeader>
-            <CardTitle>What I have so far</CardTitle>
+            <span aria-hidden className="kicker text-curtain-text">
+              The brief
+            </span>
+            <CardTitle as="h2">What I have so far</CardTitle>
           </CardHeader>
           <CardContent>
             <KeyValueList

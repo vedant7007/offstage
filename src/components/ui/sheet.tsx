@@ -11,12 +11,12 @@ const SheetClose = SheetPrimitive.Close;
 
 const SIDES = {
   bottom:
-    "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-card border-t data-open:slide-in-from-bottom data-closed:slide-out-to-bottom",
+    "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-sheet border-t data-open:slide-in-from-bottom data-closed:slide-out-to-bottom",
   right:
     "inset-y-0 right-0 h-dvh w-full max-w-md border-l data-open:slide-in-from-right data-closed:slide-out-to-right",
   // Bottom sheet on phones, side panel from md up.
   responsive: cn(
-    "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-card border-t data-open:slide-in-from-bottom data-closed:slide-out-to-bottom",
+    "inset-x-0 bottom-0 max-h-[85dvh] rounded-t-sheet border-t data-open:slide-in-from-bottom data-closed:slide-out-to-bottom",
     "md:inset-x-auto md:inset-y-0 md:right-0 md:h-dvh md:max-h-none md:w-full md:max-w-md md:rounded-none md:border-t-0 md:border-l",
     "md:data-open:slide-in-from-right md:data-closed:slide-out-to-right",
   ),
@@ -44,8 +44,10 @@ function SheetContent({
       <SheetPrimitive.Content
         {...(description ? {} : { "aria-describedby": undefined })}
         className={cn(
-          "fixed z-(--z-modal) flex flex-col border-border bg-surface-raised text-fg shadow-xl",
-          "data-open:animate-in data-closed:animate-out duration-(--duration-slow) ease-out",
+          "fixed z-(--z-modal) flex flex-col border-border bg-surface-raised text-fg depth-3",
+          // Travels on screen, so in-out on the way in; leaves faster
+          "data-open:animate-in data-open:duration-(--duration-slower) data-open:ease-(--ease-out-expo)",
+          "data-closed:animate-out data-closed:duration-(--duration-base) data-closed:ease-(--ease-in)",
           "pb-[env(safe-area-inset-bottom)]",
           SIDES[side],
           className,
@@ -62,7 +64,7 @@ function SheetContent({
           />
         ) : null}
         <div className="flex flex-col gap-1 p-6 pr-14">
-          <SheetPrimitive.Title className="text-xl font-semibold">{title}</SheetPrimitive.Title>
+          <SheetPrimitive.Title className="text-2xl font-medium">{title}</SheetPrimitive.Title>
           {description ? (
             <SheetPrimitive.Description className="text-sm text-fg-muted">
               {description}

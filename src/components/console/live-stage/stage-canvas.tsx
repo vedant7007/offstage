@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  Background,
   BaseEdge,
   type Edge,
   type EdgeProps,
@@ -16,11 +15,13 @@ import {
 import "@xyflow/react/dist/style.css";
 import type { AgentName } from "@/contracts";
 import { AgentAvatar, Badge } from "@/components/ui";
+import { cn } from "@/lib/utils";
+import { useReducedMotion } from "../fx";
 import { NODE_STATE as STATE, STAGE } from "./theme";
 import type { NodeState, Pulse } from "./use-stage";
 
 type AgentData = { agent: AgentName; state: NodeState; waiting: number; centre?: boolean };
-type BoxData = { title: string; detail: string; kind: "gate" | "data" | "channel" };
+type BoxData = { title: string; detail: string; kind: "gate" | "data" | "channel"; waiting?: boolean };
 type EdgeData = { active: boolean; pulseId?: string; still: boolean };
 
 const hidden = "!h-1 !w-1 !min-h-0 !min-w-0 !border-0 !bg-transparent";
@@ -34,25 +35,29 @@ const handles = (
 function AgentNode({ data }: NodeProps<Node<AgentData>>) {
   const s = STATE[data.state];
   return (
-    <div className={`${STAGE.agent} ${s.ring} ${data.centre ? STAGE.centre : ""}`}>
+    <div className={cn(STAGE.agent, s.ring, data.centre && STAGE.centre)}>
       {handles}
+      {s.glow ? <span aria-hidden className={cn(STAGE.glow, s.glow, "motion-safe:animate-pulse")} /> : null}
       <AgentAvatar agent={data.agent} showName size={data.centre ? "md" : "sm"} />
-      <div className="flex flex-wrap items-center gap-1">
-        <Badge tone={s.tone} className={data.state === "thinking" ? "motion-safe:animate-pulse" : undefined}>
-          {s.label}
-        </Badge>
-        {data.waiting ? <Badge tone="pending">{data.waiting} to approve</Badge> : null}
-      </div>
+      {/* One chip: what it is doing, or how many of its proposals wait for a person. */}
+      <Badge tone={data.waiting ? "pending" : s.tone} className={STAGE.chip}>
+        {data.waiting ? `${data.waiting} to approve` : s.label}
+      </Badge>
     </div>
   );
 }
 
+const KIND = { gate: "Human gate", data: "Data", channel: "Channel" } as const;
+
 function BoxNode({ data }: NodeProps<Node<BoxData>>) {
   return (
-    <div className={`${STAGE.box} ${STAGE.boxShape[data.kind]}`}>
+    <div className={cn(STAGE.box, STAGE.boxShape[data.kind], data.waiting && STAGE.gateWaiting)}>
       {handles}
-      <span className="text-sm font-semibold">{data.title}</span>
-      <span className="text-xs text-fg-muted">{data.detail}</span>
+      <span aria-hidden className={STAGE.boxKicker}>
+        {KIND[data.kind]}
+      </span>
+      <span className={STAGE.boxTitle}>{data.title}</span>
+      <span className={STAGE.boxDetail}>{data.detail}</span>
     </div>
   );
 }
@@ -71,7 +76,7 @@ function Dot({ path }: { path: string }) {
   }, []);
   if (done) return null;
   return (
-    <circle r={4} fill={STAGE.dot}>
+    <circle r={4} fill={STAGE.dot} style={{ filter: `drop-shadow(0 0 6px ${STAGE.dot})` }}>
       <animateMotion ref={ref} dur="1.2s" begin="indefinite" fill="freeze" path={path} />
     </circle>
   );
@@ -87,7 +92,7 @@ function PulseEdge({ sourceX, sourceY, targetX, targetY, data }: EdgeProps<Edge<
         path={path}
         style={{
           stroke: active ? STAGE.edgeActive : STAGE.edge,
-          strokeWidth: active ? 2.5 : 1,
+          strokeWidth: active ? 1.5 : 1,
           transition: data?.still ? undefined : "stroke 300ms",
         }}
       />
@@ -100,7 +105,7 @@ const nodeTypes = { agent: AgentNode, box: BoxNode };
 const edgeTypes = { pulse: PulseEdge };
 
 export type StageBoxes = {
-  gates: { id: string; title: string; detail: string }[];
+  gates: { id: string; title: string; detail: string; waiting?: boolean }[];
   data: { id: string; title: string; detail: string }[];
   channels: { id: string; title: string; detail: string }[];
 };
@@ -124,20 +129,10 @@ function useStable<T extends Item>(items: T[]): T[] {
   });
 }
 
-/** Whether the viewer asked for less motion. */
-export function useReducedMotion() {
-  return React.useSyncExternalStore(
-    (cb) => {
-      const m = window.matchMedia("(prefers-reduced-motion: reduce)");
-      m.addEventListener("change", cb);
-      return () => m.removeEventListener("change", cb);
-    },
-    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-    () => false,
-  );
-}
-
-const R = 330;
+// An ellipse wide enough that neighbours never touch, with data on the left and channels on the right,
+// compact enough that fitView keeps the text readable at 1440 px.
+const RX = 400;
+const RY = 300;
 const at = (x: number, y: number) => ({ x: Math.round(x), y: Math.round(y) });
 
 export function StageCanvas(props: {
@@ -155,7 +150,7 @@ export function StageCanvas(props: {
     {
       id: "agent:commander",
       type: "agent",
-      position: at(-104, -40),
+      position: at(-96, -40),
       data: {
         agent: "commander",
         state: props.stateOf("commander"),
@@ -169,7 +164,7 @@ export function StageCanvas(props: {
       return {
         id: `agent:${a}`,
         type: "agent",
-        position: at(Math.cos(angle) * R * 1.45 - 88, Math.sin(angle) * R - 30),
+        position: at(Math.cos(angle) * RX - 80, Math.sin(angle) * RY - 40),
         data: { agent: a, state: props.stateOf(a), waiting: props.waitingOf(a) },
         ariaLabel: `${a.replace("_", " ")}, ${STATE[props.stateOf(a)].label}`,
       };
@@ -177,21 +172,21 @@ export function StageCanvas(props: {
     ...props.boxes.gates.map((g, i) => ({
       id: g.id,
       type: "box",
-      position: at(-200 + i * 240, R + 110),
-      data: { title: g.title, detail: g.detail, kind: "gate" as const },
+      position: at(-184 + i * 224, RY + 80),
+      data: { title: g.title, detail: g.detail, kind: "gate" as const, waiting: g.waiting },
       ariaLabel: `${g.title}: ${g.detail}`,
     })),
     ...props.boxes.data.map((d, i) => ({
       id: d.id,
       type: "box",
-      position: at(-R * 1.45 - 380, -220 + i * 110),
+      position: at(-RX - 80 - 48 - 144, -300 + i * 124),
       data: { title: d.title, detail: d.detail, kind: "data" as const },
       ariaLabel: `${d.title}: ${d.detail}`,
     })),
     ...props.boxes.channels.map((c, i) => ({
       id: c.id,
       type: "box",
-      position: at(R * 1.45 + 220, -250 + i * 105),
+      position: at(RX + 80 + 48, -300 + i * 124),
       data: { title: c.title, detail: c.detail, kind: "channel" as const },
       ariaLabel: `${c.title}: ${c.detail}`,
     })),
@@ -223,21 +218,33 @@ export function StageCanvas(props: {
 
   return (
     <div className={STAGE.canvas}>
+      <div aria-hidden className={STAGE.spot} />
+      <div aria-hidden className={STAGE.floor} />
+      <span aria-hidden className={STAGE.kicker}>
+        On stage now
+      </span>
+      <p aria-hidden className={STAGE.legend}>
+        <span className="flex items-center gap-1.5">
+          <span className="size-1.5 rounded-full" style={{ background: STAGE.dot }} />
+          Handoff in flight
+        </span>
+        <span>Click a node for its glass box</span>
+      </p>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        colorMode="dark"
+        style={{ background: "transparent" }}
         fitView
-        fitViewOptions={{ padding: 0.08 }}
+        fitViewOptions={{ padding: 0.05 }}
         minZoom={0.2}
         nodesDraggable={false}
         nodesConnectable={false}
         onNodeClick={onNodeClick}
         proOptions={{ hideAttribution: true }}
-      >
-        <Background gap={24} color={STAGE.grid} />
-      </ReactFlow>
+      />
     </div>
   );
 }

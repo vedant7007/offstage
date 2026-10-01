@@ -21,6 +21,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { agentOf, ApproveButton, metaOf, RejectButton } from "../proposal-bits";
+import { duration, humanize, sentence } from "../text";
 import { voiceShared } from "../voice/use-voice";
 
 /** The last voice turn with the Commander: what it heard, what it cost, how fast it answered. */
@@ -30,12 +31,15 @@ function VoiceTurn() {
   const c = t.costUsd;
   return (
     <section aria-label="Last voice turn" className="flex flex-col gap-2">
-      <h3 className="font-semibold">Last voice turn</h3>
+      <h3 className="kicker text-fg-muted">Last voice turn</h3>
       <KeyValueList
         items={[
           { label: "Heard", value: t.you },
-          { label: "Intent", value: t.intent ? `${t.intent.replace(/_/g, " ")} (${t.by})` : "working" },
-          { label: "First audio", value: t.latencyMs ? `${t.latencyMs} ms after you stopped` : "not yet" },
+          { label: "Intent", value: t.intent ? `${humanize(t.intent)} (${t.by})` : "Working" },
+          {
+            label: "First audio",
+            value: t.latencyMs ? `${duration(t.latencyMs)} after you stopped` : "Not yet",
+          },
           {
             label: "Voice cost",
             value: `${usd(c.stt + c.model + c.voice)} (speech to text ${usd(c.stt)}, model ${usd(c.model)}, Murf ${usd(c.voice)})`,
@@ -47,47 +51,64 @@ function VoiceTurn() {
 }
 
 const usd = (n: number) => `$${n.toFixed(4)}`;
+const CHIP = "font-mono text-[0.6875rem] uppercase tracking-[0.06em]";
 
 function StepLine({ s }: { s: AgentStep }) {
   switch (s.kind) {
     case "llm":
       return (
         <>
-          <Badge tone={s.ok ? "info" : "danger"}>Model</Badge> {s.provider} {s.model}: {s.inputTokens} in,{" "}
-          {s.outputTokens} out, {usd(s.costUsd)}, {s.latencyMs} ms
+          <Badge tone={s.ok ? "info" : "danger"} className={CHIP}>
+            Model
+          </Badge>{" "}
+          {s.provider} {s.model}: {s.inputTokens} in, {s.outputTokens} out, {usd(s.costUsd)}, {s.latencyMs} ms
           {s.ok ? "" : ` (failed: ${s.error ?? "error"})`}
         </>
       );
     case "tool":
       return (
         <>
-          <Badge tone="neutral">Tool</Badge> {s.tool}, {s.latencyMs} ms{s.ok ? "" : ` (failed)`}
+          <Badge tone="neutral" className={CHIP}>
+            Tool
+          </Badge>{" "}
+          {s.tool}, {s.latencyMs} ms{s.ok ? "" : ` (failed)`}
         </>
       );
     case "propose":
       return (
         <>
-          <Badge tone="agent">Proposed</Badge> {s.actionKind}: {s.result}
+          <Badge tone="agent" className={CHIP}>
+            Proposed
+          </Badge>{" "}
+          {s.actionKind}: {s.result}
           {s.status ? `, ${s.status}` : ""}
         </>
       );
     case "guard":
       return (
         <>
-          <Badge tone={s.verdict === "block" ? "danger" : "neutral"}>Guard</Badge> {s.verdict} by{" "}
-          {s.by.replace("_", " ")}
+          <Badge tone={s.verdict === "block" ? "danger" : "neutral"} className={CHIP}>
+            Guard
+          </Badge>{" "}
+          {humanize(s.verdict)} by {s.by.replace(/_/g, " ")}
         </>
       );
     case "fallback":
       return (
         <>
-          <Badge tone="pending">Rules fallback</Badge> {s.reason.replace("_", " ")}
+          <Badge tone="pending" className={CHIP}>
+            Rules fallback
+          </Badge>{" "}
+          {s.reason.replace(/_/g, " ")}
         </>
       );
     default:
       return (
         <>
-          <Badge tone="neutral">Note</Badge> {"text" in s ? s.text : ""}
+          <Badge tone="neutral" className={CHIP}>
+            Note
+          </Badge>{" "}
+          {"text" in s ? s.text : ""}
         </>
       );
   }
@@ -119,7 +140,7 @@ function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
   }, [eventId, agent]);
   if (data === undefined) return <Skeleton className="h-32" />;
   if (!data)
-    return <EmptyState title="No runs yet" description="This agent has not been woken for this event." />;
+    return <EmptyState title="No runs yet" description="This agent has not woken up for this event." />;
   const { run, steps, cited } = data;
   const models = [
     ...new Set(steps.flatMap((s) => (s.kind === "llm" && s.ok ? [`${s.provider} ${s.model}`] : []))),
@@ -128,37 +149,44 @@ function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
     <section aria-label="Latest run" className="flex flex-col gap-3">
       <KeyValueList
         items={[
-          { label: "Status", value: run.status },
-          { label: "Woken by", value: run.trigger.eventType ?? run.trigger.type },
+          { label: "Status", value: humanize(run.status) },
+          { label: "Woken by", value: humanize(run.trigger.eventType ?? run.trigger.type) },
           { label: "Started", value: formatTime(run.startedAt) },
           { label: "Model", value: models.join(", ") || `No model call (${run.modelTier} tier)` },
           { label: "Tokens", value: `${run.inputTokens} in, ${run.outputTokens} out` },
           { label: "Cost", value: usd(run.costUsd) },
-          { label: "Latency", value: run.latencyMs ? `${run.latencyMs} ms` : "running" },
+          { label: "Latency", value: run.latencyMs ? duration(run.latencyMs) : "Running" },
         ]}
       />
       {cited.length ? (
         <section aria-label="Cited facts" className="flex flex-col gap-1">
-          <h3 className="font-semibold">Cited facts</h3>
+          <h3 className="kicker text-fg-muted">Cited facts</h3>
           <ul className="flex flex-col gap-1 text-sm">
             {cited.map((e) => (
               <li key={e.ref} className="flex flex-wrap items-center gap-1.5">
-                <Badge tone="neutral">{e.type}</Badge> {e.label}
+                <Badge tone="neutral" className={CHIP}>
+                  {e.type}
+                </Badge>{" "}
+                {e.label}
                 <span className="font-mono text-xs text-fg-muted">{e.ref}</span>
               </li>
             ))}
           </ul>
         </section>
       ) : null}
-      <h3 className="font-semibold">Steps</h3>
-      <ol className="flex flex-col gap-2 text-sm">
-        {steps.map((s) => (
-          <li key={s.id} className="flex flex-wrap items-center gap-1.5">
-            <span className="text-xs text-fg-muted tabular-nums">{formatTime(s.at)}</span>
-            <StepLine s={s} />
-          </li>
-        ))}
-      </ol>
+      <h3 className="kicker text-fg-muted">Steps</h3>
+      {steps.length ? (
+        <ol className="flex flex-col gap-2 border-l border-border pl-3 text-sm">
+          {steps.map((s) => (
+            <li key={s.id} className="flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-xs text-fg-muted tabular-nums">{formatTime(s.at)}</span>
+              <StepLine s={s} />
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="text-sm text-fg-muted">No steps were recorded for this run.</p>
+      )}
     </section>
   );
 }
@@ -175,12 +203,12 @@ function Proposals({
   if (!items.length) return null;
   return (
     <section aria-label="Waiting for approval" className="flex flex-col gap-3">
-      <h3 className="font-semibold">Waiting for approval</h3>
+      <h3 className="kicker text-fg-muted">Waiting for approval</h3>
       {items.map((p) => (
         <ProposalCard
           key={p.id}
           agent={agentOf(p)}
-          summary={p.summary}
+          summary={sentence(p.summary)}
           rationale={p.rationale}
           status={p.status}
           tier={p.riskTier}

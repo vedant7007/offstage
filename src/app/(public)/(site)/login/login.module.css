@@ -1,0 +1,262 @@
+/* Sign-in split: an ink stage panel beside the paper form. The stage stays black in both themes. */
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Phone: pull the footer up so the card does not float above an empty band. */
+.split {
+  margin-bottom: -2rem;
+}
+
+@media (min-width: 64rem) {
+  .split {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    min-height: calc(100dvh - 4rem);
+    /* Cancel the site footer's mt-20 so the ink stage runs into the ink footer, no paper strip. */
+    margin-bottom: -5rem;
+  }
+}
+
+.stage {
+  --ink: #000;
+  --paper: #e4e6ef;
+  --lime: #c1ff00;
+  --red: #ff4c41;
+  --error: #e90000;
+  --blue-dark: #071bdf;
+  --purple: #8832f7;
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: var(--ink);
+  color: #fff;
+  padding: 3.5rem 1rem 1.5rem;
+}
+
+@media (min-width: 40rem) {
+  .stage {
+    padding: 4.5rem 2rem 2rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .stage {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 6rem 4.5rem 4rem 3rem;
+    /* The form column runs taller than the viewport: keep the stage and its line in view while it scrolls. */
+    position: sticky;
+    top: 4rem;
+    align-self: start;
+    height: calc(100dvh - 4rem);
+  }
+}
+
+/* Soft spotlight from above, blue-dark wash from the floor. */
+.spot {
+  position: absolute;
+  inset: 0 -8%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(42% 38% at 46% 26%, rgb(255 255 255 / 0.14) 0%, transparent 70%),
+    radial-gradient(
+      60% 46% at 50% 30%,
+      color-mix(in srgb, var(--purple) 22%, transparent) 0%,
+      transparent 64%
+    ),
+    radial-gradient(
+      120% 80% at 50% 125%,
+      color-mix(in srgb, var(--blue-dark) 62%, transparent),
+      transparent 62%
+    );
+}
+
+/* Scalloped red valance across the top edge. */
+.valance {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2.25rem;
+  background: linear-gradient(180deg, var(--error), color-mix(in srgb, var(--error), var(--ink) 45%));
+  mask-image: radial-gradient(circle 13px at 13px 100%, transparent 12px, #000 13px);
+  mask-size: 26px 100%;
+  box-shadow: 0 10px 23px rgb(0 0 0 / 0.5);
+}
+
+@media (min-width: 64rem) {
+  .valance {
+    height: 3.5rem;
+  }
+}
+
+/* Gathered curtain edge on the panel's right side, desktop only. */
+.curtain {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .curtain {
+    display: block;
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 2.75rem;
+    background:
+      linear-gradient(90deg, rgb(0 0 0 / 0.6), transparent 40%),
+      repeating-linear-gradient(
+        90deg,
+        rgb(0 0 0 / 0.45) 0 9px,
+        rgb(255 255 255 / 0.07) 9px 21px,
+        rgb(0 0 0 / 0.2) 21px 33px
+      ),
+      linear-gradient(180deg, var(--red), var(--error) 58%, color-mix(in srgb, var(--error), var(--ink) 62%));
+    box-shadow: -23px 0 46px rgb(0 0 0 / 0.55);
+  }
+}
+
+.copy {
+  position: relative;
+  z-index: 3;
+}
+
+.kicker {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--lime);
+}
+
+.kicker::after {
+  content: "";
+  height: 1.5px;
+  width: clamp(28px, 6vw, 64px);
+  background: currentColor;
+}
+
+.line {
+  margin-top: 1rem;
+  max-width: 18ch;
+  font-size: clamp(1.75rem, 6vw, 2.25rem);
+  line-height: 1.04;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+@media (min-width: 64rem) {
+  .line {
+    margin-top: 1.5rem;
+    font-size: clamp(3rem, 4.6vw, 4.5rem);
+    line-height: 1;
+    letter-spacing: -0.045em;
+  }
+}
+
+/* The second line starts its word reveal after the first line's four words. */
+.accent {
+  color: var(--lime);
+}
+
+.accent :global(.tr-inner) {
+  transition-delay: calc((var(--w, 0) + 4) * 30ms);
+}
+
+.lede {
+  display: none;
+}
+
+@media (min-width: 64rem) {
+  .lede {
+    display: block;
+    max-width: 34ch;
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid rgb(255 255 255 / 0.16);
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+    letter-spacing: -0.011em;
+    color: color-mix(in srgb, var(--paper) 78%, var(--ink));
+    text-wrap: pretty;
+  }
+}
+
+.side {
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 1.5rem 1rem 1rem;
+}
+
+/* One quiet glow behind the card; the site backdrop (ambient light and grain) shows around it. */
+.side::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(36rem 28rem at 50% 30%, var(--ambient-1), transparent 70%);
+}
+
+@media (min-width: 40rem) {
+  .side {
+    padding: 2.5rem 2rem 4rem;
+  }
+}
+
+@media (min-width: 64rem) {
+  .side {
+    align-items: center;
+    padding: 4rem 3rem;
+  }
+}
+
+.card {
+  width: 100%;
+  max-width: 32rem;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .spot {
+    animation: sway 9s var(--ease-in-out) infinite alternate;
+  }
+
+  .kicker,
+  .lede {
+    animation: rise var(--duration-slower) var(--ease-out-expo) both;
+  }
+
+  .lede {
+    animation-delay: 360ms;
+  }
+
+  .card {
+    animation: rise var(--duration-slower) var(--ease-out-expo) 80ms both;
+  }
+}
+
+@keyframes sway {
+  from {
+    translate: -4% 0;
+  }
+  to {
+    translate: 4% 0;
+  }
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    translate: 0 12px;
+  }
+}

@@ -1,10 +1,16 @@
 "use client";
 
 import * as React from "react";
+import { flushSync } from "react-dom";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Ellipsis, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/provider";
+import { prefersReducedMotion, vtAnchor } from "./motion";
+import { ScrollHeader } from "./shell-bits";
+import { Sheet, SheetClose, SheetContent, SheetTrigger } from "./sheet";
+import { Tooltip } from "./tooltip";
 
 export type NavItem = {
   href: string;
@@ -15,15 +21,19 @@ export type NavItem = {
   badge?: number;
   /** Active only on this exact path, not its children. Use for a section's home tab, such as /me. */
   exact?: boolean;
+  /** Sidebar section heading, such as "Run the show". Consecutive items with the same group share it. */
+  group?: string;
 };
 
 type AppShellProps = {
   title: React.ReactNode;
   homeHref?: string;
-  /** Up to five items. Bottom tab bar on phones, sidebar from md up. */
+  /** Sidebar from md up. Bottom tab bar on phones: five fit, beyond that the rest move into a More sheet. */
   nav: NavItem[];
   /** Right side of the top bar: ThemeToggle, LanguageSwitcher, account. */
   actions?: React.ReactNode;
+  /** Optional live status shown in the top bar, such as a connection pill. */
+  status?: React.ReactNode;
   children: React.ReactNode;
   /** Design review page only: renders inside another page without its own main landmark or skip link. */
   preview?: boolean;
@@ -33,93 +43,366 @@ function isActive(pathname: string, item: NavItem) {
   return pathname === item.href || (!item.exact && pathname.startsWith(`${item.href}/`));
 }
 
-function AppShell({ title, homeHref = "/", nav, actions, children, preview = false }: AppShellProps) {
+// Collapsed sidebar, remembered per browser. Storage can throw (private mode, blocked site data).
+const COLLAPSE_KEY = "offstage:sidebar-collapsed";
+const collapseListeners = new Set<() => void>();
+function readCollapsed() {
+  try {
+    return window.localStorage.getItem(COLLAPSE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeCollapsed(value: boolean) {
+  try {
+    window.localStorage.setItem(COLLAPSE_KEY, value ? "1" : "0");
+  } catch {
+    // Not remembered, still toggles for this page view below.
+  }
+  memoryCollapsed = value;
+  collapseListeners.forEach((l) => l());
+}
+let memoryCollapsed: boolean | null = null;
+function subscribeCollapsed(onChange: () => void) {
+  collapseListeners.add(onChange);
+  return () => {
+    collapseListeners.delete(onChange);
+  };
+}
+
+/**
+ * Collapses or expands the sidebar in one layout pass: the browser snapshots the sidebar and the main
+ * column and glides between the two layouts (motion.css, data-vt="sidebar"), instead of animating width
+ * frame by frame. Instant without View Transitions support or under reduced motion.
+ */
+function toggleCollapsed(next: boolean) {
+  if (typeof document.startViewTransition !== "function" || prefersReducedMotion()) {
+    writeCollapsed(next);
+    return;
+  }
+  const root = document.documentElement;
+  root.dataset.vt = "sidebar";
+  const done = () => {
+    if (root.dataset.vt === "sidebar") delete root.dataset.vt;
+  };
+  document.startViewTransition(() => flushSync(() => writeCollapsed(next))).finished.then(done, done);
+}
+
+/** Slides one highlight to whichever item is marked data-active. Runs after every render; it is cheap. */
+function useIndicator(axis: "x" | "y") {
+  const list = React.useRef<HTMLDivElement>(null);
+  const bar = React.useRef<HTMLSpanElement>(null);
+  React.useLayoutEffect(() => {
+    const l = list.current;
+    const b = bar.current;
+    if (!l || !b) return;
+    const place = () => {
+      const active = l.querySelector<HTMLElement>('[data-active="true"]');
+      if (!active) {
+        b.style.opacity = "0";
+        return;
+      }
+      b.style.opacity = "1";
+      if (axis === "y") {
+        // Height is set, never animated: only the transform glides.
+        b.style.height = `${active.offsetHeight}px`;
+        b.style.transform = `translateY(${active.offsetTop}px)`;
+      } else {
+        b.style.transform = `translateX(${active.offsetLeft + (active.offsetWidth - b.offsetWidth) / 2}px)`;
+      }
+      // The first placement jumps; later moves slide.
+      requestAnimationFrame(() => (b.dataset.ready = "true"));
+    };
+    place();
+    const observer = new ResizeObserver(place);
+    observer.observe(l);
+    return () => observer.disconnect();
+  });
+  return { list, bar };
+}
+
+function Badge({ count, compact }: { count: number; compact?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "rounded-full bg-curtain font-mono text-xs leading-5 font-medium tabular-nums text-on-curtain",
+        compact ? "absolute -top-1 right-0 min-w-5 px-1 text-center" : "ml-auto px-2",
+      )}
+    >
+      {count}
+    </span>
+  );
+}
+
+function AppShell({ title, homeHref = "/", nav, actions, status, children, preview = false }: AppShellProps) {
   const t = useT();
   const pathname = usePathname();
   const Main = preview ? "div" : "main";
+  const navLabel = preview ? t("nav.sections") : t("nav.main");
+  const collapsed = React.useSyncExternalStore(
+    subscribeCollapsed,
+    () => memoryCollapsed ?? readCollapsed(),
+    () => false,
+  );
+  const { list: sideListRef, bar: sideBarRef } = useIndicator("y");
+  const { list: tabListRef, bar: tabBarRef } = useIndicator("x");
 
-  const link = (item: NavItem, variant: "tab" | "side") => {
+  const hasSidebar = nav.length > 0;
+  const hasTabs = nav.length > 1;
+  const overflow = nav.length > 5;
+  const primary = overflow ? nav.slice(0, 4) : nav;
+  const more = overflow ? nav.slice(4) : [];
+  const current = nav.find((item) => isActive(pathname, item));
+  const moreActive = more.some((item) => isActive(pathname, item));
+
+  const brand = (
+    <Link
+      href={homeHref}
+      className="flex min-h-11 min-w-0 items-center gap-2.5 text-lg font-medium tracking-[-0.03em]"
+    >
+      {/* The lime cue dot, same as the public wordmark */}
+      <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-[#c1ff00] ring-1 ring-black/40" />
+      <span className={cn("truncate", hasSidebar && collapsed && "md:sr-only")}>{title}</span>
+    </Link>
+  );
+
+  const sideLink = (item: NavItem) => {
+    const active = isActive(pathname, item);
+    const link = (
+      <Link
+        key={item.href}
+        href={item.href}
+        data-active={active}
+        aria-current={active ? "page" : undefined}
+        className={cn(
+          "relative z-10 flex min-h-11 items-center gap-3 rounded-full px-3.5 text-sm [&_svg]:size-[1.125rem] [&_svg]:shrink-0",
+          "transition-colors duration-(--duration-fast) ease-out",
+          active
+            ? "font-medium text-fg [&_svg]:text-curtain-text"
+            : "text-fg-muted hover:bg-surface-sunken/60 hover:text-fg",
+          collapsed && "justify-center px-0",
+        )}
+      >
+        {item.icon}
+        <span className={cn("truncate", collapsed && "sr-only")}>{item.label}</span>
+        {item.badge ? <Badge count={item.badge} compact={collapsed} /> : null}
+      </Link>
+    );
+    return collapsed ? (
+      <Tooltip key={item.href} content={item.label} side="right" delay={400}>
+        {link}
+      </Tooltip>
+    ) : (
+      link
+    );
+  };
+
+  // Sidebar sections: consecutive items that share a group sit under one heading.
+  const groups: { label?: string; items: NavItem[] }[] = [];
+  for (const item of nav) {
+    const last = groups[groups.length - 1];
+    if (last && last.label === item.group) last.items.push(item);
+    else groups.push({ label: item.group, items: [item] });
+  }
+
+  const tabClass = (active: boolean) =>
+    cn(
+      "press relative z-10 flex min-h-14 flex-1 flex-col items-center gap-1 px-1 pt-2 pb-2 text-xs leading-4 [&_svg]:size-5 [&_svg]:shrink-0",
+      active ? "font-medium text-fg [&_svg]:text-curtain-soft-fg" : "text-fg-muted hover:text-fg",
+    );
+
+  const tabLink = (item: NavItem) => {
     const active = isActive(pathname, item);
     return (
       <Link
         key={item.href}
         href={item.href}
+        data-active={active}
         aria-current={active ? "page" : undefined}
-        className={cn(
-          "relative flex items-center [&_svg]:size-5 [&_svg]:shrink-0",
-          variant === "tab"
-            ? "min-h-14 flex-1 flex-col justify-center gap-0.5 px-1 text-xs"
-            : "min-h-11 gap-3 rounded-control px-3 text-base",
-          active
-            ? variant === "tab"
-              ? "font-semibold text-curtain-text"
-              : "bg-curtain-soft font-semibold text-curtain-soft-fg"
-            : "text-fg-muted hover:text-fg",
-          variant === "side" && !active && "hover:bg-surface-sunken",
-        )}
+        className={tabClass(active)}
       >
-        {variant === "tab" && active ? (
-          <span aria-hidden className="absolute top-0 h-0.5 w-8 rounded-full bg-curtain" />
-        ) : null}
-        {item.icon}
-        <span className="truncate">{item.label}</span>
-        {item.badge ? (
-          <span
-            className={cn(
-              "rounded-full bg-curtain px-1.5 text-xs font-semibold tabular-nums text-on-curtain",
-              variant === "tab" ? "absolute top-1.5 left-1/2 ml-2" : "ml-auto",
-            )}
-          >
-            {item.badge}
-          </span>
-        ) : null}
+        <span aria-hidden className="relative flex h-8 w-14 items-center justify-center">
+          {item.icon}
+          {item.badge ? <Badge count={item.badge} compact /> : null}
+        </span>
+        <span className="max-w-full truncate">{item.label}</span>
       </Link>
     );
   };
 
   return (
-    <div className="flex min-h-dvh flex-col">
+    <div
+      className={cn(
+        "relative isolate flex min-h-dvh",
+        // Height of the phone tab bar, so pages and floating docks can clear it: var(--shell-bottom).
+        hasTabs
+          ? "[--shell-bottom:calc(4.375rem+env(safe-area-inset-bottom))] md:[--shell-bottom:0px]"
+          : "[--shell-bottom:0px]",
+        preview && "min-h-full",
+      )}
+    >
+      <div aria-hidden className={cn("shell-backdrop", preview ? "absolute" : "fixed")} />
       {preview ? null : (
         <a
           href="#main"
-          className="sr-only z-(--z-toast) rounded-control bg-surface-raised px-4 py-3 font-medium focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
+          className="sr-only z-(--z-toast) rounded-full bg-surface-raised px-5 py-3 font-medium shadow-card focus:not-sr-only focus:fixed focus:top-2 focus:left-2"
         >
           {t("common.skipToContent")}
         </a>
       )}
 
-      <header className="sticky top-0 z-(--z-appbar) border-b border-border bg-bg/95 pt-[env(safe-area-inset-top)] backdrop-blur">
-        <div className="flex min-h-14 items-center justify-between gap-3 px-4">
-          <Link href={homeHref} className="min-w-0 truncate py-2 text-lg font-semibold">
-            {title}
-          </Link>
-          {actions ? <div className="flex shrink-0 items-center gap-1">{actions}</div> : null}
-        </div>
-      </header>
-
-      <div className="flex flex-1">
-        <nav
-          aria-label={preview ? t("nav.sections") : t("nav.main")}
-          className="sticky top-14 hidden h-[calc(100dvh-3.5rem)] w-60 shrink-0 border-r border-border p-3 md:block"
+      {hasSidebar ? (
+        <div
+          // Anchored: it stays still while pages cross-fade. No blur: nothing scrolls behind it.
+          {...(preview ? {} : vtAnchor("app-sidebar"))}
+          className={cn(
+            "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-border bg-surface/75 md:flex",
+            collapsed ? "w-[4.75rem]" : "w-64",
+            preview && "h-auto",
+          )}
         >
-          <div className="flex flex-col gap-1">{nav.map((item) => link(item, "side"))}</div>
-        </nav>
+          <div className={cn("flex h-16 shrink-0 items-center px-5", collapsed && "justify-center px-0")}>
+            {brand}
+          </div>
+          <nav aria-label={navLabel} className="flex-1 overflow-x-hidden overflow-y-auto px-3 pb-3">
+            <div ref={sideListRef} className="relative flex flex-col">
+              <span
+                ref={sideBarRef}
+                aria-hidden
+                className="absolute inset-x-0 top-0 rounded-full border border-border bg-surface-raised opacity-0 depth-1 data-ready:transition-[transform,opacity] data-ready:duration-300 data-ready:ease-(--ease-in-out)"
+              />
+              {groups.map((group, i) => (
+                <div key={`${group.label ?? ""}-${i}`} className="flex flex-col gap-0.5">
+                  {group.label && !collapsed ? (
+                    <p className="kicker px-3.5 pt-5 pb-2 text-fg-muted">{group.label}</p>
+                  ) : i > 0 ? (
+                    <span aria-hidden className="mx-3 my-3 h-px bg-border" />
+                  ) : null}
+                  {group.items.map(sideLink)}
+                </div>
+              ))}
+            </div>
+          </nav>
+          {preview ? null : (
+            <div className={cn("shrink-0 border-t border-border p-3", collapsed && "flex justify-center")}>
+              <button
+                type="button"
+                aria-expanded={!collapsed}
+                onClick={() => toggleCollapsed(!collapsed)}
+                className={cn(
+                  "flex min-h-11 items-center gap-3 rounded-full px-3.5 text-sm text-fg-muted transition-colors duration-(--duration-fast) ease-out hover:bg-surface-sunken/70 hover:text-fg [&_svg]:size-[1.125rem]",
+                  collapsed ? "w-11 justify-center px-0" : "w-full",
+                )}
+              >
+                {collapsed ? <PanelLeftOpen aria-hidden /> : <PanelLeftClose aria-hidden />}
+                <span className={cn(collapsed && "sr-only")}>
+                  {collapsed ? t("nav.expand") : t("nav.collapse")}
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      <div data-shell-column className="flex min-w-0 flex-1 flex-col">
+        <ScrollHeader
+          {...(preview ? {} : vtAnchor("app-topbar"))}
+          className="sticky top-0 z-(--z-appbar) pt-[env(safe-area-inset-top)]"
+        >
+          <div className="flex min-h-14 items-center justify-between gap-3 px-4 md:min-h-16 md:px-8">
+            <div className={cn("min-w-0", hasSidebar && "md:hidden")}>{brand}</div>
+            {hasSidebar ? (
+              <p className="hidden min-w-0 items-center gap-2 truncate text-sm md:flex">
+                {current?.group ? (
+                  <>
+                    <span className="text-fg-muted">{current.group}</span>
+                    <span aria-hidden className="text-border-strong">
+                      /
+                    </span>
+                  </>
+                ) : null}
+                <span className="font-medium">{current?.label ?? title}</span>
+              </p>
+            ) : null}
+            <div className="flex shrink-0 items-center gap-1">
+              {status ? <div className="mr-2 hidden sm:flex">{status}</div> : null}
+              {actions}
+            </div>
+          </div>
+        </ScrollHeader>
 
         <Main
           id={preview ? undefined : "main"}
           tabIndex={preview ? undefined : -1}
-          className="min-w-0 flex-1 px-4 pt-6 pb-24 outline-none md:px-8 md:pb-10"
+          data-shell-main
+          className={cn(
+            "min-w-0 flex-1 px-4 pt-4 pb-[calc(var(--shell-bottom)+2.5rem)] outline-none md:px-8 md:pt-6 md:pb-12",
+          )}
         >
           {children}
         </Main>
       </div>
 
-      <nav
-        aria-label={preview ? t("nav.sections") : t("nav.main")}
-        className="fixed inset-x-0 bottom-0 z-(--z-appbar) border-t border-border bg-bg/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
-      >
-        <div className="flex">{nav.map((item) => link(item, "tab"))}</div>
-      </nav>
+      {hasTabs ? (
+        <nav
+          aria-label={navLabel}
+          // A solid dock with a lit top edge and a soft upward shadow. No blur: the top bar owns the
+          // one backdrop-filter on the screen.
+          {...(preview ? {} : vtAnchor("app-tabbar"))}
+          className={cn(
+            "z-(--z-appbar) border-t border-border bg-surface pb-[env(safe-area-inset-bottom)] shadow-[inset_0_1px_0_var(--highlight),0_-12px_32px_-16px_rgb(var(--shadow-ink)/0.2)] md:hidden",
+            preview ? "absolute inset-x-0 bottom-0" : "fixed inset-x-0 bottom-0",
+          )}
+        >
+          <div ref={tabListRef} className="relative flex">
+            <span
+              ref={tabBarRef}
+              aria-hidden
+              className="absolute top-2 left-0 h-8 w-14 rounded-full bg-curtain-soft opacity-0 data-ready:transition-[transform,opacity] data-ready:duration-300 data-ready:ease-(--ease-in-out)"
+            />
+            {primary.map(tabLink)}
+            {overflow ? (
+              <Sheet>
+                <SheetTrigger asChild>
+                  <button type="button" data-active={moreActive} className={tabClass(moreActive)}>
+                    <span aria-hidden className="flex h-8 w-14 items-center justify-center">
+                      <Ellipsis />
+                    </span>
+                    <span>{t("common.more")}</span>
+                  </button>
+                </SheetTrigger>
+                <SheetContent side="bottom" title={t("common.more")}>
+                  <nav aria-label={t("common.more")} className="flex flex-col gap-1">
+                    {more.map((item) => {
+                      const active = isActive(pathname, item);
+                      return (
+                        <SheetClose asChild key={item.href}>
+                          <Link
+                            href={item.href}
+                            aria-current={active ? "page" : undefined}
+                            className={cn(
+                              "flex min-h-14 items-center gap-4 rounded-inner px-4 text-base [&_svg]:size-5 [&_svg]:shrink-0",
+                              "transition-colors duration-(--duration-fast) ease-out",
+                              active
+                                ? "bg-curtain-soft font-medium text-curtain-soft-fg"
+                                : "text-fg hover:bg-surface-sunken",
+                            )}
+                          >
+                            {item.icon}
+                            <span className="flex-1">{item.label}</span>
+                            {item.group ? <span className="kicker text-fg-muted">{item.group}</span> : null}
+                            {item.badge ? <Badge count={item.badge} /> : null}
+                          </Link>
+                        </SheetClose>
+                      );
+                    })}
+                  </nav>
+                </SheetContent>
+              </Sheet>
+            ) : null}
+          </div>
+        </nav>
+      ) : null}
     </div>
   );
 }

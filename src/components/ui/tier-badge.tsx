@@ -34,9 +34,8 @@ export function TierBadge({
       tabIndex={showMeaning ? undefined : 0}
       className={cn(
         badgeVariants({ tone: TIERS[tier] }),
-        "font-mono",
         // With the meaning spelled out the text can be long, so let it wrap on narrow screens.
-        showMeaning && "w-auto max-w-full items-start rounded-control py-1 whitespace-normal",
+        showMeaning && "w-auto max-w-full items-start rounded-card px-2.5 py-1 whitespace-normal",
         className,
       )}
     >

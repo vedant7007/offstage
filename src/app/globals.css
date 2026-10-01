@@ -9,6 +9,7 @@
 @import "shadcn/tailwind.css";
 @import "../styles/tokens.css";
 @import "../styles/theme.css";
+@import "../styles/motion.css";
 
 :root,
 .light,
@@ -45,5 +46,5 @@
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.1875rem;
 }

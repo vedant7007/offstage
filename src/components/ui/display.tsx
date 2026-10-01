@@ -17,21 +17,21 @@ function EmptyState({ icon, title, description, action, className }: EmptyStateP
     <div
       data-slot="empty-state"
       className={cn(
-        "flex flex-col items-center gap-3 rounded-card border border-dashed border-border-strong px-6 py-10 text-center",
+        "flex flex-col items-center justify-center rounded-card border-[1.5px] border-dashed border-border-strong bg-surface/60 px-6 py-12 text-center",
         className,
       )}
     >
       {icon ? (
         <div
           aria-hidden
-          className="flex size-12 items-center justify-center rounded-full bg-surface-sunken text-fg-muted [&_svg]:size-6"
+          className="mb-4 flex size-10 items-center justify-center rounded-inner bg-curtain-soft text-curtain-soft-fg depth-1 [&_svg]:size-5"
         >
           {icon}
         </div>
       ) : null}
-      <p className="text-lg font-semibold">{title}</p>
-      {description ? <p className="max-w-sm text-sm text-fg-muted">{description}</p> : null}
-      {action ? <div className="mt-1">{action}</div> : null}
+      <p className="text-lg font-medium">{title}</p>
+      {description ? <p className="measure-tight mt-1 text-sm text-fg-muted">{description}</p> : null}
+      {action ? <div className="mt-6">{action}</div> : null}
     </div>
   );
 }
@@ -115,22 +115,30 @@ type PageHeaderProps = {
 /** The page's one h1, with optional actions that wrap below on phones. */
 function PageHeader({ title, description, eyebrow, back, actions, display, className }: PageHeaderProps) {
   return (
-    <header data-slot="page-header" className={cn("flex flex-col gap-3 pb-6", className)}>
+    <header data-slot="page-header" className={cn("flex flex-col gap-3 pb-12", className)}>
       {back}
-      <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
-        <div className="flex min-w-0 flex-col gap-1">
-          {eyebrow ? <p className="text-sm font-medium text-curtain-text">{eyebrow}</p> : null}
+      <div className="flex flex-col gap-8 md:flex-row md:items-end md:justify-between">
+        <div className="flex min-w-0 flex-col">
+          {eyebrow ? (
+            <p className="kicker mb-3 flex items-center gap-3 text-curtain-text">
+              {eyebrow}
+              <span aria-hidden className="h-px w-8 bg-current" />
+            </p>
+          ) : null}
+          {/* Tracking comes with each size (tokens.css), tightening as the type grows */}
           <h1
             className={cn(
-              "text-2xl font-semibold md:text-3xl",
-              display && "font-display font-bold tracking-tight",
+              "font-medium text-balance",
+              display ? "text-section font-display" : "text-2xl md:text-3xl",
             )}
           >
             {title}
           </h1>
-          {description ? <p className="text-base text-fg-muted">{description}</p> : null}
+          {description ? (
+            <p className="measure-lede mt-4 text-base text-pretty text-fg-muted md:text-lg">{description}</p>
+          ) : null}
         </div>
-        {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+        {actions ? <div className="flex shrink-0 flex-wrap gap-2">{actions}</div> : null}
       </div>
     </header>
   );
@@ -161,10 +169,13 @@ function Section({
     <section aria-labelledby={headingId} className={cn("flex flex-col gap-4", className)} {...props}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <Heading id={headingId} className={cn("font-semibold", Heading === "h2" ? "text-xl" : "text-lg")}>
+          <Heading
+            id={headingId}
+            className={cn("font-medium", Heading === "h2" ? "text-xl md:text-2xl" : "text-lg")}
+          >
             {title}
           </Heading>
-          {description ? <p className="text-sm text-fg-muted">{description}</p> : null}
+          {description ? <p className="measure text-sm text-fg-muted">{description}</p> : null}
         </div>
         {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
       </div>

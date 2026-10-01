@@ -1,6 +1,7 @@
 /*
  * Sutradhar design tokens. The single source for colour, type, spacing, radius, motion and z-index.
- * Light theme is "paper", dark theme is "ink". Contrast ratios for every pairing are checked by
+ * Design system "Backstage". Light theme is "paper", dark theme is "ink".
+ * Contrast ratios for every pairing are checked by
  * `pnpm contrast` and recorded in docs/design-tokens.md. Change a colour here, then rerun it.
  *
  * Colour roles follow one pattern:
@@ -15,160 +16,224 @@
 .light {
   color-scheme: light;
 
-  /* Surfaces: warm paper */
-  --bg: #faf6ef;
-  --surface: #fffdf9;
+  /* Surfaces: cool paper */
+  --bg: #e4e6ef;
+  --surface: #f0f1fa;
   --surface-raised: #ffffff;
-  --surface-sunken: #f2ece1;
-  --border: #e4dacb;
-  --border-strong: #857866;
-  --fg: #1f1a16;
-  --fg-muted: #5a5146;
-  --overlay: rgb(24 18 12 / 0.5);
-  --ring: #1f5aa6;
+  --surface-sunken: #d9dce8;
+  --border: #c9ccda;
+  --border-strong: #6b7085;
+  --fg: #000000;
+  --fg-muted: #4a4f63;
+  --overlay: rgb(0 0 0 / 0.5);
+  --ring: #071bdf;
 
-  /* Curtain: muted crimson, the one brand accent */
-  --curtain: #9b2839;
-  --curtain-hover: #821f2f;
+  /* Curtain: blue-dark, the one brand accent. White text on it. */
+  --curtain: #071bdf;
+  --curtain-hover: #1a2ffb;
   --on-curtain: #ffffff;
-  --curtain-text: #9b2839;
-  --curtain-soft: #f7e7e7;
-  --curtain-soft-fg: #7a1d2b;
+  --curtain-text: #071bdf;
+  --curtain-soft: #dadfff;
+  --curtain-soft-fg: #071bdf;
 
-  /* Agent activity: cool teal */
-  --agent: #0d6b69;
+  /* Agent activity: purple. Purple text on paper uses the deeper shade. */
+  --agent: #8832f7;
   --on-agent: #ffffff;
-  --agent-text: #0b5f5d;
-  --agent-soft: #dcefec;
-  --agent-soft-fg: #0a5250;
+  --agent-text: #6a1fd0;
+  --agent-soft: #ebdffd;
+  --agent-soft-fg: #5a16b8;
 
-  /* Approved: green */
-  --approved: #1e6b3a;
-  --approved-text: #1b6134;
-  --approved-soft: #e1f0e4;
-  --approved-soft-fg: #17532c;
+  /* Approved: lime is a fill only in light mode, with black text on it */
+  --approved: #3e4c00;
+  --approved-text: #3e4c00;
+  --approved-soft: #c1ff00;
+  --approved-soft-fg: #000000;
 
-  /* Pending: amber */
-  --pending: #a86b12;
-  --pending-text: #7c4f00;
-  --pending-soft: #fbefd3;
-  --pending-soft-fg: #6e4600;
+  /* Pending: gold fill, deep gold text */
+  --pending: #7a5a00;
+  --pending-text: #6b4e00;
+  --pending-soft: #ffe45e;
+  --pending-soft-fg: #000000;
 
   /* Info and executed: blue */
-  --info: #1f5aa6;
-  --info-text: #1d549b;
-  --info-soft: #e3ecf8;
-  --info-soft-fg: #184a8a;
+  --info: #1a2ffb;
+  --info-text: #071bdf;
+  --info-soft: #dadfff;
+  --info-soft-fg: #071bdf;
 
   /* Neutral states: rejected, stale, undone, draft */
-  --neutral: #7a7064;
-  --neutral-soft: #ece6dc;
-  --neutral-soft-fg: #4a433a;
+  --neutral: #6b7085;
+  --neutral-soft: #d9dce8;
+  --neutral-soft-fg: #2a2d38;
 
   /* Danger: destructive actions and error text. Never a large solid fill. */
-  --danger: #b42318;
-  --danger-text: #a8200f;
-  --danger-soft: #fce8e6;
-  --danger-soft-fg: #8f1d12;
+  --danger: #e90000;
+  --danger-text: #b80000;
+  --danger-soft: #ffe1de;
+  --danger-soft-fg: #8f0000;
 
   /* Emergency: the only solid red in the product. Always paired with a stripe pattern and icon. */
-  --emergency: #c8102e;
+  --emergency: #e90000;
   --on-emergency: #ffffff;
-  --emergency-soft: #fde3e3;
-  --emergency-soft-fg: #9a0b21;
+  --emergency-soft: #ffe1de;
+  --emergency-soft-fg: #8f0000;
+
+  /* Ambient backdrop behind the app chrome: decoration only, never text */
+  --ambient-1: rgb(7 27 223 / 0.09);
+  --ambient-2: rgb(136 50 247 / 0.06);
+  --ambient-grid: rgb(7 27 223 / 0.05);
+
+  /* Depth: a 1px inner top highlight plus a shadow ink, composed by the depth-* utilities */
+  --highlight: rgb(255 255 255 / 0.75);
+  --shadow-ink: 11 20 26;
+
+  /* Static film grain for the app backdrop: dark specks on paper */
+  --grain-opacity: 0.05;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 .dark {
   color-scheme: dark;
 
-  /* Surfaces: deep ink */
-  --bg: #111318;
-  --surface: #181b22;
-  --surface-raised: #1f232c;
-  --surface-sunken: #0c0e12;
-  --border: #2e3340;
-  --border-strong: #737b8d;
-  --fg: #f2ede4;
-  --fg-muted: #aaa397;
-  --overlay: rgb(0 0 0 / 0.6);
-  --ring: #8ab4f8;
+  /* Surfaces: ink */
+  --bg: #000000;
+  --surface: #0e0f14;
+  --surface-raised: #16171d;
+  --surface-sunken: #07080b;
+  --border: #2a2d38;
+  --border-strong: #6b7085;
+  --fg: #e4e6ef;
+  --fg-muted: #9aa0b4;
+  --overlay: rgb(0 0 0 / 0.7);
+  --ring: #c1ff00;
 
-  --curtain: #b83a4d;
-  --curtain-hover: #a13043;
-  --on-curtain: #ffffff;
-  --curtain-text: #f28f9c;
-  --curtain-soft: #3a1c23;
-  --curtain-soft-fg: #f6b6bf;
+  /* Curtain: lime with black text. Blue-dark is never text on ink. */
+  --curtain: #c1ff00;
+  --curtain-hover: #d4ff4d;
+  --on-curtain: #000000;
+  --curtain-text: #c1ff00;
+  --curtain-soft: #1f2a00;
+  --curtain-soft-fg: #c1ff00;
 
-  --agent: #2a9d96;
-  --on-agent: #07201f;
-  --agent-text: #6fd3cb;
-  --agent-soft: #12302f;
-  --agent-soft-fg: #8fe0d8;
+  --agent: #b47cff;
+  --on-agent: #000000;
+  --agent-text: #b47cff;
+  --agent-soft: #24123f;
+  --agent-soft-fg: #cda8ff;
 
-  --approved: #4cbf73;
-  --approved-text: #7bd69a;
-  --approved-soft: #15301f;
-  --approved-soft-fg: #9be3b3;
+  --approved: #c1ff00;
+  --approved-text: #c1ff00;
+  --approved-soft: #1f2a00;
+  --approved-soft-fg: #d4ff4d;
 
-  --pending: #f2b94b;
-  --pending-text: #f5c96e;
-  --pending-soft: #3a2c10;
-  --pending-soft-fg: #f6cd7a;
+  --pending: #ffe45e;
+  --pending-text: #ffe45e;
+  --pending-soft: #2e2600;
+  --pending-soft-fg: #ffe45e;
 
-  --info: #8ab4f8;
-  --info-text: #9dc0fa;
-  --info-soft: #172a45;
-  --info-soft-fg: #a9c8fa;
+  --info: #8a95ff;
+  --info-text: #8a95ff;
+  --info-soft: #0a1450;
+  --info-soft-fg: #b3baff;
 
-  --neutral: #8d8679;
-  --neutral-soft: #262a33;
-  --neutral-soft-fg: #d0c9bd;
+  --neutral: #7a7f93;
+  --neutral-soft: #1c1e26;
+  --neutral-soft-fg: #c9ccda;
 
-  --danger: #ff7b72;
-  --danger-text: #ff8a80;
-  --danger-soft: #3a1716;
-  --danger-soft-fg: #ffa39b;
+  --danger: #ff4c41;
+  --danger-text: #ff6b61;
+  --danger-soft: #2a0705;
+  --danger-soft-fg: #ff8a82;
 
-  --emergency: #d42a3a;
+  --emergency: #e90000;
   --on-emergency: #ffffff;
-  --emergency-soft: #3d1417;
-  --emergency-soft-fg: #ffa0a5;
+  --emergency-soft: #3a0000;
+  --emergency-soft-fg: #ff8a82;
+
+  --ambient-1: rgb(26 47 251 / 0.2);
+  --ambient-2: rgb(136 50 247 / 0.1);
+  --ambient-grid: rgb(228 230 239 / 0.04);
+
+  --highlight: rgb(255 255 255 / 0.06);
+  --shadow-ink: 0 0 0;
+
+  /* Light specks on ink */
+  --grain-opacity: 0.035;
+  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .6 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 /* Non-colour scales. Tailwind reads these as theme values and also emits them as CSS variables. */
 @theme static {
-  /* Type scale (px): 12 14 16 18 22 28 36 48, with line heights that leave room for Devanagari */
+  /* Type scale (px): 12 14 16 18 22 28 36 48 56 72 96. Each size carries its own tracking, tightening
+     optically as it grows (Inter Tight has no opsz axis). Display line heights are tight; theme.css
+     restores room for Devanagari matras under :lang(hi). */
   --text-*: initial;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.125rem;
+  --text-xs--letter-spacing: 0.01em;
   --text-sm: 0.875rem;
   --text-sm--line-height: 1.375rem;
+  --text-sm--letter-spacing: 0em;
   --text-base: 1rem;
   --text-base--line-height: 1.5rem;
+  --text-base--letter-spacing: -0.006em;
   --text-lg: 1.125rem;
   --text-lg--line-height: 1.75rem;
+  --text-lg--letter-spacing: -0.011em;
   --text-xl: 1.375rem;
-  --text-xl--line-height: 1.875rem;
+  --text-xl--line-height: 1.75rem;
+  --text-xl--letter-spacing: -0.015em;
   --text-2xl: 1.75rem;
-  --text-2xl--line-height: 2.25rem;
+  --text-2xl--line-height: 2.125rem;
+  --text-2xl--letter-spacing: -0.02em;
   --text-3xl: 2.25rem;
-  --text-3xl--line-height: 2.75rem;
+  --text-3xl--line-height: 2.625rem;
+  --text-3xl--letter-spacing: -0.025em;
   --text-4xl: 3rem;
-  --text-4xl--line-height: 3.5rem;
+  --text-4xl--line-height: 3.25rem;
+  --text-4xl--letter-spacing: -0.03em;
+  --text-5xl: 3.5rem;
+  --text-5xl--line-height: 3.75rem;
+  --text-5xl--letter-spacing: -0.035em;
+  --text-6xl: 4.5rem;
+  --text-6xl--line-height: 4.625rem;
+  --text-6xl--letter-spacing: -0.04em;
+  --text-7xl: 6rem;
+  --text-7xl--line-height: 5.75rem;
+  --text-7xl--letter-spacing: -0.045em;
 
   /* Spacing: 4px base. p-1 is 4px, p-4 is 16px. */
   --spacing: 0.25rem;
 
-  /* Radius: 8 for controls, 16 for cards */
-  --radius-control: 0.5rem;
-  --radius-card: 1rem;
+  /* Radius: 3 for controls, 18 for cards, pill for buttons and chips */
+  --radius-control: 0.1875rem;
+  --radius-card: 1.125rem;
+  --radius-pill: 999px;
+  /* Tiles nested in a card (card 18 minus a 6 gap) and dialogs, sheets, the voice panel */
+  --radius-inner: 0.75rem;
+  --radius-sheet: 1.5rem;
 
-  /* Motion: state changes only, 150 to 250 ms, ease-out */
-  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  /* Soft long shadow for cards on paper (shadow-card) */
+  --shadow-card: 0 1px 0.5px rgb(11 20 26 / 0.08), 0 16px 32px -16px rgb(11 20 26 / 0.18);
+
+  /* Motion. App surfaces stay inside 150 to 400 ms. Arrivals use expo-out, things travelling on screen
+     use in-out, exits use in and run faster than enters. Reduced motion turns it all off (theme.css). */
+  --ease-out: cubic-bezier(0.4, 0, 0.1, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-in: cubic-bezier(0.5, 0, 0.75, 0);
+  /* Springs (linear() curves, defined in :root below) as Tailwind eases: ease-spring, ease-spring-soft */
+  --ease-spring: var(--spring-snappy);
+  --ease-spring-soft: var(--spring-soft);
+  --duration-instant: 100ms;
   --duration-fast: 150ms;
   --duration-base: 200ms;
   --duration-slow: 250ms;
+  --duration-slower: 400ms;
+  /* Signature moments only: landing, the public hero, voice */
+  --duration-reveal: 600ms;
+  /* Delay between items in a list cascade. Cap the cascade at 8 items. */
+  --stagger: 40ms;
   --animate-spin: spin 1s linear infinite;
 
   /* Touch target minimum on mobile */
@@ -190,4 +255,106 @@
     transparent 0 8px,
     color-mix(in srgb, var(--emergency) 18%, transparent) 8px 16px
   );
+
+  /* Springs fall back to expo-out where linear() is not supported */
+  --spring-snappy: var(--ease-out-expo);
+  --spring-soft: var(--ease-out-expo);
+  --spring-bouncy: var(--ease-out-expo);
+}
+
+/* Springs from a damped oscillator. snappy (k400 c30, 400 ms, 2.8% overshoot): presses, magnet return.
+   soft (k170 c22, 600 ms): panels, toasts, tilt return. bouncy (k300 c18, 720 ms): the voice orb and
+   the approve check only. */
+@supports (transition-timing-function: linear(0, 1)) {
+  :root {
+    --spring-snappy: linear(
+      0,
+      0.047,
+      0.157,
+      0.297,
+      0.443,
+      0.579,
+      0.698,
+      0.797,
+      0.874,
+      0.932,
+      0.973,
+      1,
+      1.017,
+      1.025,
+      1.028,
+      1.028,
+      1.025,
+      1.021,
+      1.017,
+      1.013,
+      1.009,
+      1.007,
+      1.004,
+      1.002,
+      1
+    );
+    --spring-soft: linear(
+      0,
+      0.054,
+      0.176,
+      0.322,
+      0.468,
+      0.599,
+      0.709,
+      0.797,
+      0.865,
+      0.914,
+      0.95,
+      0.974,
+      0.989,
+      0.999,
+      1.004,
+      1.006,
+      1.007,
+      1.007,
+      1.006,
+      1.005,
+      1.004,
+      1.003,
+      1.002,
+      1.001,
+      1
+    );
+    --spring-bouncy: linear(
+      0,
+      0.068,
+      0.232,
+      0.438,
+      0.646,
+      0.829,
+      0.972,
+      1.07,
+      1.126,
+      1.147,
+      1.142,
+      1.121,
+      1.092,
+      1.06,
+      1.032,
+      1.009,
+      0.993,
+      0.983,
+      0.979,
+      0.978,
+      0.981,
+      0.985,
+      0.99,
+      0.994,
+      0.998,
+      1.001,
+      1.002,
+      1.003,
+      1.003,
+      1.003,
+      1.002,
+      1.002,
+      1
+    );
+  }
 }

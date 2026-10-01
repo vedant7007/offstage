@@ -39,12 +39,12 @@ export default async function RegisterPage({ params }: PageProps<"/e/[slug]/regi
     }));
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col px-4 pt-8 md:px-8">
+    <div className="mx-auto flex max-w-2xl flex-col px-4 pt-8 md:px-8 md:pt-12">
       <PageHeader
         back={
           <Link
             href={`/e/${slug}`}
-            className="inline-flex min-h-11 w-fit items-center gap-2 font-medium text-curtain-text underline underline-offset-4"
+            className="inline-flex min-h-11 w-fit items-center gap-2 rounded-full border-[1.5px] border-border-strong px-4 text-sm font-medium transition-colors duration-(--duration-fast) ease-out hover:bg-surface"
           >
             <ArrowLeft aria-hidden className="size-4" />
             {event.name}

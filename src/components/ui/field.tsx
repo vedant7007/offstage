@@ -48,7 +48,10 @@ export function Field({ label, hint, error, required = false, hideLabel, classNa
   return (
     <FieldContext.Provider value={{ id, hintId, errorId, invalid: Boolean(error), required }}>
       <div data-slot="field" className={cn("flex flex-col gap-1.5", className)}>
-        <label htmlFor={id} className={cn("text-sm font-medium text-fg", hideLabel && "sr-only")}>
+        <label
+          htmlFor={id}
+          className={cn("text-sm font-medium tracking-[-0.01em] text-fg", hideLabel && "sr-only")}
+        >
           {label}
           {required ? (
             <span className="ml-1 text-fg-muted" aria-hidden>
@@ -75,8 +78,10 @@ export function Field({ label, hint, error, required = false, hideLabel, classNa
 
 /** Shared look for text-like controls. */
 export const controlClass = cn(
-  "w-full rounded-control border border-border-strong bg-surface px-3 text-base text-fg",
-  "placeholder:text-fg-muted transition-colors duration-(--duration-fast) ease-out",
-  "hover:border-fg-muted disabled:cursor-not-allowed disabled:opacity-55",
-  "aria-invalid:border-danger aria-invalid:border-2",
+  "w-full rounded-control border-[1.5px] border-border-strong bg-surface-raised px-3 text-base text-fg depth-1",
+  "placeholder:text-fg-muted transition-[border-color,background-color] duration-(--duration-fast) ease-out",
+  "hover:border-fg disabled:cursor-not-allowed disabled:opacity-55",
+  // Focus: the 2px ring plus a soft halo in the ring colour (the halo is static, never animated)
+  "focus-visible:border-ring focus-visible:outline-offset-1 focus-visible:shadow-[0_0_0_4px_color-mix(in_srgb,var(--ring)_16%,transparent)]",
+  "aria-invalid:border-2 aria-invalid:border-danger",
 );

@@ -25,19 +25,28 @@ for (const scheme of ["light", "dark"] as const) {
   });
 }
 
-test("landing tells the story in eleven cues and links to the live demo", async ({ page }) => {
+test("landing tells the story in seven cues and links to the live demo", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("OFFSTAGE");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The show goes on.");
   await expect(page.getByRole("link", { name: "Enter live demo" })).toHaveAttribute("href", "/console");
-  for (const cue of ["14 AI agents.", "The agents propose.", "The rule.", "The show goes on."]) {
-    await expect(
-      page.getByRole("heading", { level: 2, name: new RegExp(cue.replace(".", "\.")) }),
-    ).toBeAttached();
+  for (const cue of [
+    "The chaos before the show",
+    "Enter the Commander",
+    "The crew",
+    "The show must go on",
+    "The rule",
+  ]) {
+    await expect(page.getByRole("heading", { level: 2, name: cue })).toBeAttached();
   }
+  await expect(page.getByText("14 agents, every one with a human lead.")).toBeAttached();
   await expect(page.getByRole("link", { name: "Enter the live demo" })).toHaveAttribute("href", "/console");
+  await expect(page.getByRole("link", { name: "See the attendee side" })).toHaveAttribute(
+    "href",
+    "/e/hacknova-2026",
+  );
   await expect(page.getByRole("link", { name: "Demo event" })).toHaveAttribute("href", "/e/hacknova-2026");
   await expect(
-    page.getByText("Agents propose. Policy decides. Humans approve. Code executes."),
+    page.getByRole("contentinfo").getByText("Agents propose. Policy decides. Humans approve. Code executes."),
   ).toBeAttached();
 });
 
@@ -47,22 +56,33 @@ test("landing with reduced motion shows every cue as still text", async ({ brows
   const errors = collectErrors(page);
   await page.goto("/");
   await expect(page.locator("[data-mode='poster']")).toBeAttached();
-  await expect(page.getByRole("heading", { level: 2, name: /14 AI agents/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "The crew" })).toBeVisible();
+  await expect(page.getByText("Illustrative, from the seeded HackNova demo")).toBeVisible();
   await expect(page.locator("canvas")).toHaveCount(0);
   expect(errors).toEqual([]);
   await context.close();
 });
 
-test("about our AI reads in all three languages", async ({ page, context }) => {
+test("about our AI reads in all three languages", async ({ page, context, isMobile }) => {
+  // On phones the language switcher lives in the header menu sheet. Wait for the page to re-render
+  // in the new language (h1 by tag: the open sheet hides the page from the accessibility tree), then close it.
+  const pickLanguage = async (label: string, menu: string, value: string, h1: string) => {
+    if (!isMobile) return page.getByLabel(label).selectOption(value);
+    await page.getByRole("button", { name: menu }).click();
+    await page.getByRole("dialog").getByLabel(label).selectOption(value);
+    await expect(page.locator("h1")).toHaveText(h1);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+  };
   await page.goto("/about-ai");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("About our AI");
-  await expect(page.getByText("Drafted by Sutradhar, approved by Lead")).toBeVisible();
+  await expect(page.getByText("Drafted by the OFFSTAGE assistant, approved by Event lead")).toBeVisible();
 
-  await page.getByLabel("Language").selectOption("hi");
+  await pickLanguage("Language", "Menu", "hi", "हमारे AI के बारे में");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("हमारे AI के बारे में");
   await expect(page.getByRole("heading", { name: "आपातकाल इंसानों तक जाता है" })).toBeVisible();
 
-  await page.getByLabel("भाषा").selectOption("hinglish");
+  await pickLanguage("भाषा", "मेन्यू", "hinglish", "Hamare AI ke baare mein");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hamare AI ke baare mein");
   await context.clearCookies();
 });

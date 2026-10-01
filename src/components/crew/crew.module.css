@@ -1,0 +1,113 @@
+/* Crew motion: scan feedback and sync status only. Opacity and transforms only; the global
+   reduced-motion rule in theme.css stops every animation here, and the flash is not rendered at all. */
+
+/* Full-screen answer flash, portalled to <body> so no transformed ancestor can box it in. */
+.flash {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  opacity: 0;
+  animation: flash 360ms var(--ease-out) both;
+}
+.flash svg {
+  width: 6rem;
+  height: 6rem;
+  stroke-width: 1.5;
+}
+@keyframes flash {
+  18% {
+    opacity: 0.92;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+/* The result card settles in with a soft spring, after the flash has done the shouting. */
+.result {
+  animation: result-in 600ms var(--spring-soft) both;
+}
+@keyframes result-in {
+  from {
+    opacity: 0;
+    scale: 0.96;
+  }
+}
+
+/* Offline and waiting banners slide down into place. */
+.drop {
+  animation: drop 240ms var(--ease-out-expo) both;
+}
+@keyframes drop {
+  from {
+    opacity: 0;
+    translate: 0 -8px;
+  }
+}
+
+/* A "no" you can see without reading: the rejected result shakes its head once. */
+.result[data-tone="danger"] {
+  animation:
+    result-in 600ms var(--spring-soft) both,
+    shake 420ms var(--ease-out) both;
+}
+@keyframes shake {
+  15% {
+    translate: -8px 0;
+  }
+  35% {
+    translate: 7px 0;
+  }
+  55% {
+    translate: -5px 0;
+  }
+  75% {
+    translate: 3px 0;
+  }
+}
+
+/* The answer icon lands with a bounce: in the flash and on the result card. */
+.pop,
+.flash svg {
+  animation: pop 720ms var(--spring-bouncy) both;
+}
+@keyframes pop {
+  from {
+    scale: 0.4;
+  }
+}
+
+/* Viewfinder: a scan line sweeping the frame. Under reduced motion it rests across the middle. */
+.sweep {
+  position: absolute;
+  inset: 0;
+  translate: 0 -50%;
+  border-bottom: 2px solid var(--curtain);
+  background: linear-gradient(
+    to bottom,
+    transparent 70%,
+    color-mix(in srgb, var(--curtain) 22%, transparent)
+  );
+  animation: sweep 2.4s var(--ease-in-out) infinite alternate;
+}
+@keyframes sweep {
+  from {
+    translate: 0 -100%;
+  }
+  to {
+    translate: 0 0;
+  }
+}
+
+/* Shift progress fills to now once, as the card arrives. */
+.fill {
+  animation: fill 900ms var(--ease-out-expo) 200ms both;
+}
+@keyframes fill {
+  from {
+    scale: 0 1;
+  }
+}

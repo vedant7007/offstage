@@ -4,14 +4,9 @@ import * as React from "react";
 import type { DeliveryStatsResponse } from "@/contracts";
 import { api } from "@/lib/api-client";
 import { DataTable, type Column } from "@/components/ui";
+import { channelName } from "./text";
 
 type Row = DeliveryStatsResponse["channels"][number];
-const LABEL: Record<string, string> = {
-  email: "Email",
-  telegram: "Telegram",
-  whatsapp: "WhatsApp",
-  sms: "SMS",
-};
 const num = (key: "real" | "mock" | "pending" | "failed" | "skipped", header: string): Column<Row> => ({
   key,
   header,
@@ -19,7 +14,7 @@ const num = (key: "real" | "mock" | "pending" | "failed" | "skipped", header: st
   cell: (r) => r[key].toLocaleString("en-IN"),
 });
 const COLUMNS: Column<Row>[] = [
-  { key: "channel", header: "Channel", primary: true, cell: (r) => LABEL[r.channel] ?? r.channel },
+  { key: "channel", header: "Channel", primary: true, cell: (r) => channelName(r.channel) },
   num("real", "Real"),
   num("mock", "Mock"),
   num("pending", "Queued"),
