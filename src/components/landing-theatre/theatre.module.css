@@ -146,6 +146,17 @@
   pointer-events: auto;
 }
 
+.root[data-curtain] .nav,
+.root[data-curtain] .rail {
+  mix-blend-mode: normal;
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.55);
+}
+
+.navCue,
+.brand {
+  transition: color 0.3s var(--ease);
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -196,7 +207,8 @@
   transition:
     transform 0.3s var(--ease),
     background-color 0.3s var(--ease),
-    color 0.3s var(--ease);
+    color 0.3s var(--ease),
+    box-shadow 0.3s var(--ease);
 }
 
 .btn:hover {
@@ -276,6 +288,7 @@
 
 .rail button::after {
   content: "";
+  flex: none;
   width: 18px;
   height: 1.5px;
   background: currentColor;
@@ -295,8 +308,7 @@
 }
 
 .rail button:hover .railLabel,
-.rail button:focus-visible .railLabel,
-.rail button[aria-current] .railLabel {
+.rail button:focus-visible .railLabel {
   opacity: 1;
   transform: none;
 }
@@ -425,6 +437,17 @@
 
 .dark .cueKicker {
   color: var(--lime);
+}
+
+.cueHeadCenter .cueKicker {
+  justify-content: center;
+}
+
+.cueHeadCenter .cueKicker::before {
+  content: "";
+  width: clamp(28px, 6vw, 64px);
+  height: 1.5px;
+  background: currentColor;
 }
 
 .cueTitle {
@@ -602,7 +625,7 @@
 
 .chaos {
   position: absolute;
-  inset: 0;
+  inset: var(--pad-top) 0 0;
   z-index: 4;
   transform-style: preserve-3d;
 }
@@ -611,7 +634,7 @@
   position: absolute;
   left: var(--x);
   top: var(--y);
-  width: min(320px, 24vw);
+  width: min(320px, 22vw);
   padding: 1.25rem 1.4rem 1.3rem;
   border: 1.5px solid rgb(0 0 0 / 0.14);
   border-radius: var(--r-card);
@@ -758,13 +781,22 @@
   position: absolute;
   z-index: 6;
   left: 50%;
-  top: 30%;
+  top: 15%;
   transform: translateX(-50%);
   width: max-content;
   max-width: 86vw;
   text-align: center;
   font-size: clamp(1rem, 1.8vw, 1.5rem);
   color: var(--red);
+}
+
+.boom b {
+  display: block;
+  margin-bottom: 0.5rem;
+  font: 500 clamp(2.75rem, 6vw, 4.75rem) / 1 var(--sans);
+  letter-spacing: -0.04em;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
 }
 
 .impact {
@@ -851,10 +883,14 @@
   transform-style: preserve-3d;
 }
 
+.stageCrew {
+  perspective-origin: 50% 55%;
+}
+
 .ring {
   position: absolute;
   left: 50%;
-  top: 54%;
+  top: 55%;
   transform-style: preserve-3d;
 }
 
@@ -862,13 +898,18 @@
   position: absolute;
   left: 50%;
   top: 50%;
-  width: min(296px, 66vw);
+  width: min(260px, 64vw);
   padding: 1.25rem 1.4rem;
   border: 1.5px solid color-mix(in srgb, var(--blue) 48%, transparent);
   border-radius: var(--r-card);
   background: color-mix(in srgb, var(--ink) 88%, var(--blue-dark));
   will-change: transform, opacity;
   backface-visibility: hidden;
+  transition: border-color 0.3s var(--ease);
+}
+
+.agent[data-front] {
+  border-color: var(--lime);
 }
 
 .agentN {
@@ -896,7 +937,8 @@
 }
 
 .agentCore {
-  top: 54%;
+  top: 55%;
+  width: min(300px, 70vw);
   z-index: 5;
   transform: translate(-50%, -50%);
   border-color: var(--lime);
@@ -1314,6 +1356,14 @@
   gap: 0.75rem 1rem;
 }
 
+.ctaRow .btnLime {
+  box-shadow: 0 10px 40px color-mix(in srgb, var(--lime) 32%, transparent);
+}
+
+.ctaRow .btnLime:hover {
+  box-shadow: 0 14px 52px color-mix(in srgb, var(--lime) 45%, transparent);
+}
+
 .ctaRow:focus-within {
   opacity: 1 !important;
   pointer-events: auto !important;
@@ -1432,7 +1482,7 @@
 
   .ring,
   .agentCore {
-    top: 62%;
+    top: 60%;
   }
 
   .ccard {
@@ -1466,7 +1516,7 @@
 
   .boom {
     top: auto;
-    bottom: 12%;
+    bottom: 10%;
   }
 
   .agent {

@@ -28,7 +28,11 @@ export const actLabel = (i: number) => {
   return act.cue ? `Cue ${act.cue}: ${act.label}` : act.label;
 };
 
-/** Chaos cards: text, where they sit on a wide stage (percent, clear of the heading), and how far they drift, sink and turn. */
+/**
+ * Chaos cards: text, where they sit on the stage (percent of the area under the nav, clear of the
+ * heading), and how far they drift, sink and turn. Cards in one row drift the same way, so their
+ * text never slides under a neighbour.
+ */
 export type ChaosCard = {
   t: string;
   x: number;
@@ -41,34 +45,34 @@ export type ChaosCard = {
 };
 export const CHAOS: ChaosCard[] = [
   {
-    t: "Operations scattered across WhatsApp and five different people.",
-    x: 50,
-    y: 5,
-    dx: 180,
+    t: "Plans split across WhatsApp groups and five people’s heads.",
+    x: 47,
+    y: 0,
+    dx: -70,
     dz: 70,
     ry: -7,
     rz: -2,
   },
-  { t: "The same questions, asked again and again.", x: 75, y: 13, dx: -150, dz: 110, ry: 6, rz: 2 },
+  { t: "The same questions, asked again and again.", x: 72, y: 7, dx: -70, dz: 110, ry: 6, rz: 2 },
   {
     t: "A speaker cancels. Nobody hears about it in time.",
-    x: 54,
-    y: 33,
-    dx: 120,
+    x: 47,
+    y: 28,
+    dx: 60,
     dz: -60,
     ry: -5,
     rz: -3,
     red: true,
   },
-  { t: "Volunteers unsure where to be, or what to do next.", x: 78, y: 41, dx: -190, dz: 40, ry: 8, rz: 1 },
-  { t: "Money tracked across chat windows and memory.", x: 4, y: 50, dx: 160, dz: -90, ry: -6, rz: 3 },
-  { t: "No proper report when the event ends.", x: 29, y: 58, dx: -120, dz: 130, ry: 5, rz: -2 },
-  { t: "WiFi collapses at peak check-in.", x: 53, y: 64, dx: 200, dz: 20, ry: -8, rz: 2, red: true },
+  { t: "Volunteers unsure where to be or what comes next.", x: 71, y: 34, dx: 60, dz: 40, ry: 8, rz: 1 },
+  { t: "Money tracked in chat threads and memory.", x: 3, y: 55, dx: -50, dz: -90, ry: -6, rz: 3 },
+  { t: "No proper report when the event ends.", x: 26, y: 63, dx: -50, dz: 130, ry: 5, rz: -2 },
+  { t: "WiFi collapses at peak check-in.", x: 49, y: 57, dx: -50, dz: 20, ry: -8, rz: 2, red: true },
   {
     t: "Faculty approvals, OD letters, certificates: a paper trail with no end.",
-    x: 77,
-    y: 71,
-    dx: -160,
+    x: 72,
+    y: 65,
+    dx: -50,
     dz: -120,
     ry: 7,
     rz: -1,
@@ -76,7 +80,7 @@ export const CHAOS: ChaosCard[] = [
 ];
 
 export const CMD: Step[] = [
-  { t: "The organizer talks to the Commander.", a: "Organizer" },
+  { t: "The organiser talks to the Commander.", a: "Organiser" },
   { t: "The Commander interviews them about the event.", a: "Commander" },
   { t: "It drafts the event plan and the timeline.", a: "Commander" },
   { t: "It builds the agent team for this event.", a: "Commander" },
@@ -89,17 +93,14 @@ export const COMMANDER: Agent = {
   lead: "Event head",
 };
 
-/** The other thirteen, split across the inner and outer ring. */
-export const CREW_IN: Agent[] = [
+/** The other thirteen, in the order they turn past on the ring around the Commander. */
+export const CREW: Agent[] = [
   { name: "Planner", does: "Timeline, milestones, overdue work.", lead: "Event head" },
   { name: "Finance", does: "Budget, ledger, overspend warnings. Never pays.", lead: "Treasurer" },
   { name: "Sponsorship", does: "Prospects, pitch drafts, follow-ups.", lead: "Sponsorship lead" },
   { name: "Marketing", does: "Content calendar, post drafts, registration funnel.", lead: "Marketing lead" },
   { name: "Registrar", does: "Registrations, waitlist, duplicates, teams.", lead: "Registrations lead" },
   { name: "Scheduler", does: "Sessions, rooms, clashes, replanning.", lead: "Program lead" },
-];
-
-export const CREW_OUT: Agent[] = [
   { name: "Speaker Liaison", does: "Confirmations, AV and travel needs, reminders.", lead: "Program lead" },
   { name: "Crew Chief", does: "Volunteer shifts, no-shows, breaks.", lead: "Volunteer lead" },
   { name: "Logistics", does: "Rooms, AV, food counts, inventory.", lead: "Logistics lead" },
@@ -115,11 +116,11 @@ export const CHAIN: Step[] = [
   { t: "It pulls in the Scheduler, Speaker Liaison, Crew Chief, Herald and Helpdesk.", a: "Commander" },
   { t: "The solver checks every room and slot.", a: "Scheduler" },
   { t: "Three valid slots come back.", a: "Scheduler" },
-  { t: "Ripple shows everyone the move touches.", a: "Commander" },
+  { t: "Ripple view shows everyone the move touches.", a: "Commander" },
   { t: "Policy marks it T3: two approvals needed.", a: "Policy" },
-  { t: "The Program lead approves.", a: "Program lead" },
+  { t: "The program lead approves.", a: "Program lead" },
   { t: "Faculty approves on their phone.", a: "Faculty" },
-  { t: "Attendees, the volunteer and the speaker hear it on their channel.", a: "Herald" },
+  { t: "Attendees, volunteers and the speaker hear it on their own channel.", a: "Herald" },
   { t: "Helpdesk answers with the new time.", a: "Helpdesk" },
 ];
 
@@ -144,15 +145,15 @@ export const TIERS = [
 
 export const FEATS: Feature[] = [
   {
-    t: "Ripple View",
+    t: "Ripple view",
     d: "Change one session and see everything it touches: rooms, attendees, volunteers, announcements and helpdesk answers, before anything changes.",
   },
   {
-    t: "Glass-box Agents",
+    t: "Glass-box agents",
     d: "Every agent step shows its model, tokens, cost and the evidence it cited. Nothing happens in a black box.",
   },
   {
-    t: "Check-in When WiFi Dies",
+    t: "Check-in when WiFi dies",
     d: "Volunteers keep checking people in with no network. Scans queue on the phone and sync, with duplicates flagged, when WiFi returns.",
   },
   {
@@ -160,11 +161,11 @@ export const FEATS: Feature[] = [
     d: "When 8 people ask the same thing in 10 minutes, Radar raises it and proposes an announcement before the queue grows.",
   },
   {
-    t: "Built for Indian Colleges",
+    t: "Built for Indian colleges",
     d: "OD letters, certificates with a public verify page, faculty approvals: handled the way your campus actually works.",
   },
   {
-    t: "What-if Simulator",
+    t: "What-if simulator",
     d: "Lose a speaker or a room, cut the budget, or add 30% more people. See the impact in a sandbox, with real data untouched.",
   },
 ];

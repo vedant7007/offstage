@@ -10,8 +10,7 @@ import {
   CHAOS,
   CMD,
   COMMANDER,
-  CREW_IN,
-  CREW_OUT,
+  CREW,
   FEATS,
   IMPACT,
   IMPACT_CAPTION,
@@ -40,10 +39,20 @@ const vars = (v: Record<string, string | number>) => v as unknown as CSSProperti
 const nn = (i: number) => String(i + 1).padStart(2, "0");
 
 /** The kicker and h2 of a cue, from the one label each act uses everywhere. */
-function CueHead({ id, sticky, children }: { id: ActId; sticky?: boolean; children?: ReactNode }) {
+function CueHead({
+  id,
+  sticky,
+  center,
+  children,
+}: {
+  id: ActId;
+  sticky?: boolean;
+  center?: boolean;
+  children?: ReactNode;
+}) {
   const act = ACTS.find((a) => a.id === id);
   return (
-    <header className={cx(s.cueHead, sticky && s.cueHeadSticky)}>
+    <header className={cx(s.cueHead, sticky && s.cueHeadSticky, center && s.cueHeadCenter)}>
       <p className={cx(s.cueKicker, s.mono)}>{act?.cue ? `Cue ${act.cue}` : act?.label}</p>
       {children}
     </header>
@@ -225,8 +234,7 @@ export function TheatrePage() {
                 <span className={s.line}>The chaos</span> <span className={s.line}>before the show</span>
               </h2>
               <p className={s.cueLede}>
-                Every event starts the same way: bright people, big ideas, and operations scattered
-                everywhere.
+                Every college event starts the same way: bright people, big ideas, and nothing in one place.
               </p>
             </CueHead>
             <ul className={s.chaos} data-t="chaos">
@@ -238,7 +246,7 @@ export function TheatrePage() {
                     "--x": `${c.x}%`,
                     "--y": `${c.y}%`,
                     "--mx": `${i % 2 ? 51 : 3}%`,
-                    "--my": `${29 + Math.floor(i / 2) * 16 + (i % 2) * 3}%`,
+                    "--my": `${13 + Math.floor(i / 2) * 18 + (i % 2) * 3}%`,
                   })}
                 >
                   <span className={cx(s.ccardI, s.mono)}>{nn(i)}</span>
@@ -286,15 +294,8 @@ export function TheatrePage() {
               <p className={s.cueLede}>14 agents, every one with a human lead. Scroll to turn the stage.</p>
             </CueHead>
             <div className={s.rings}>
-              <ul className={cx(s.ring, s.ringIn)} data-t="ringIn">
-                {CREW_IN.map((a) => (
-                  <li key={a.name} className={s.agent}>
-                    <AgentBody agent={a} />
-                  </li>
-                ))}
-              </ul>
-              <ul className={cx(s.ring, s.ringOut)} data-t="ringOut">
-                {CREW_OUT.map((a) => (
+              <ul className={s.ring} data-t="ring">
+                {CREW.map((a) => (
                   <li key={a.name} className={s.agent}>
                     <AgentBody agent={a} />
                   </li>
@@ -311,14 +312,14 @@ export function TheatrePage() {
         <section id="show" data-act="show" className={cx(s.act, s.dark)} style={vars({ "--acth": "360vh" })}>
           <div className={cx(s.stage, s.stageTunnel, s.persp)}>
             <div className={s.floor} aria-hidden />
-            <p className={cx(s.boom, s.mono)} data-t="boom">
-              2:03 PM. The keynote speaker cancels.
-            </p>
             <CueHead id="show" sticky>
               <h2 className={s.cueTitle}>
                 <span className={s.line}>The show</span> <span className={s.line}>must go on</span>
               </h2>
             </CueHead>
+            <p className={cx(s.boom, s.mono)} data-t="boom">
+              <b>2:03 PM.</b> The keynote speaker cancels.
+            </p>
             <ol className={s.tunnel} data-t="show">
               {CHAIN.map((step, i) => (
                 <Node key={step.t} i={i} item={step} />
@@ -417,7 +418,7 @@ export function TheatrePage() {
           <div className={s.disclose} data-reveal="">
             <h3 className={cx(s.discloseH, s.mono)}>Every automated message says so</h3>
             <Flip film={film} />
-            <p className={cx(s.discloseLine, s.mono)}>“Drafted by OFFSTAGE, approved by the Program lead”</p>
+            <p className={cx(s.discloseLine, s.mono)}>“Drafted by OFFSTAGE, approved by the program lead”</p>
           </div>
         </section>
 
@@ -431,7 +432,7 @@ export function TheatrePage() {
           <div className={cx(s.stage, s.stageFinal, s.persp)}>
             <div className={s.floor} aria-hidden />
             <div className={s.spot} aria-hidden />
-            <CueHead id="final" />
+            <CueHead id="final" center />
             <ul className={s.bow} data-t="bow">
               {BOW.map((b) => (
                 <li key={b}>{b}</li>

@@ -6,6 +6,7 @@ import { CHAOS, actLabel } from "./content";
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 const easeOut = (t: number) => 1 - (1 - t) ** 3;
+const smooth = (t: number) => t * t * (3 - 2 * t);
 const TAU = Math.PI * 2;
 
 /** Acts that keep a slow drift while on screen. While one is visible the loop keeps running. */
@@ -62,8 +63,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
       impact: one("impact"),
       impactEnd: one("impactEnd"),
       feat: kids("feat"),
-      ringIn: kids("ringIn"),
-      ringOut: kids("ringOut"),
+      ring: kids("ring"),
       plates: kids("plates"),
       emerg: one("emerg"),
       bow: kids("bow"),
@@ -76,22 +76,31 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
 
     // Depth scale for narrow screens, read on resize, not every frame.
     let D = 1;
+    let RY = 210; // how far the front of the crew ring drops below the Commander
     const measure = () => {
       const w = window.innerWidth;
       D = w <= 560 ? 0.45 : w <= 860 ? 0.6 : 1;
+      RY = Math.min(210, window.innerHeight * 0.24);
     };
     measure();
 
-    /* generic fly-through: node i is centred on the camera at p = i / (n - 1) */
-    const fly = (nodes: HTMLElement[], p: number, spread: number, sway: Sway, t: number) => {
+    /*
+     * Generic fly-through: node i reaches the camera at p = end * i / (n - 1), so the last node
+     * has flown past before the act's closing beat plays. Each node holds still at the camera for
+     * the first part of its step, so it can be read, then flies on. It fades fast as it passes,
+     * and only the next two wait in the fog, so no text sits behind a half-transparent card.
+     */
+    const fly = (nodes: HTMLElement[], p: number, spread: number, sway: Sway, t: number, end = 1) => {
       const n = nodes.length;
       const sp = spread * D;
-      const far = (n - 1) * sp;
+      const raw = (p / end) * (n - 1);
+      const step = Math.floor(raw);
+      const at = step + smooth(clamp((raw - step - 0.35) / 0.65));
       nodes.forEach((node, i) => {
-        const z = (p * (n - 1) - i) * sp;
+        const z = (at - i) * sp;
         tf(node, `translate(-50%,-50%) translate3d(${sway(i, t, D)}px,0,${z}px)`);
-        const pass = clamp(1 - (z - 110) / 520); // flew past the camera
-        const fog = clamp((z + far * 0.92) / 480, 0.07, 1); // still out in the wings
+        const pass = clamp(1 - (z - 0.12 * sp) / (0.26 * sp)); // flew past the camera
+        const fog = clamp(1 - (-z - sp) / (1.4 * sp)); // still out in the wings
         op(node, pass * fog);
       });
     };
@@ -126,42 +135,51 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
           $.cmd,
           dp,
           740,
-          (i, t, d) => ((i % 2 ? 1 : -1) * (44 + (i % 3) * 30) + Math.sin(t * 0.9 + i) * 10) * d,
+          (i, t, d) => ((i % 2 ? 1 : -1) * (120 + (i % 3) * 40) + Math.sin(t * 0.9 + i) * 10) * d,
           t,
+          0.7,
         );
-        const c = clamp((dp - 0.8) / 0.16);
+        const c = clamp((dp - 0.86) / 0.12);
         op($.converge, c);
         tf($.converge, `translate(-50%,-50%) scale(${lerp(0.6, 1, easeOut(c))})`);
       },
       crew(dp, t) {
-        const place = (ring: HTMLElement[], R: number, ang: number) => {
-          ring.forEach((el, i) => {
-            const a = (i / ring.length) * TAU - Math.PI / 2 + ang;
-            const y = Math.sin(t * 0.6 + i * 1.3) * 9 * D;
-            tf(el, `translate(-50%,-50%) translate3d(${Math.sin(a) * R}px,${y}px,${Math.cos(a) * R}px)`);
-            op(el, clamp((Math.cos(a) + 0.32) / 0.95, 0.05, 1));
-          });
-        };
-        place($.ringIn, 410 * D, dp * TAU * 0.55 + t * 0.035);
-        place($.ringOut, 730 * D, -dp * TAU * 0.38 - t * 0.025);
+        // One tilted ring around the Commander: the front sits low and close, the back high and
+        // far, so the Commander in the middle is never covered. Each agent turns to the front once.
+        const n = $.ring.length;
+        const rx = Math.min(520, window.innerWidth * 0.36);
+        const rz = 260 * D;
+        const turn = dp * TAU * ((n - 1) / n) + t * 0.02;
+        $.ring.forEach((el, i) => {
+          const a = (i / n) * TAU - turn;
+          const c = Math.cos(a);
+          const bob = Math.sin(t * 0.6 + i * 1.3) * 6 * D;
+          tf(el, `translate(-50%,-50%) translate3d(${Math.sin(a) * rx}px,${c * RY + bob}px,${c * rz}px)`);
+          // Narrow screens have no room for the whole ring: only the agent at the front shows.
+          op(el, D < 1 ? clamp((c - 0.86) / 0.12) : clamp(0.22 + 0.78 * ((c + 0.2) / 1.2), 0.12, 1));
+          el.toggleAttribute("data-front", c > Math.cos(Math.PI / n));
+        });
       },
       show(dp, t) {
         fly(
           $.show,
           dp,
           620,
-          (i, t, d) => ((i % 2 ? 1 : -1) * (70 + (i % 3) * 44) + Math.sin(t * 0.8 + i * 1.4) * 8) * d,
+          (i, t, d) => ((i % 2 ? 1 : -1) * (120 + (i % 3) * 40) + Math.sin(t * 0.8 + i * 1.4) * 8) * d,
           t,
+          0.78,
         );
         op($.boom, clamp(1 - dp / 0.1));
         $.impact?.toggleAttribute("data-on", dp > 0.84);
         $.impactEnd?.toggleAttribute("data-on", dp > 0.93);
       },
       rule(dp) {
+        // The four lines arrive one after another out of the dark, then hold still to be read.
         $.plates.forEach((el, i) => {
-          const z = ((i - 1.5) * 150 + (0.5 - dp) * 380) * D;
-          const x = (i % 2 ? 1 : -1) * (0.5 - dp) * 54 * D;
-          tf(el, `translate3d(${x}px,0,${z}px)`);
+          const a = easeOut(clamp((dp + 0.15 - i * 0.12) / 0.35));
+          const x = (i % 2 ? 1 : -1) * (1 - a) * 90 * D;
+          tf(el, `translate3d(${x}px,0,${-(1 - a) * 420 * D}px)`);
+          op(el, a);
         });
         $.emerg?.toggleAttribute("data-on", dp > 0.6);
       },
@@ -170,8 +188,9 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
           $.feat,
           dp,
           690,
-          (i, t, d) => ((i % 2 ? 1 : -1) * (90 + (i % 3) * 54) + Math.sin(t * 0.7 + i) * 12) * d,
+          (i, t, d) => ((i % 2 ? 1 : -1) * (120 + (i % 3) * 40) + Math.sin(t * 0.7 + i) * 12) * d,
           t,
+          0.92,
         );
       },
       final(dp) {
@@ -183,12 +202,14 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
         const b = clamp((dp - 0.62) / 0.24);
         op($.cta, b);
         if ($.cta) $.cta.style.pointerEvents = b > 0.5 ? "auto" : "none";
-        // The curtains part for the closing tableau, then close behind the call to action.
-        // Phones open them further so the text in the middle is never covered.
-        const a = easeOut(clamp((dp - 0.24) / 0.22)) * (1 - clamp((dp - 0.86) / 0.14));
-        const w = D < 1 ? 92 : 24;
-        tf($.finL, `translateX(calc(${-w * a}% - ${a}vw)) rotateY(${-14 * a}deg)`);
-        tf($.finR, `translateX(calc(${w * a}% + ${a}vw)) rotateY(${14 * a}deg)`);
+        // The curtains part for the closing tableau, then draw in to frame it, stopping well
+        // clear of the text. On narrow screens they stay open.
+        const open = easeOut(clamp((dp - 0.08) / 0.3));
+        const frame = D < 1 ? 0 : easeOut(clamp((dp - 0.78) / 0.18));
+        const w = 100 * open * (1 - 0.4 * frame);
+        const turn = 22 * open * (1 - frame / 2);
+        tf($.finL, `translateX(calc(${-w}% - ${open}vw)) rotateY(${-turn}deg)`);
+        tf($.finR, `translateX(calc(${w}% + ${open}vw)) rotateY(${turn}deg)`);
       },
     };
 
@@ -205,12 +226,15 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
       const vh = window.innerHeight;
       let busy = false;
       let cur = 0;
+      let under = "";
 
       // Reads first: one rect per act.
       acts.forEach((a, i) => {
         const r = a.sc.getBoundingClientRect();
         a.p = clamp(-r.top / Math.max(1, r.height - vh));
         if (r.top <= vh * 0.5) cur = i;
+        const er = a.el === a.sc ? r : a.el.getBoundingClientRect();
+        if (er.top <= 40 && er.bottom > 40) under = a.id;
         const on = r.bottom > 0 && r.top < vh;
         if (on !== a.on) {
           a.on = on;
@@ -228,6 +252,9 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
 
       // Then writes.
       if (film) for (const a of acts) if (a.on) update[a.id]?.(a.dp, t);
+
+      // Over the red curtains the blended chrome turns cyan; plain white reads better there.
+      root.toggleAttribute("data-curtain", film && (under === "opening" || under === "final"));
 
       if (cur !== current) {
         current = cur;
@@ -289,12 +316,13 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
         ...$.cmd,
         ...$.show,
         ...$.feat,
-        ...$.ringIn,
-        ...$.ringOut,
+        ...$.ring,
         ...$.plates,
       ];
       for (const el of moved) el?.style.removeProperty("transform");
       for (const el of moved) el?.style.removeProperty("opacity");
+      for (const el of $.ring) el.removeAttribute("data-front");
+      root.removeAttribute("data-curtain");
       $.cta?.style.removeProperty("pointer-events");
     };
   }, [rootRef, film]);
