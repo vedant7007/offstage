@@ -71,7 +71,9 @@ export async function Faq({ data, cue }: Props) {
                 <ChevronDown className="size-4" />
               </span>
             </summary>
-            <p className="measure border-t border-border px-5 py-4 text-pretty text-fg-muted md:px-6">{f.answer}</p>
+            <p className="measure border-t border-border px-5 py-4 text-pretty text-fg-muted md:px-6">
+              {f.answer}
+            </p>
           </details>
         ))}
       </div>

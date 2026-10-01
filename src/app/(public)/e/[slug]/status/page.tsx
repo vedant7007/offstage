@@ -6,7 +6,8 @@ import { ArrowLeft, MessageCircleQuestionMark, Presentation } from "lucide-react
 import type { PublicStatusResponse } from "@/contracts";
 import { Alert, Button, LanguageSwitcher, ThemeToggle, TimeRange } from "@/components/ui";
 import { getPublicEvent, getPublicStatus } from "@/components/public/data";
-import { LiveRefresh } from "@/components/public/status/live-refresh";
+import { BoardClock, LiveRefresh } from "@/components/public/status/live-refresh";
+import { LivePulse, NumberTicker } from "@/components/ui/motion";
 import { getT } from "@/lib/i18n/server";
 import { formatTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -47,6 +48,23 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
   const soonest = (r: PublicStatusResponse["rooms"][number]) =>
     r.current ? `0${r.current.startsAt}` : r.next ? `1${r.next.startsAt}` : "2";
   const rooms = [...data.rooms].sort((a, b) => soonest(a).localeCompare(soonest(b)));
+  // The board's figures, all counted from the status data. They roll when a refresh changes them.
+  const slots = data.rooms.flatMap((r) => [r.current, r.next]).filter((x) => x !== undefined);
+  const figures = [
+    {
+      key: "now",
+      label: t("event.sessionStatus.running"),
+      value: data.rooms.filter((r) => r.current).length,
+    },
+    { key: "next", label: t("board.next"), value: data.rooms.filter((r) => r.next).length },
+    {
+      key: "late",
+      label: t("event.sessionStatus.delayed"),
+      value: slots.filter((x) => x.status === "delayed" || x.delayMinutes > 0).length,
+      tone: "text-pending-text",
+    },
+    { key: "news", label: t("board.announcements"), value: data.announcements.length },
+  ];
   // TimeRange prints "IST" at a fixed small size; scale it with the time on the projector.
   const zone = kiosk ? "[&>span]:text-[0.6em]" : undefined;
 
@@ -145,13 +163,43 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
               {t("board.title")}
             </h1>
           </div>
-          <div className="flex flex-col items-start gap-1 md:items-end">
-            <LiveRefresh className={kiosk ? "text-lg" : undefined} />
-            <p className={cn("font-mono text-fg-muted", kiosk ? "text-lg" : "text-xs")}>
-              {t("board.updated", { time: formatTime(data.now) })}
-            </p>
+          <div className="flex flex-col items-start gap-2 md:items-end">
+            <BoardClock
+              now={data.now}
+              className={kiosk ? "text-[clamp(4rem,7vw,6.5rem)]/none" : "text-5xl/none md:text-6xl/none"}
+            />
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              <LiveRefresh className={kiosk ? "text-lg" : undefined} />
+              <p className={cn("font-mono text-fg-muted", kiosk ? "text-lg" : "text-xs")}>
+                {t("board.updated", { time: formatTime(data.now) })}
+              </p>
+            </div>
           </div>
         </div>
+
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border depth-2 md:grid-cols-4">
+          {figures.map((f) => (
+            <div key={f.key} className="flex flex-col gap-2 bg-surface p-4 md:p-6">
+              <dt
+                className={cn(
+                  "font-mono font-medium tracking-[0.12em] text-fg-muted uppercase",
+                  kiosk ? "text-base" : "text-xs",
+                )}
+              >
+                {f.label}
+              </dt>
+              <dd
+                className={cn(
+                  "font-medium tracking-[-0.04em]",
+                  kiosk ? "text-6xl/none" : "text-4xl/none md:text-5xl/none",
+                  f.value > 0 && f.tone,
+                )}
+              >
+                <NumberTicker value={f.value} mode="roll" />
+              </dd>
+            </div>
+          ))}
+        </dl>
 
         {emergencies.map((a) => (
           <Alert key={a.id} variant="emergency" title={a.title} className={kiosk ? "text-xl" : undefined}>
@@ -176,7 +224,7 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
                   <article
                     aria-labelledby={`room-${r.roomId}`}
                     className={cn(
-                      "flex h-full flex-col gap-5 rounded-card bg-surface p-6 shadow-card",
+                      "flex h-full flex-col gap-5 rounded-card bg-surface p-6 depth-2",
                       kiosk ? "border-2 border-border-strong" : "border border-border",
                     )}
                   >
@@ -184,17 +232,11 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
                       id={`room-${r.roomId}`}
                       className={cn("flex items-center gap-2.5", kiosk ? "text-3xl" : "text-xl")}
                     >
-                      <span aria-hidden className="relative flex size-2.5 shrink-0">
-                        {r.current ? (
-                          <span className="absolute inset-0 animate-ping rounded-full bg-approved opacity-60 motion-reduce:hidden" />
-                        ) : null}
-                        <span
-                          className={cn(
-                            "relative size-2.5 rounded-full",
-                            r.current ? "bg-approved" : "bg-border-strong",
-                          )}
-                        />
-                      </span>
+                      {r.current ? (
+                        <LivePulse className="size-2.5" />
+                      ) : (
+                        <span aria-hidden className="size-2.5 shrink-0 rounded-full bg-border-strong" />
+                      )}
                       {r.roomName}
                     </h3>
                     {slot(t("board.now"), r.current, t("board.nothingNow"), true)}
@@ -216,7 +258,7 @@ export default async function StatusPage({ params, searchParams }: PageProps<"/e
                 {others.map((a) => (
                   <li
                     key={a.id}
-                    className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-5 shadow-card"
+                    className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-5 depth-2"
                   >
                     <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
                       <p className={cn("font-medium tracking-[-0.015em]", kiosk ? "text-2xl" : "text-lg")}>

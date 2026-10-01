@@ -12,6 +12,7 @@ import { DraftedByLabel, PageHeader, TierBadge } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
 import type { MessageKey } from "@/lib/i18n/translate";
 import { cn } from "@/lib/utils";
+import { Reveal, TextReveal } from "@/components/ui/motion";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -50,12 +51,15 @@ const LAW = ["propose", "decide", "approve", "execute"] as const;
 export default async function AboutAiPage() {
   const t = await getT();
   const block = (b: Block, num: number, extra?: React.ReactNode, wide = false) => (
-    <section
+    <Reveal
+      as="section"
       key={b.id}
+      index={wide ? 0 : (num + 1) % 2}
       aria-labelledby={`${b.id}-title`}
       className={cn(
-        "flex flex-col gap-4 rounded-card border border-border bg-surface p-6 shadow-card md:p-7",
+        "flex flex-col gap-4 rounded-card border border-border bg-surface p-6 depth-2 md:p-8",
         wide && "md:col-span-2",
+        num === 1 && "edge",
       )}
     >
       <div className="flex items-center justify-between gap-3">
@@ -71,7 +75,7 @@ export default async function AboutAiPage() {
       </h2>
       <p className="max-w-3xl text-base leading-relaxed text-pretty text-fg-muted">{t(b.body)}</p>
       {extra}
-    </section>
+    </Reveal>
   );
 
   const [decide, ...rest] = BLOCKS;
@@ -80,21 +84,24 @@ export default async function AboutAiPage() {
       <PageHeader
         display
         eyebrow="OFFSTAGE"
-        title={t("aboutAi.title")}
+        title={<TextReveal as="span" text={t("aboutAi.title")} />}
         description={t("aboutAi.intro")}
         className="pb-0"
       />
 
       <ol
         aria-label={t("landing.lawTitle")}
-        className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border md:grid-cols-4"
+        className="grid grid-cols-2 gap-px overflow-hidden rounded-card border border-border bg-border depth-2 md:grid-cols-4"
       >
+        {/* The four rules light up in order, like cues being called. */}
         {LAW.map((k, i) => (
-          <li key={k} className="flex flex-col gap-2 bg-surface p-4 md:p-5">
-            <span aria-hidden className="kicker text-curtain-text">
-              {String(i + 1).padStart(2, "0")}
-            </span>
-            <span className="font-medium tracking-[-0.015em]">{t(`landing.law.${k}`)}</span>
+          <li key={k} className="bg-surface p-4 md:p-6">
+            <Reveal variant="fade" index={i + 2} className="flex flex-col gap-3">
+              <span aria-hidden className="kicker text-curtain-text">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <span className="font-medium tracking-[-0.015em]">{t(`landing.law.${k}`)}</span>
+            </Reveal>
           </li>
         ))}
       </ol>

@@ -69,48 +69,48 @@ export async function Schedule({ data, day, track, cue }: Props) {
       </SectionHead>
 
       <div className="flex flex-col gap-3">
-      <nav aria-label={t("event.dayNav")}>
-        <ul className="flex gap-2 overflow-x-auto pb-1">
-          {days.map((d) => {
-            const first = data.sessions.find((s) => istDateKey(s.startsAt) === d);
-            const active = d === day;
-            return (
-              <li key={d}>
-                <Link
-                  href={href(d, track)}
-                  aria-current={active ? "true" : undefined}
-                  className={pill(active)}
-                >
-                  {active ? fill("schedule-day") : null}
-                  {first ? formatDayShort(first.startsAt) : d}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
-
-      {data.tracks.length ? (
-        <nav aria-label={t("event.trackFilter")}>
-          <ul className="flex flex-wrap gap-2">
-            {[null, ...data.tracks.map((tr) => tr.id)].map((id) => {
-              const active = id === track;
+        <nav aria-label={t("event.dayNav")}>
+          <ul className="flex gap-2 overflow-x-auto pb-1">
+            {days.map((d) => {
+              const first = data.sessions.find((s) => istDateKey(s.startsAt) === d);
+              const active = d === day;
               return (
-                <li key={id ?? "all"}>
+                <li key={d}>
                   <Link
-                    href={href(day, id)}
+                    href={href(d, track)}
                     aria-current={active ? "true" : undefined}
                     className={pill(active)}
                   >
-                    {active ? fill("schedule-track") : null}
-                    {id ? tracks.get(id)?.name : t("event.allTracks")}
+                    {active ? fill("schedule-day") : null}
+                    {first ? formatDayShort(first.startsAt) : d}
                   </Link>
                 </li>
               );
             })}
           </ul>
         </nav>
-      ) : null}
+
+        {data.tracks.length ? (
+          <nav aria-label={t("event.trackFilter")}>
+            <ul className="flex flex-wrap gap-2">
+              {[null, ...data.tracks.map((tr) => tr.id)].map((id) => {
+                const active = id === track;
+                return (
+                  <li key={id ?? "all"}>
+                    <Link
+                      href={href(day, id)}
+                      aria-current={active ? "true" : undefined}
+                      className={pill(active)}
+                    >
+                      {active ? fill("schedule-track") : null}
+                      {id ? tracks.get(id)?.name : t("event.allTracks")}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+        ) : null}
       </div>
 
       {sessions.length === 0 ? (
@@ -140,17 +140,14 @@ export async function Schedule({ data, day, track, cue }: Props) {
                     <TimeRange
                       start={s.startsAt}
                       end={s.endsAt}
-                            className="font-mono text-xs font-medium tracking-[0.04em] text-curtain-text tabular-nums"
+                      className="font-mono text-xs font-medium tracking-[0.04em] text-curtain-text tabular-nums"
                     />
                     <Badge tone="outline">{t(`event.sessionKind.${s.kind}`)}</Badge>
                     {tone ? <Badge tone={tone}>{t(`event.sessionStatus.${s.status}`)}</Badge> : null}
                   </div>
                   <h3
                     id={titleId}
-                    className={cn(
-                      "text-xl text-balance",
-                      s.status === "cancelled" && "line-through",
-                    )}
+                    className={cn("text-xl text-balance", s.status === "cancelled" && "line-through")}
                   >
                     {s.title}
                   </h3>

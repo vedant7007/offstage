@@ -5,6 +5,7 @@ import { getCertificate } from "@/components/public/data";
 import { getT } from "@/lib/i18n/server";
 import { formatDate, formatDayShort } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { Reveal, TextReveal } from "@/components/ui/motion";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -48,15 +49,19 @@ export default async function VerifyPage({ params }: PageProps<"/verify/[certId]
     <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-10 md:px-8 md:pt-14">
       <PageHeader
         eyebrow="OFFSTAGE"
-        title={t("verify.title")}
+        title={<TextReveal as="span" text={t("verify.title")} />}
         description={t("verify.intro")}
         className="pb-0"
       />
 
-      <section
+      {/* The verdict settles in once, just after the heading. */}
+      <Reveal
+        as="section"
+        variant="scale"
+        delay={150}
         aria-labelledby="verify-result"
         data-state={state}
-        className={cn("flex flex-col gap-5 rounded-card border-2 p-5 shadow-card md:p-7", look.box)}
+        className={cn("flex flex-col gap-6 rounded-card border-2 p-5 depth-2 md:p-8", look.box)}
       >
         <div className="flex items-start gap-3">
           <span className="flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-current">
@@ -71,7 +76,7 @@ export default async function VerifyPage({ params }: PageProps<"/verify/[certId]
         </div>
 
         {cert ? (
-          <div className="rounded-card bg-surface-raised p-5 text-fg md:p-6">
+          <div className="rounded-inner bg-surface-raised p-5 text-fg depth-1 md:p-6">
             <p className="kicker text-fg-muted">{t("verify.recipient")}</p>
             <p
               className={cn(
@@ -113,7 +118,7 @@ export default async function VerifyPage({ params }: PageProps<"/verify/[certId]
             {t("verify.id")}: {certId}
           </p>
         )}
-      </section>
+      </Reveal>
     </div>
   );
 }

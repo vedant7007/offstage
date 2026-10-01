@@ -71,6 +71,18 @@ import {
   Tooltip,
   type Column,
 } from "@/components/ui";
+import {
+  ConfirmBurst,
+  Kicker,
+  LivePulse,
+  Magnetic,
+  NumberTicker,
+  PREMIUM_KIT,
+  SkeletonCard,
+  SpotlightCard,
+  TextReveal,
+  Tilt,
+} from "@/components/ui/motion";
 import { useT } from "@/lib/i18n/provider";
 import type { Messages } from "@/lib/i18n/translate";
 import {
@@ -157,6 +169,7 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
       </div>
 
       <BackstageSamples />
+      <PremiumKit />
 
       <Section id="tokens" title={t("design.sections.tokens")}>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -573,13 +586,13 @@ function BackstageSamples() {
         </span>
       </div>
       <div className="grid gap-4 md:grid-cols-3">
-        <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-6 shadow-card">
+        <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-6 depth-2">
           <p className="kicker text-fg-muted">Static card</p>
           <p className="text-xl font-medium tracking-[-0.015em]">18 px radius, hairline border</p>
           <p className="text-sm text-fg-muted">Soft long shadow. No lift, because it does nothing.</p>
         </div>
-        <SpotlightCard />
-        <div className="dark flex flex-col gap-2 rounded-card bg-bg p-6 text-fg shadow-card">
+        <PickCard />
+        <div className="dark grain relative isolate flex flex-col gap-2 rounded-card bg-bg p-6 text-fg depth-3 before:-z-10">
           <p className="kicker text-curtain-text">Ink stage</p>
           <p className="text-xl font-medium tracking-[-0.015em]">A nested dark panel</p>
           <p className="text-sm text-fg-muted">Tokens flip inside it, in both themes.</p>
@@ -594,35 +607,163 @@ function BackstageSamples() {
   );
 }
 
-/** Interactive card: lifts on hover and follows the pointer with a soft curtain-coloured light. */
-function SpotlightCard() {
+/** Interactive card built from the kit utilities: the app-wide PointerFx drives the spotlight. */
+function PickCard() {
   const [picked, setPicked] = React.useState(false);
   return (
     <button
       type="button"
       aria-pressed={picked}
       onClick={() => setPicked((v) => !v)}
-      onPointerMove={(e) => {
-        const r = e.currentTarget.getBoundingClientRect();
-        e.currentTarget.style.setProperty("--x", `${e.clientX - r.left}px`);
-        e.currentTarget.style.setProperty("--y", `${e.clientY - r.top}px`);
-      }}
-      className="group relative flex flex-col gap-2 overflow-hidden rounded-card border border-border bg-surface p-6 text-left shadow-card transition-[transform,border-color] duration-(--duration-slow) ease-out hover:border-border-strong motion-safe:hover:-translate-y-0.5 aria-pressed:border-curtain"
+      className="spot spot-edge lift press flex flex-col gap-2 rounded-card border border-border bg-surface p-6 text-left depth-2 aria-pressed:border-curtain"
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-(--duration-slow) group-hover:opacity-100"
-        style={{
-          background:
-            "radial-gradient(16rem circle at var(--x, 50%) var(--y, 0%), color-mix(in oklab, var(--curtain) 14%, transparent), transparent 70%)",
-        }}
-      />
-      <span className="kicker relative text-fg-muted">Interactive card</span>
-      <span className="relative text-xl font-medium tracking-[-0.015em]">Spotlight and lift</span>
-      <span className="relative text-sm text-fg-muted">
+      <span className="kicker text-fg-muted">Interactive card</span>
+      <span className="text-xl font-medium tracking-[-0.015em]">Spotlight and lift</span>
+      <span className="text-sm text-fg-muted">
         {picked ? "Selected. Click again to clear." : "Hover, or press to select."}
       </span>
     </button>
+  );
+}
+
+/**
+ * Every premium kit piece, live. English only, a review aid. Each demo is the real component, so what
+ * looks right here looks right in the app.
+ */
+function PremiumKit() {
+  const [run, setRun] = React.useState(0);
+  const [live, setLive] = React.useState(318);
+  const [approved, setApproved] = React.useState(0);
+  return (
+    <Section
+      id="premium"
+      title="Premium kit"
+      description="Motion and depth primitives from components/ui/motion. One or two signature moments per page, everything else quiet."
+    >
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <Demo name="TextReveal" note="Words rise out of a mask. One per page, on the h1.">
+          <TextReveal
+            key={run}
+            as="p"
+            text="The show goes on."
+            className="text-4xl font-medium tracking-[-0.03em] [&_.tr-inner]:text-fade"
+          />
+          <Button size="sm" variant="secondary" onClick={() => setRun((n) => n + 1)}>
+            Replay
+          </Button>
+        </Demo>
+
+        <Demo name="NumberTicker" note="Count up on enter, or roll only the digits that change.">
+          <div className="flex items-baseline gap-6">
+            <NumberTicker value={124580} className="text-4xl font-medium tracking-[-0.04em]" />
+            <NumberTicker value={live} mode="roll" className="font-mono text-4xl tracking-[-0.04em]" />
+          </div>
+          <Button size="sm" variant="secondary" onClick={() => setLive((n) => n + 7)}>
+            Add 7 check-ins
+          </Button>
+        </Demo>
+
+        <Demo name="Magnetic" note="The one primary action leans toward the cursor and springs back.">
+          <Magnetic>
+            <Button size="lg">Register now</Button>
+          </Magnetic>
+        </Demo>
+
+        <Demo name="SpotlightCard" note="Cursor spotlight and a border that lights up near it.">
+          <SpotlightCard className="flex w-full flex-col gap-1">
+            <span className="kicker text-fg-muted">10:30 IST</span>
+            <span className="text-lg font-medium">Opening keynote</span>
+          </SpotlightCard>
+        </Demo>
+
+        <Demo name="Tilt" note="The attendee pass leans with a soft glare. One sheen sweep on touch.">
+          <Tilt className="dark w-full">
+            <div className="edge flex items-center gap-4 rounded-card bg-bg p-5 text-fg depth-3">
+              <span className="relative z-2 grid size-14 shrink-0 grid-cols-3 gap-1 rounded-inner bg-white p-2">
+                {Array.from({ length: 9 }, (_, i) => (
+                  <span key={i} className={i % 2 ? "bg-white" : "bg-black"} />
+                ))}
+              </span>
+              <span className="flex flex-col gap-1">
+                <span className="kicker text-curtain-text">Pass</span>
+                <span className="font-medium">Sneha Reddy</span>
+              </span>
+            </div>
+          </Tilt>
+        </Demo>
+
+        <Demo
+          name="LivePulse and ConfirmBurst"
+          note="A pulse always next to the word Live. Rays on approve only."
+        >
+          <span className="inline-flex items-center gap-2.5 text-sm font-medium">
+            <LivePulse />
+            Live
+          </span>
+          <span className="relative inline-grid">
+            <Button size="sm" onClick={() => setApproved((n) => n + 1)}>
+              Approve
+            </Button>
+            {approved ? <ConfirmBurst key={approved} /> : null}
+          </span>
+        </Demo>
+
+        <Demo name="Skeletons" note="Loading in the shape of the content. Nothing shows for fast loads.">
+          <SkeletonCard className="w-full" />
+        </Demo>
+
+        <Demo name="Depth" note="Light, not boxes: an inner highlight and soft long shadows.">
+          <div className="grid w-full grid-cols-3 gap-3">
+            {(["depth-1", "depth-2", "depth-3"] as const).map((d) => (
+              <span
+                key={d}
+                className={`${d} flex h-20 items-end rounded-inner border border-border bg-surface p-2 font-mono text-xs text-fg-muted`}
+              >
+                {d}
+              </span>
+            ))}
+          </div>
+        </Demo>
+
+        <Demo name="edge and edge-live" note="Gradient hairline on key cards; one moving border per page.">
+          <div className="grid w-full grid-cols-2 gap-3">
+            <span className="edge flex h-20 items-end rounded-inner bg-surface p-2 font-mono text-xs text-fg-muted">
+              edge
+            </span>
+            <span className="edge edge-live flex h-20 items-end rounded-inner bg-surface p-2 font-mono text-xs text-fg-muted">
+              edge-live
+            </span>
+          </div>
+        </Demo>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <Kicker>Reference</Kicker>
+        <ul className="grid gap-x-8 sm:grid-cols-2">
+          {PREMIUM_KIT.map((k) => (
+            <li key={k.name} className="flex flex-col gap-0.5 border-b border-border py-3">
+              <span className="flex items-baseline justify-between gap-3">
+                <span className="font-mono text-sm font-medium">{k.name}</span>
+                <span className="kicker text-fg-muted">{k.kind}</span>
+              </span>
+              <span className="text-sm text-fg-muted">{k.use}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </Section>
+  );
+}
+
+function Demo({ name, note, children }: { name: string; note: string; children: React.ReactNode }) {
+  return (
+    <div className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5 depth-1 md:p-6">
+      <div className="flex flex-col gap-1">
+        <h3 className="font-mono text-sm font-medium">{name}</h3>
+        <p className="text-sm text-pretty text-fg-muted">{note}</p>
+      </div>
+      <div className="flex flex-1 flex-col items-start justify-center gap-4">{children}</div>
+    </div>
   );
 }
 
