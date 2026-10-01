@@ -6,3 +6,5 @@ src/db/migrations
 docs
 *.md
 pnpm-workspace.yaml
+src/showcase/fixtures/*.json
+src/showcase/fixtures/scenarios
