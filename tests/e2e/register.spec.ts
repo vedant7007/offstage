@@ -109,6 +109,10 @@ test("registers on the fixture event, verifies the code and reaches the ticket",
 test("explains what is missing and moves focus to the first problem", async ({ page }) => {
   await mockBackend(page);
   await page.goto(REGISTER);
+  // Submitting before React hydrates would do a native form submit and reload the page.
+  await page.waitForFunction(() =>
+    Object.keys(document.querySelector("form") ?? {}).some((k) => k.startsWith("__reactFiber")),
+  );
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(
     page.getByRole("alert").filter({ hasText: "Fix the highlighted fields to continue." }),

@@ -484,6 +484,8 @@
 
 /* Cross-document navigations (full page loads) crossfade too. In-app routes use React ViewTransition
    (src/components/ui/motion/transitions.tsx, mounted by each area's template.tsx); its CSS lives in motion.css. */
-@view-transition {
-  navigation: auto;
+@media (prefers-reduced-motion: no-preference) {
+  @view-transition {
+    navigation: auto;
+  }
 }

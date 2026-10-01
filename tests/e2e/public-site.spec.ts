@@ -63,16 +63,26 @@ test("landing with reduced motion shows every cue as still text", async ({ brows
   await context.close();
 });
 
-test("about our AI reads in all three languages", async ({ page, context }) => {
+test("about our AI reads in all three languages", async ({ page, context, isMobile }) => {
+  // On phones the language switcher lives in the header menu sheet. Wait for the page to re-render
+  // in the new language (h1 by tag: the open sheet hides the page from the accessibility tree), then close it.
+  const pickLanguage = async (label: string, menu: string, value: string, h1: string) => {
+    if (!isMobile) return page.getByLabel(label).selectOption(value);
+    await page.getByRole("button", { name: menu }).click();
+    await page.getByRole("dialog").getByLabel(label).selectOption(value);
+    await expect(page.locator("h1")).toHaveText(h1);
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog")).toBeHidden();
+  };
   await page.goto("/about-ai");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("About our AI");
   await expect(page.getByText("Drafted by the OFFSTAGE assistant, approved by Event lead")).toBeVisible();
 
-  await page.getByLabel("Language").selectOption("hi");
+  await pickLanguage("Language", "Menu", "hi", "हमारे AI के बारे में");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("हमारे AI के बारे में");
   await expect(page.getByRole("heading", { name: "आपातकाल इंसानों तक जाता है" })).toBeVisible();
 
-  await page.getByLabel("भाषा").selectOption("hinglish");
+  await pickLanguage("भाषा", "मेन्यू", "hinglish", "Hamare AI ke baare mein");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Hamare AI ke baare mein");
   await context.clearCookies();
 });
