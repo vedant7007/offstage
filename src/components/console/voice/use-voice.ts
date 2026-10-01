@@ -29,6 +29,8 @@ export type Turn = {
   firstSayMs?: number;
   costUsd: { stt: number; model: number; voice: number };
   interrupted?: boolean;
+  /** A question Offstage asked back, when the backend sends one: the next turn answers it. */
+  followUp?: string;
 };
 export type Steps = Record<VoiceStep, { state: "todo" | "active" | "done"; label: string }>;
 const EMPTY_STEPS: Steps = {
@@ -106,6 +108,8 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
   const streamDone = React.useRef(true);
   const voiceRef = React.useRef<VoiceId>("en-US-matthew");
   const openRef = React.useRef(opts.onOpenProposal);
+  /** The backend's conversation thread, when it sends one; every later turn sends it back. */
+  const conversationRef = React.useRef<string | null>(null);
 
   const setVoiceId = (v: VoiceId) => voiceStore.set(v);
   React.useEffect(() => {
@@ -249,7 +253,12 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
         const res = await fetch("/api/agents/voice/turn", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ turnId: turn.id, text, via }),
+          body: JSON.stringify({
+            turnId: turn.id,
+            text,
+            via,
+            ...(conversationRef.current ? { conversationId: conversationRef.current } : {}),
+          }),
           signal: ctl.signal,
         });
         if (!res.ok || !res.body)
@@ -267,7 +276,18 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
             const raw = buf.slice(0, nl);
             buf = buf.slice(nl + 1);
             if (!raw.trim()) continue;
-            const e = JSON.parse(raw) as VoiceEvent;
+            const parsed: unknown = JSON.parse(raw);
+            const e = parsed as VoiceEvent;
+            // Optional fields a conversational backend may add to any event: the thread, and a question back.
+            const more = parsed as { conversationId?: unknown; followUp?: unknown };
+            if (typeof more.conversationId === "string") conversationRef.current = more.conversationId;
+            const ask =
+              typeof more.followUp === "string"
+                ? more.followUp
+                : more.followUp === true && e.type === "say"
+                  ? e.text
+                  : "";
+            if (ask) update((t) => (t.followUp = ask));
             if (e.type === "intent") update((t) => ((t.intent = e.intent), (t.by = e.by)));
             else if (e.type === "say") {
               if (turn.firstSayMs === undefined)

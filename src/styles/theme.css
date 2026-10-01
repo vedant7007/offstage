@@ -221,5 +221,5 @@
   }
 }
 :where([data-shell-main] > *) {
-  animation: shell-enter var(--duration-slower) var(--ease-out) both;
+  animation: shell-enter var(--duration-slower) var(--ease-out) backwards;
 }
