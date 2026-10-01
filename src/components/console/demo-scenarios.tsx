@@ -22,23 +22,22 @@ export function DemoScenarios() {
   return (
     <section
       aria-labelledby="demo-scenarios"
-      className="flex flex-col gap-4 rounded-card border border-dashed border-agent bg-surface p-5 shadow-card"
+      className="flex flex-col gap-3 rounded-card border border-dashed border-agent/70 bg-surface px-4 py-4 shadow-card sm:px-5"
     >
-      <div className="flex flex-col gap-1">
+      <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
         <Kicker className="text-agent-text">Demo only</Kicker>
-        <h2 id="demo-scenarios" className="text-lg font-medium tracking-[-0.02em]">
+        <h2 id="demo-scenarios" className="text-base font-medium tracking-[-0.015em]">
           Demo scenarios
         </h2>
-        <p className="text-sm text-fg-muted">
-          Fire a scripted disruption and watch the agents react on the stage.
-        </p>
+        <p className="text-sm text-fg-muted">Fire a scripted disruption and watch the agents react.</p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {SCENARIOS.map(({ scenario, label }) => (
           <Button
             key={scenario}
             variant="secondary"
             size="sm"
+            className="shrink-0"
             loading={busy === scenario}
             disabled={busy !== null && busy !== scenario}
             onClick={() => {

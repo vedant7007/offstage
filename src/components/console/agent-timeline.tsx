@@ -4,10 +4,11 @@ import * as React from "react";
 import type { AgentRun, AgentRunResponse, AgentStep } from "@/contracts";
 import { api } from "@/lib/api-client";
 import { Alert, AgentAvatar, Badge, EmptyState, PageHeader, Skeleton } from "@/components/ui";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, History } from "lucide-react";
 import { formatDateTime } from "@/lib/time";
 import { cn } from "@/lib/utils";
 import { SPOT, spotlight } from "./fx";
+import { duration, humanize } from "./text";
 
 const usd = (n: number) => `$${n.toFixed(n < 0.01 ? 5 : 3)}`;
 
@@ -16,12 +17,12 @@ function stepLine(s: AgentStep): { label: string; detail: string } {
     case "llm":
       return {
         label: s.ok ? "Model call" : "Model call failed",
-        detail: `${s.provider} ${s.model}, ${s.inputTokens + s.outputTokens} tokens, ${s.latencyMs} ms, ${usd(s.costUsd)}${s.error ? `, ${s.error}` : ""}`,
+        detail: `${s.provider} ${s.model}, ${s.inputTokens + s.outputTokens} tokens, ${duration(s.latencyMs)}, ${usd(s.costUsd)}${s.error ? `, ${s.error}` : ""}`,
       };
     case "tool":
       return {
         label: `Tool ${s.tool}`,
-        detail: `${s.ok ? "ok" : `failed: ${s.error ?? ""}`}, ${s.latencyMs} ms`,
+        detail: `${s.ok ? "ok" : `failed: ${s.error ?? ""}`}, ${duration(s.latencyMs)}`,
       };
     case "propose":
       return {
@@ -34,7 +35,7 @@ function stepLine(s: AgentStep): { label: string; detail: string } {
         detail: `by ${s.by}, score ${s.score.toFixed(2)}${s.reasons.length ? `, ${s.reasons.join(", ")}` : ""}`,
       };
     case "fallback":
-      return { label: "Fell back to rules", detail: `${s.reason}: ${s.message}` };
+      return { label: "Fell back to rules", detail: `${s.reason.replace(/_/g, " ")}: ${s.message}` };
     default:
       return { label: "Note", detail: s.text };
   }
@@ -50,6 +51,8 @@ function RunDetail({ eventId, run }: { eventId: string; run: AgentRun }) {
   }, [eventId, run.id]);
   if (error) return <p className="text-sm text-danger-text">{error}</p>;
   if (!data) return <Skeleton className="h-16" />;
+  if (!data.steps.length)
+    return <p className="text-sm text-fg-muted">No steps were recorded for this run.</p>;
   return (
     <ol className="flex flex-col gap-2.5 border-l border-border-strong pl-4">
       {data.steps.map((s) => {
@@ -84,7 +87,7 @@ export function AgentTimeline({ eventId }: { eventId: string }) {
       <PageHeader
         eyebrow="Glass box"
         title="Timeline"
-        description="Every agent run: what it read, which model answered, what it cost and what it proposed."
+        description="Every agent run: what woke it, which model answered, what it cost and what it proposed."
       />
       {error ? (
         <Alert variant="danger" title="Could not load the timeline">
@@ -93,7 +96,11 @@ export function AgentTimeline({ eventId }: { eventId: string }) {
       ) : null}
       {!runs && !error ? <Skeleton className="h-40" /> : null}
       {runs && !runs.length ? (
-        <EmptyState title="No agent runs yet" description="Runs appear here as agents wake up." />
+        <EmptyState
+          icon={<History />}
+          title="No agent runs yet"
+          description="Every run lands here the moment an agent wakes up, with its model, cost and proposals."
+        />
       ) : null}
       <ul className="flex flex-col gap-3">
         {(runs ?? []).map((r) => (
@@ -105,19 +112,23 @@ export function AgentTimeline({ eventId }: { eventId: string }) {
             <details className="group">
               <summary className="flex min-h-14 cursor-pointer list-none flex-wrap items-center gap-3 rounded-card p-4 [&::-webkit-details-marker]:hidden">
                 <AgentAvatar agent={r.agent} size="sm" />
-                <span className="font-medium capitalize">{r.agent.replace("_", " ")}</span>
-                <span className="font-mono text-xs text-fg-muted">
-                  {r.trigger.eventType ?? r.trigger.type}, {formatDateTime(r.startedAt)}
+                <span className="flex min-w-0 flex-col">
+                  <span className="font-medium capitalize">{r.agent.replace("_", " ")}</span>
+                  <span className="text-sm text-fg-muted">
+                    {humanize(r.trigger.eventType ?? r.trigger.type)}, {formatDateTime(r.startedAt)}
+                  </span>
                 </span>
                 <Badge
                   tone={r.status === "succeeded" ? "approved" : r.status === "failed" ? "danger" : "pending"}
                 >
-                  {r.status}
+                  {humanize(r.status)}
                 </Badge>
-                {r.simulation ? <Badge tone="agent">simulation</Badge> : null}
+                {r.simulation ? <Badge tone="agent">Simulation</Badge> : null}
                 <span className="ml-auto font-mono text-xs text-fg-muted tabular-nums">
-                  {r.inputTokens + r.outputTokens} tokens, {usd(r.costUsd)}
-                  {r.latencyMs !== undefined ? `, ${(r.latencyMs / 1000).toFixed(1)} s` : ""}
+                  {r.inputTokens + r.outputTokens
+                    ? `${(r.inputTokens + r.outputTokens).toLocaleString("en-IN")} tokens, ${usd(r.costUsd)}`
+                    : "No model call"}
+                  {r.latencyMs !== undefined ? `, ${duration(r.latencyMs)}` : ""}
                   {r.proposalIds.length ? `, ${r.proposalIds.length} proposed` : ""}
                 </span>
                 <ChevronDown

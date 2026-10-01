@@ -21,7 +21,7 @@ import { NODE_STATE as STATE, STAGE } from "./theme";
 import type { NodeState, Pulse } from "./use-stage";
 
 type AgentData = { agent: AgentName; state: NodeState; waiting: number; centre?: boolean };
-type BoxData = { title: string; detail: string; kind: "gate" | "data" | "channel" };
+type BoxData = { title: string; detail: string; kind: "gate" | "data" | "channel"; waiting?: boolean };
 type EdgeData = { active: boolean; pulseId?: string; still: boolean };
 
 const hidden = "!h-1 !w-1 !min-h-0 !min-w-0 !border-0 !bg-transparent";
@@ -39,24 +39,23 @@ function AgentNode({ data }: NodeProps<Node<AgentData>>) {
       {handles}
       {s.glow ? <span aria-hidden className={cn(STAGE.glow, s.glow, "motion-safe:animate-pulse")} /> : null}
       <AgentAvatar agent={data.agent} showName size={data.centre ? "md" : "sm"} />
-      <div className="flex flex-wrap items-center gap-1">
-        <Badge tone={s.tone} className={STAGE.chip}>
-          {s.label}
-        </Badge>
-        {data.waiting ? (
-          <Badge tone="pending" className={STAGE.chip}>
-            {data.waiting} to approve
-          </Badge>
-        ) : null}
-      </div>
+      {/* One chip: what it is doing, or how many of its proposals wait for a person. */}
+      <Badge tone={data.waiting ? "pending" : s.tone} className={STAGE.chip}>
+        {data.waiting ? `${data.waiting} to approve` : s.label}
+      </Badge>
     </div>
   );
 }
 
+const KIND = { gate: "Human gate", data: "Data", channel: "Channel" } as const;
+
 function BoxNode({ data }: NodeProps<Node<BoxData>>) {
   return (
-    <div className={cn(STAGE.box, STAGE.boxShape[data.kind])}>
+    <div className={cn(STAGE.box, STAGE.boxShape[data.kind], data.waiting && STAGE.gateWaiting)}>
       {handles}
+      <span aria-hidden className={STAGE.boxKicker}>
+        {KIND[data.kind]}
+      </span>
       <span className={STAGE.boxTitle}>{data.title}</span>
       <span className={STAGE.boxDetail}>{data.detail}</span>
     </div>
@@ -106,7 +105,7 @@ const nodeTypes = { agent: AgentNode, box: BoxNode };
 const edgeTypes = { pulse: PulseEdge };
 
 export type StageBoxes = {
-  gates: { id: string; title: string; detail: string }[];
+  gates: { id: string; title: string; detail: string; waiting?: boolean }[];
   data: { id: string; title: string; detail: string }[];
   channels: { id: string; title: string; detail: string }[];
 };
@@ -130,7 +129,10 @@ function useStable<T extends Item>(items: T[]): T[] {
   });
 }
 
-const R = 330;
+// An ellipse wide enough that neighbours never touch, with data on the left and channels on the right,
+// compact enough that fitView keeps the text readable at 1440 px.
+const RX = 400;
+const RY = 300;
 const at = (x: number, y: number) => ({ x: Math.round(x), y: Math.round(y) });
 
 export function StageCanvas(props: {
@@ -148,7 +150,7 @@ export function StageCanvas(props: {
     {
       id: "agent:commander",
       type: "agent",
-      position: at(-104, -40),
+      position: at(-96, -40),
       data: {
         agent: "commander",
         state: props.stateOf("commander"),
@@ -162,7 +164,7 @@ export function StageCanvas(props: {
       return {
         id: `agent:${a}`,
         type: "agent",
-        position: at(Math.cos(angle) * R * 1.45 - 88, Math.sin(angle) * R - 30),
+        position: at(Math.cos(angle) * RX - 80, Math.sin(angle) * RY - 40),
         data: { agent: a, state: props.stateOf(a), waiting: props.waitingOf(a) },
         ariaLabel: `${a.replace("_", " ")}, ${STATE[props.stateOf(a)].label}`,
       };
@@ -170,21 +172,21 @@ export function StageCanvas(props: {
     ...props.boxes.gates.map((g, i) => ({
       id: g.id,
       type: "box",
-      position: at(-200 + i * 240, R + 110),
-      data: { title: g.title, detail: g.detail, kind: "gate" as const },
+      position: at(-184 + i * 224, RY + 80),
+      data: { title: g.title, detail: g.detail, kind: "gate" as const, waiting: g.waiting },
       ariaLabel: `${g.title}: ${g.detail}`,
     })),
     ...props.boxes.data.map((d, i) => ({
       id: d.id,
       type: "box",
-      position: at(-R * 1.45 - 380, -220 + i * 110),
+      position: at(-RX - 80 - 48 - 144, -300 + i * 124),
       data: { title: d.title, detail: d.detail, kind: "data" as const },
       ariaLabel: `${d.title}: ${d.detail}`,
     })),
     ...props.boxes.channels.map((c, i) => ({
       id: c.id,
       type: "box",
-      position: at(R * 1.45 + 220, -250 + i * 105),
+      position: at(RX + 80 + 48, -300 + i * 124),
       data: { title: c.title, detail: c.detail, kind: "channel" as const },
       ariaLabel: `${c.title}: ${c.detail}`,
     })),
@@ -221,13 +223,22 @@ export function StageCanvas(props: {
       <span aria-hidden className={STAGE.kicker}>
         On stage now
       </span>
+      <p aria-hidden className={STAGE.legend}>
+        <span className="flex items-center gap-1.5">
+          <span className="size-1.5 rounded-full" style={{ background: STAGE.dot }} />
+          Handoff in flight
+        </span>
+        <span>Click a node for its glass box</span>
+      </p>
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         edgeTypes={edgeTypes}
+        colorMode="dark"
+        style={{ background: "transparent" }}
         fitView
-        fitViewOptions={{ padding: 0.08 }}
+        fitViewOptions={{ padding: 0.05 }}
         minZoom={0.2}
         nodesDraggable={false}
         nodesConnectable={false}

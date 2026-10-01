@@ -19,9 +19,11 @@ import {
   KeyValueList,
   PageHeader,
   Skeleton,
+  TierBadge,
   toast,
 } from "@/components/ui";
 import { CountUp } from "./fx";
+import { channelName } from "./text";
 
 // Printing (Save as PDF) shows the report alone, without the console around it.
 const PRINT = `@media print {
@@ -95,7 +97,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
             className="flex flex-col-reverse gap-1 rounded-card border border-border bg-surface p-4 shadow-card break-inside-avoid"
           >
             <dt className="kicker text-fg-muted">{h.label}</dt>
-            <dd className="font-mono text-3xl font-medium">{h.node}</dd>
+            <dd className="font-mono text-4xl font-medium tracking-[-0.02em]">{h.node}</dd>
           </div>
         ))}
       </dl>
@@ -112,8 +114,8 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           </div>
         ) : (
           <p className="text-sm text-fg-muted">
-            No summary yet, or the numbers changed since the last one. Write summary asks the Chronicler for
-            three or four sentences that only quote the numbers below.
+            No summary for these numbers yet. Write summary asks the Chronicler for three or four sentences
+            that quote only the numbers below.
           </p>
         )}
       </Block>
@@ -167,7 +169,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           rowKey={(m) => m.channel}
           rows={r.messages}
           columns={[
-            { key: "channel", header: "Channel", cell: (m) => m.channel.replace("_", " "), primary: true },
+            { key: "channel", header: "Channel", cell: (m) => channelName(m.channel), primary: true },
             { key: "real", header: "Real", cell: (m) => m.real, align: "end" },
             { key: "mock", header: "Mock", cell: (m) => m.mock, align: "end" },
             { key: "failed", header: "Failed", cell: (m) => m.failed, align: "end" },
@@ -175,7 +177,10 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           ]}
           empty={<EmptyState title="No messages sent" />}
         />
-        <p className="mt-2 text-sm text-fg-muted">In-app notifications: {r.inAppNotifications}</p>
+        <p className="mt-2 text-sm text-fg-muted">
+          Plus <span className="tabular-nums">{r.inAppNotifications.toLocaleString("en-IN")}</span> in-app
+          notifications.
+        </p>
       </Block>
 
       <Block title="Budget">
@@ -213,7 +218,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
           rowKey={(x) => x.tier}
           rows={r.approvals}
           columns={[
-            { key: "tier", header: "Tier", cell: (x) => x.tier, primary: true },
+            { key: "tier", header: "Tier", cell: (x) => <TierBadge tier={x.tier} />, primary: true },
             { key: "total", header: "Proposed", cell: (x) => x.total, align: "end" },
             { key: "executed", header: "Carried out", cell: (x) => x.executed, align: "end" },
             { key: "rejected", header: "Rejected", cell: (x) => x.rejected, align: "end" },
@@ -243,7 +248,7 @@ export function CloseoutView({ eventId }: { eventId: string }) {
                 </Link>
               </>
             ) : (
-              <>, at /verify/ followed by the certificate id (none issued yet)</>
+              <>, at /verify/ plus its id. None issued yet</>
             )}
             .
           </p>

@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { EvalsResponse } from "@/contracts";
+import { FlaskConical } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { formatDayShort, formatTime } from "@/lib/time";
 import {
@@ -11,8 +12,6 @@ import {
   Button,
   Card,
   CardContent,
-  CardHeader,
-  CardTitle,
   DataTable,
   EmptyState,
   PageHeader,
@@ -20,6 +19,7 @@ import {
   toast,
 } from "@/components/ui";
 import { CountUp, Kicker } from "./fx";
+import { duration } from "./text";
 
 const pct = (x: number) => `${Math.round(x * 1000) / 10}%`;
 /** A rate (0 to 1) that counts up to its percentage. */
@@ -29,12 +29,12 @@ const usd = (x: number) => `$${x.toFixed(4)}`;
 function Metric(props: { title: string; value: React.ReactNode; detail: string; pass?: boolean }) {
   return (
     <Card>
-      <CardHeader>
-        <CardTitle className="kicker text-fg-muted">{props.title}</CardTitle>
-      </CardHeader>
-      <CardContent className="flex flex-col gap-2">
+      <CardContent>
+        <h3 className="kicker text-fg-muted">{props.title}</h3>
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-3xl font-medium tabular-nums">{props.value}</span>
+          <span className="font-mono text-4xl font-medium tracking-[-0.02em] tabular-nums">
+            {props.value}
+          </span>
           {props.pass === undefined ? null : (
             <Badge tone={props.pass ? "approved" : "danger"}>{props.pass ? "Pass" : "Below target"}</Badge>
           )}
@@ -86,7 +86,7 @@ export function EvalsView({ eventId }: { eventId: string }) {
         description={
           g
             ? `Golden set last run ${formatDayShort(g.at)}, ${formatTime(g.at)} on the ${g.profile} profile, ${usd(g.costUsd)} of model time.`
-            : "The golden set has not been run on this server yet."
+            : "How well the agents answer, refuse and plan, measured on a fixed golden set and live at this event."
         }
         actions={
           e.canRun ? (
@@ -137,15 +137,18 @@ export function EvalsView({ eventId }: { eventId: string }) {
           <Metric
             title="Retrieval"
             value={<Pct x={g.retrieval.hitRate} />}
-            detail={`The right document in the top ${g.retrieval.k}. Helpdesk answers in ${g.helpdesk.avgLatencyMs} ms on average.`}
+            detail={`The right document in the top ${g.retrieval.k}. Helpdesk answers in ${duration(g.helpdesk.avgLatencyMs)} on average.`}
             pass={g.pass.retrieval}
           />
         </div>
       ) : (
         <EmptyState
+          icon={<FlaskConical />}
           title="No golden run yet"
           description={
-            e.canRun ? "Run evals to measure this server's models." : "Ask the event owner to run them."
+            e.canRun
+              ? "Run evals to score grounding, injection blocking, the solver and retrieval on this server's models."
+              : "Ask the event owner to run them."
           }
         />
       )}
@@ -173,7 +176,7 @@ export function EvalsView({ eventId }: { eventId: string }) {
         <Metric
           title="Average per run"
           value={runs ? usd(cost / runs) : usd(0)}
-          detail={`${latency} ms average latency.`}
+          detail={`${duration(latency)} average latency.`}
         />
         <Metric
           title="Injection attempts blocked"
@@ -194,7 +197,7 @@ export function EvalsView({ eventId }: { eventId: string }) {
           },
           { key: "runs", header: "Runs", cell: (a) => a.runs, align: "end" },
           { key: "failed", header: "Failed", cell: (a) => a.failed, align: "end" },
-          { key: "latency", header: "Avg latency", cell: (a) => `${a.avgLatencyMs} ms`, align: "end" },
+          { key: "latency", header: "Avg latency", cell: (a) => duration(a.avgLatencyMs), align: "end" },
           { key: "cost", header: "Avg cost", cell: (a) => usd(a.avgCostUsd), align: "end" },
           { key: "total", header: "Total cost", cell: (a) => usd(a.totalCostUsd), align: "end" },
         ]}

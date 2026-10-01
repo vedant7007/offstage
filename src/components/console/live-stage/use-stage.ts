@@ -67,6 +67,8 @@ export function useStage(eventId: string) {
   const agentOf = React.useRef(new Map<string, AgentName>());
   // The server may run a demo clock; metrics carry its time, so the log reads the same clock as the console.
   const offset = React.useRef(0);
+  // The same offset as state, so the phone mockups can show the demo clock.
+  const [skew, setSkew] = React.useState(0);
 
   const addLog = React.useCallback((text: string, tone?: LogLine["tone"]) => {
     const at = new Date(Date.now() + offset.current).toISOString();
@@ -107,6 +109,7 @@ export function useStage(eventId: string) {
     api.call("overview", { params: { eventId } }).then(
       (o) => {
         offset.current = Date.parse(o.metrics.at) - Date.now();
+        setSkew(offset.current);
         setMetrics(o.metrics);
         setDisabled(new Set(o.agents.filter((a) => !a.enabled).map((a) => a.name)));
         setKilled(!o.globalAgentsEnabled);
@@ -187,6 +190,7 @@ export function useStage(eventId: string) {
     });
     on("metrics", ({ metrics: m }) => {
       offset.current = Date.parse(m.at) - Date.now();
+      setSkew(offset.current);
       setMetrics(m);
     });
     const seen = new Set<string>();
@@ -302,6 +306,8 @@ export function useStage(eventId: string) {
     connected,
     metrics,
     feedTick,
+    /** Milliseconds on the demo clock, ticking once a second. */
+    clock: now + skew,
     label,
     reload: loadPending,
     fmt: formatTime,

@@ -148,13 +148,18 @@ export function IntakeChat() {
                   }}
                 />
               </Field>
-              <Button type="submit" loading={busy} className="self-end">
-                Send
-              </Button>
+              <div className="flex items-center justify-between gap-3">
+                <p className="hidden font-mono text-xs text-fg-muted sm:block">
+                  Enter to send, Shift and Enter for a new line
+                </p>
+                <Button type="submit" loading={busy} className="ms-auto">
+                  Send
+                </Button>
+              </div>
             </form>
           )}
           {error ? (
-            <Alert variant="danger" title="Interview">
+            <Alert variant="danger" title="The Commander could not reply">
               {error}
             </Alert>
           ) : null}

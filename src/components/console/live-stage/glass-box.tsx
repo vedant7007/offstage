@@ -21,6 +21,7 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { agentOf, ApproveButton, metaOf, RejectButton } from "../proposal-bits";
+import { duration, humanize, sentence } from "../text";
 import { voiceShared } from "../voice/use-voice";
 
 /** The last voice turn with the Commander: what it heard, what it cost, how fast it answered. */
@@ -34,8 +35,11 @@ function VoiceTurn() {
       <KeyValueList
         items={[
           { label: "Heard", value: t.you },
-          { label: "Intent", value: t.intent ? `${t.intent.replace(/_/g, " ")} (${t.by})` : "working" },
-          { label: "First audio", value: t.latencyMs ? `${t.latencyMs} ms after you stopped` : "not yet" },
+          { label: "Intent", value: t.intent ? `${humanize(t.intent)} (${t.by})` : "Working" },
+          {
+            label: "First audio",
+            value: t.latencyMs ? `${duration(t.latencyMs)} after you stopped` : "Not yet",
+          },
           {
             label: "Voice cost",
             value: `${usd(c.stt + c.model + c.voice)} (speech to text ${usd(c.stt)}, model ${usd(c.model)}, Murf ${usd(c.voice)})`,
@@ -86,7 +90,7 @@ function StepLine({ s }: { s: AgentStep }) {
           <Badge tone={s.verdict === "block" ? "danger" : "neutral"} className={CHIP}>
             Guard
           </Badge>{" "}
-          {s.verdict} by {s.by.replace("_", " ")}
+          {humanize(s.verdict)} by {s.by.replace(/_/g, " ")}
         </>
       );
     case "fallback":
@@ -95,7 +99,7 @@ function StepLine({ s }: { s: AgentStep }) {
           <Badge tone="pending" className={CHIP}>
             Rules fallback
           </Badge>{" "}
-          {s.reason.replace("_", " ")}
+          {s.reason.replace(/_/g, " ")}
         </>
       );
     default:
@@ -136,7 +140,7 @@ function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
   }, [eventId, agent]);
   if (data === undefined) return <Skeleton className="h-32" />;
   if (!data)
-    return <EmptyState title="No runs yet" description="This agent has not been woken for this event." />;
+    return <EmptyState title="No runs yet" description="This agent has not woken up for this event." />;
   const { run, steps, cited } = data;
   const models = [
     ...new Set(steps.flatMap((s) => (s.kind === "llm" && s.ok ? [`${s.provider} ${s.model}`] : []))),
@@ -145,13 +149,13 @@ function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
     <section aria-label="Latest run" className="flex flex-col gap-3">
       <KeyValueList
         items={[
-          { label: "Status", value: run.status },
-          { label: "Woken by", value: run.trigger.eventType ?? run.trigger.type },
+          { label: "Status", value: humanize(run.status) },
+          { label: "Woken by", value: humanize(run.trigger.eventType ?? run.trigger.type) },
           { label: "Started", value: formatTime(run.startedAt) },
           { label: "Model", value: models.join(", ") || `No model call (${run.modelTier} tier)` },
           { label: "Tokens", value: `${run.inputTokens} in, ${run.outputTokens} out` },
           { label: "Cost", value: usd(run.costUsd) },
-          { label: "Latency", value: run.latencyMs ? `${run.latencyMs} ms` : "running" },
+          { label: "Latency", value: run.latencyMs ? duration(run.latencyMs) : "Running" },
         ]}
       />
       {cited.length ? (
@@ -171,14 +175,18 @@ function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
         </section>
       ) : null}
       <h3 className="kicker text-fg-muted">Steps</h3>
-      <ol className="flex flex-col gap-2 border-l border-border pl-3 text-sm">
-        {steps.map((s) => (
-          <li key={s.id} className="flex flex-wrap items-center gap-1.5">
-            <span className="font-mono text-xs text-fg-muted tabular-nums">{formatTime(s.at)}</span>
-            <StepLine s={s} />
-          </li>
-        ))}
-      </ol>
+      {steps.length ? (
+        <ol className="flex flex-col gap-2 border-l border-border pl-3 text-sm">
+          {steps.map((s) => (
+            <li key={s.id} className="flex flex-wrap items-center gap-1.5">
+              <span className="font-mono text-xs text-fg-muted tabular-nums">{formatTime(s.at)}</span>
+              <StepLine s={s} />
+            </li>
+          ))}
+        </ol>
+      ) : (
+        <p className="text-sm text-fg-muted">No steps were recorded for this run.</p>
+      )}
     </section>
   );
 }
@@ -200,7 +208,7 @@ function Proposals({
         <ProposalCard
           key={p.id}
           agent={agentOf(p)}
-          summary={p.summary}
+          summary={sentence(p.summary)}
           rationale={p.rationale}
           status={p.status}
           tier={p.riskTier}

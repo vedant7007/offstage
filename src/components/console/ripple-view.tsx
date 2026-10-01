@@ -1,14 +1,7 @@
 import { CalendarClock, DoorOpen, FileText, Megaphone, UserRound, Users } from "lucide-react";
 import type { Ripple, ScheduleOption } from "@/contracts";
 import { Badge, Card, CardContent, CardHeader, CardTitle, InfoChip } from "@/components/ui";
-
-const CHANNEL: Record<string, string> = {
-  in_app: "In app",
-  email: "Email",
-  telegram: "Telegram",
-  whatsapp: "WhatsApp",
-  sms: "SMS",
-};
+import { channelName, sentence } from "./text";
 
 const METRIC: Record<string, string> = {
   movedSessions: "Sessions moved",
@@ -102,7 +95,7 @@ export function RippleView({ ripple }: { ripple: Ripple }) {
               </span>
               {a.channels.map((c) => (
                 <InfoChip key={c} tone="outline">
-                  {CHANNEL[c] ?? c}
+                  {channelName(c)}
                 </InfoChip>
               ))}
             </li>
@@ -152,7 +145,7 @@ export function OptionCards({ options }: { options: ScheduleOption[] }) {
             }
           >
             <CardHeader>
-              <CardTitle className="text-base">{o.label}</CardTitle>
+              <CardTitle className="text-base">{sentence(o.label)}</CardTitle>
               {o.chosen ? <Badge tone="approved">Proposed</Badge> : <Badge tone="neutral">Considered</Badge>}
             </CardHeader>
             <CardContent>

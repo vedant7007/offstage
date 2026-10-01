@@ -5,11 +5,6 @@ const demoMode = process.env.DEMO_MODE === "true" || process.env.DEMO_MODE === "
 
 export default async function ConsoleHome({ params }: PageProps<"/console/[eventId]">) {
   const { eventId } = await params;
-  // In demo mode the scenario buttons sit above the stage, so the audience watches the agents react.
-  return (
-    <div className="flex flex-col gap-4">
-      {demoMode ? <DemoScenarios /> : null}
-      <LiveStage eventId={eventId} />
-    </div>
-  );
+  // In demo mode the scenario buttons sit right above the stage, so the audience watches the agents react.
+  return <LiveStage eventId={eventId} demo={demoMode ? <DemoScenarios /> : null} />;
 }

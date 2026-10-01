@@ -13,18 +13,21 @@ import {
   Textarea,
   toast,
 } from "@/components/ui";
-import { formatDateTime } from "@/lib/time";
+import { formatDateTime, formatTime, istDateKey } from "@/lib/time";
 
 /** Which agent card to show: the proposing agent, or the Commander for a person's own proposal. */
 export function agentOf(p: ActionProposal): string {
   return p.proposedBy.kind === "agent" ? p.proposedBy.agent : "commander";
 }
 
+/** "Proposed 24 Oct 2026, 10:42 AM · Expires 11:12 AM · 0 of 2 approvals · Faculty sign-off needed" */
 export function metaOf(p: ActionProposal): string {
   const parts = [`Proposed ${formatDateTime(p.createdAt)}`];
-  if (p.status === "pending") parts.push(`expires ${formatDateTime(p.expiresAt)}`);
+  const sameDay = istDateKey(p.createdAt) === istDateKey(p.expiresAt);
+  if (p.status === "pending")
+    parts.push(`Expires ${sameDay ? formatTime(p.expiresAt) : formatDateTime(p.expiresAt)}`);
   if (p.requiredApprovals > 1) parts.push(`${p.approvals.length} of ${p.requiredApprovals} approvals`);
-  if (p.facultyApprovalRequired) parts.push("faculty approval required");
+  if (p.facultyApprovalRequired) parts.push("Faculty sign-off needed");
   return parts.join(" · ");
 }
 
@@ -91,7 +94,7 @@ export function RejectButton({
       </DialogTrigger>
       <DialogContent
         title="Reject this proposal"
-        description="The agent sees your reason and will not propose it again."
+        description="The agent sees your reason and will not propose this again."
       >
         <form
           className="flex flex-col gap-4"
@@ -113,7 +116,10 @@ export function RejectButton({
             }
           }}
         >
-          <Field label="Reason">
+          <Field
+            label="Reason"
+            hint="One line is enough, for example: wrong room, check with the speaker first."
+          >
             <Textarea value={reason} onChange={(e) => setReason(e.target.value)} required maxLength={600} />
           </Field>
           <div className="flex justify-end gap-2">

@@ -58,9 +58,9 @@ export function WhatIfView({ eventId }: { eventId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
-        eyebrow="Sandbox, nothing real changes"
+        eyebrow="Sandbox"
         title="What if"
-        description="Try a scenario on a copy of the event. The agents re-plan in a sandbox; nothing real changes."
+        description="Try a scenario on a copy of the event. The agents re-plan in the sandbox and nothing real changes."
       />
       <form
         className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5 shadow-card"
@@ -77,13 +77,13 @@ export function WhatIfView({ eventId }: { eventId: string }) {
             maxLength={500}
           />
         </Field>
-        <div className="flex flex-wrap items-center gap-2">
+        <div>
           <Button type="submit" loading={busy}>
             Simulate
           </Button>
-          <span aria-hidden className="kicker mx-1 text-fg-muted">
-            or try
-          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+          <span className="kicker me-1 text-fg-muted">Or try</span>
           {EXAMPLES.map((x) => (
             <Button
               key={x}
@@ -99,7 +99,7 @@ export function WhatIfView({ eventId }: { eventId: string }) {
         </div>
       </form>
       {error ? (
-        <Alert variant="danger" title="Simulation">
+        <Alert variant="danger" title="The simulation did not run">
           {error}
         </Alert>
       ) : null}
@@ -159,7 +159,7 @@ export function WhatIfView({ eventId }: { eventId: string }) {
                       <li key={n} className="flex flex-wrap items-center gap-2">
                         <TierBadge tier={r.riskTier} />
                         <span>{r.summary}</span>
-                        <Badge tone="neutral">simulated</Badge>
+                        <Badge tone="neutral">Simulated</Badge>
                       </li>
                     ) : null,
                   )}

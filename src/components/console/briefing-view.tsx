@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import type { Briefing } from "@/contracts";
+import { Newspaper } from "lucide-react";
 import { api } from "@/lib/api-client";
 import { formatDate, formatTime } from "@/lib/time";
 import {
@@ -16,6 +17,18 @@ import {
   PageHeader,
   Skeleton,
 } from "@/components/ui";
+
+/**
+ * A fact as a reader wants it: shares as percentages, codes as words, counts with Indian grouping.
+ * The value itself is never changed, only how it is written.
+ */
+function factValue(id: string, label: string, v: string | number | boolean): string {
+  if (typeof v === "boolean") return v ? "Yes" : "No";
+  if (typeof v === "string") return v.replace(/_/g, " ");
+  if (!Number.isInteger(v) && v >= 0 && v <= 2 && /used|rate|share|ratio/i.test(`${id} ${label}`))
+    return `${Math.round(v * 100)}%`;
+  return v.toLocaleString("en-IN");
+}
 
 /** Today's briefing: each section's sentences with the facts behind every number. */
 export function BriefingView({ eventId }: { eventId: string }) {
@@ -48,7 +61,7 @@ export function BriefingView({ eventId }: { eventId: string }) {
       <PageHeader
         eyebrow="Commander, every morning"
         title="Daily briefing"
-        description="What is due today, what is at risk, and what waits for you. Every number comes from the event data."
+        description="What is due today, what is at risk and what waits for you. Every number comes from the event data."
         actions={
           <Button onClick={generate} loading={busy}>
             {briefing ? "Refresh briefing" : "Write today's briefing"}
@@ -56,19 +69,29 @@ export function BriefingView({ eventId }: { eventId: string }) {
         }
       />
       {error ? (
-        <Alert variant="danger" title="Briefing">
+        <Alert variant="danger" title="Could not load the briefing">
           {error}
         </Alert>
       ) : null}
-      {briefing === undefined && !error ? <Skeleton className="h-40" /> : null}
+      {briefing === undefined && !error ? (
+        <div aria-hidden className="grid gap-4 md:grid-cols-2">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-56 rounded-card" />
+          ))}
+        </div>
+      ) : null}
       {briefing === null ? (
-        <EmptyState title="No briefing yet today" description="Write one now; it takes a few seconds." />
+        <EmptyState
+          icon={<Newspaper />}
+          title="No briefing yet today"
+          description="Write one now. It takes a few seconds and every number comes from the event data."
+        />
       ) : null}
       {briefing ? (
         <>
           <p className="font-mono text-xs tracking-[0.02em] text-fg-muted">
             {formatDate(briefing.generatedAt)}, {formatTime(briefing.generatedAt)}.{" "}
-            {briefing.generatedBy === "model" ? "Written by the Commander" : "Written from rules"}, numbers
+            {briefing.generatedBy === "model" ? "Written by the Commander" : "Written from rules"}. Numbers
             from the database.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
@@ -88,7 +111,10 @@ export function BriefingView({ eventId }: { eventId: string }) {
                       return f ? (
                         <li key={id}>
                           <Badge tone="neutral">
-                            {f.label}: <span className="font-semibold tabular-nums">{String(f.value)}</span>
+                            {f.label}:{" "}
+                            <span className="font-semibold tabular-nums">
+                              {factValue(f.id, f.label, f.value)}
+                            </span>
                           </Badge>
                         </li>
                       ) : null;
