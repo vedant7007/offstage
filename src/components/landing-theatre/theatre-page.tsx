@@ -3,7 +3,15 @@
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+  type ReactNode,
+} from "react";
 import { CONSOLE_PATH, DEMO_EVENT_SLUG, eventPath } from "@/components/public/links";
 import en from "@/lib/i18n/en.json";
 import { useT } from "@/lib/i18n/provider";
