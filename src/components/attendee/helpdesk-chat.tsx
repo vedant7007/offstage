@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Info, LifeBuoy, Send } from "lucide-react";
+import { LifeBuoy, Send, ShieldCheck } from "lucide-react";
 import type { ChatResult, ChatStreamChunk, Citation } from "@/contracts";
 import { AgentAvatar, Alert, Chip, CitationChip, IconButton, LanguageSwitcher } from "@/components/ui";
 import { ApiClientError, createApiClient } from "@/lib/api-client";
@@ -112,12 +112,18 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <p className="flex max-w-prose items-start gap-2 text-sm text-fg-muted">
-          <Info aria-hidden className="mt-0.5 size-4 shrink-0" />
-          {t("chat.honest")}
-        </p>
-        <LanguageSwitcher />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+        <div className="flex flex-1 items-start gap-3 rounded-card border border-border bg-surface p-4">
+          <span
+            aria-hidden
+            className="flex size-8 shrink-0 items-center justify-center rounded-full bg-curtain text-on-curtain [&_svg]:size-4"
+          >
+            <ShieldCheck />
+          </span>
+          <p className="text-sm text-fg-muted">{t("chat.honest")}</p>
+        </div>
+        {/* The top bar has the language menu from sm up; phones get it here. */}
+        <LanguageSwitcher className="self-start sm:hidden" />
       </div>
       {demo ? <Alert variant="info" title={t("chat.demo")} /> : null}
 
@@ -128,7 +134,7 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
               key={m.id}
               className="flex justify-end motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300"
             >
-              <p className="max-w-[85%] rounded-card rounded-br-md border border-border bg-surface-raised px-4 py-2.5 text-fg shadow-card">
+              <p className="max-w-[85%] rounded-card rounded-br-md bg-curtain px-4 py-2.5 text-on-curtain shadow-card">
                 <span className="sr-only">{t("chat.you")}: </span>
                 {m.text}
               </p>
@@ -141,8 +147,8 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
               <AgentAvatar agent="helpdesk" size="sm" className="mt-1" />
               <div
                 className={cn(
-                  "flex max-w-[85%] flex-col gap-2.5 rounded-card rounded-tl-md border bg-info-soft px-4 py-3 text-fg",
-                  m.result?.escalationId ? "border-pending" : "border-transparent",
+                  "flex max-w-[85%] flex-col gap-3 rounded-card rounded-tl-md border bg-surface-raised px-4 py-3 text-fg shadow-card",
+                  m.result?.escalationId ? "border-pending" : "border-border",
                 )}
               >
                 <span className="sr-only">{t("chat.assistant")}: </span>
@@ -166,7 +172,7 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
                 )}
                 {m.result?.blocked ? <p className="text-sm text-fg-muted">{t("chat.blockedHint")}</p> : null}
                 {m.result?.escalationId ? (
-                  <div className="flex items-start gap-2 rounded-card bg-pending-soft px-3 py-2 text-sm text-pending-soft-fg">
+                  <div className="flex items-start gap-2 rounded-[0.75rem] border border-pending/30 bg-pending-soft/60 px-3 py-2.5 text-sm text-pending-soft-fg">
                     <LifeBuoy aria-hidden className="mt-0.5 size-4 shrink-0" />
                     <p>
                       {t("chat.escalated")}{" "}
@@ -182,8 +188,14 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
                     <div className="flex flex-wrap gap-2">{m.result.answer.citations.map(citationChip)}</div>
                   </div>
                 ) : null}
-                {m.result && !m.result.blocked ? (
-                  <p className="font-mono text-xs text-fg-muted">{t("chat.answeredBy")}</p>
+                {/* Only a cited answer came from the documents; an escalation or a refusal did not. */}
+                {m.result &&
+                m.result.answer.citations.length > 0 &&
+                !m.result.escalationId &&
+                !m.result.blocked ? (
+                  <p className="border-t border-border pt-2 font-mono text-xs text-fg-muted">
+                    {t("chat.answeredBy")}
+                  </p>
                 ) : null}
               </div>
             </div>

@@ -74,3 +74,9 @@ export async function getMySchedule(
     throw err;
   }
 }
+
+/** Event time for this request: real time plus the demo clock offset (see src/lib/time.ts). */
+export function eventNow(me: MeResponse | null) {
+  const clockOffsetMs = me?.clockOffsetMs ?? 0;
+  return { clockOffsetMs, nowIso: new Date(Date.now() + clockOffsetMs).toISOString() };
+}
