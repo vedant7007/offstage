@@ -49,7 +49,7 @@ async function live(eventId: string, client: Db): Promise<EvalsResponse["live"]>
   // A blocked message is never stored as a message; the helpdesk writes an audit row for it instead.
   const [guard] = (await client.execute(sql`
     with blocked as (
-      select (select count(*) from ${t.auditLog} where event_id = ${eventId} and action = 'helpdesk.input_blocked')
+      select (select count(*) from ${t.auditLog} where event_id = ${eventId} and action in ('helpdesk.input_blocked', 'voice.input_blocked'))
         + (select count(*) from ${t.agentSteps} s join ${t.agentRuns} r on r.id = s.run_id
             where r.event_id = ${eventId} and s.kind = 'guard' and s.data->>'verdict' = 'block') as n
     )

@@ -21,6 +21,30 @@ import {
   Skeleton,
 } from "@/components/ui";
 import { agentOf, ApproveButton, metaOf, RejectButton } from "../proposal-bits";
+import { voiceShared } from "../voice/use-voice";
+
+/** The last voice turn with the Commander: what it heard, what it cost, how fast it answered. */
+function VoiceTurn() {
+  const t = React.useSyncExternalStore(voiceShared.subscribe, voiceShared.get, () => null);
+  if (!t) return null;
+  const c = t.costUsd;
+  return (
+    <section aria-label="Last voice turn" className="flex flex-col gap-2">
+      <h3 className="font-semibold">Last voice turn</h3>
+      <KeyValueList
+        items={[
+          { label: "Heard", value: t.you },
+          { label: "Intent", value: t.intent ? `${t.intent.replace(/_/g, " ")} (${t.by})` : "working" },
+          { label: "First audio", value: t.latencyMs ? `${t.latencyMs} ms after you stopped` : "not yet" },
+          {
+            label: "Voice cost",
+            value: `${usd(c.stt + c.model + c.voice)} (speech to text ${usd(c.stt)}, model ${usd(c.model)}, Murf ${usd(c.voice)})`,
+          },
+        ]}
+      />
+    </section>
+  );
+}
 
 const usd = (n: number) => `$${n.toFixed(4)}`;
 
@@ -209,6 +233,7 @@ export function GlassBox(props: {
         <div className="flex flex-col gap-6">
           {kind === "agent" ? (
             <>
+              {name === "commander" ? <VoiceTurn /> : null}
               <RunTrace eventId={props.eventId} agent={name as AgentName} />
               <Proposals eventId={props.eventId} items={mine} onDone={props.onChanged} />
             </>

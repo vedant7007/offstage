@@ -35,6 +35,8 @@
     "ai:models": "tsx src/ai/rag/prefetch.ts",
     "kb:index": "tsx src/ai/rag/index-cli.ts",
     "evals": "tsx tests/evals/run.ts",
+    "voice:audio": "tsx tests/voice/make-audio.ts",
+    "voice:test": "tsx tests/voice/run.ts",
     "db:counts": "tsx src/db/counts.ts",
     "test:db": "vitest run --config vitest.integration.config.ts"
   },
