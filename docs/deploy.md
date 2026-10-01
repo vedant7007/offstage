@@ -9,7 +9,35 @@ browser ── https ──> Caddy :443 ──> app :3000 (Next.js)
                          Postgres :5432 (localhost only) <── worker (agents, outbox, Telegram polling)
 ```
 
-## Current deployment
+## Decommissioned on 2026-10-01
+
+The hackathon server is gone. The hosted version is now a simulated showcase on Vercel; the real
+system still runs locally with `pnpm dev`, Docker and `.env`. Main at that point is tagged
+`v1-hackathon-final`.
+
+Removed from ap-south-1 (every other region was scanned and had nothing):
+
+| Resource | ID |
+|---|---|
+| EC2 `t3.medium` (terminated) | `i-0123456789abcdef0` |
+| Elastic IP `203.0.113.10` (released) | `eipalloc-0123456789abcdef0` |
+| 30 GB gp3 root volume (deleted with the instance) | `vol-0123456789abcdef0` |
+| Three "OFFSTAGE before demo" snapshots | `snap-0123456789abcdef0`, `snap-0123456789abcdef1`, `snap-0123456789abcdef2` |
+| Security group `offstage-web` | `sg-0123456789abcdef0` |
+| Key pair `offstage-deploy` | `key-0123456789abcdef0` |
+
+Kept on purpose: the SES identity `example.org` and its DNS, its `Outbound...` configuration sets
+and the Amplify and CDK buckets. They belong to the AWS Student Community Day project.
+
+A final `pg_dump -Fc` of the server database and the three snapshot dumps are archived off the repo
+on Vedant's laptop (`C:\CODING\offstage-archive`, with `SHA256SUMS`). Account keys and third-party
+tokens still to revoke are listed in [decommission-checklist.md](decommission-checklist.md).
+
+To bring a server back, follow sections 1 to 4 below with a fresh key pair, security group and
+Elastic IP; restore the archive with `pg_restore -d sutradhar --clean <dump>` inside the db
+container if you want the hackathon data. The IDs below are historical.
+
+## Deployment as it was
 
 | | |
 |---|---|
