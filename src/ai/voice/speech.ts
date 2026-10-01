@@ -14,7 +14,9 @@ const MIN_BILLED_SECONDS = 10;
 // Forcing English with a Hinglish prompt keeps Hinglish in Roman letters ("lunch kahan milega"), which intent
 // matching and captions need; without it whisper writes Devanagari.
 const HINGLISH_PROMPT =
-  "Event organiser speaking English or Hinglish, written in Roman letters: lunch kahan milega, kya hua, theek hai. Offstage, HackNova, Lab 204, keynote, volunteer, Scheduler, Crew Chief.";
+  "Event organiser speaking English or Hinglish, written in Roman letters: lunch kahan milega, kya hua, theek hai. " +
+  // The demo's own words, so whisper hears "projector" and not "director".
+  "OFFSTAGE, HackNova, projector, Lab 204, budget, catering, keynote, speaker, cancelled, volunteer, lunch, approve, Main Auditorium, Seminar Hall, Scheduler, Crew Chief.";
 
 /**
  * Three warm, confident Falcon voices; the first is the default (the voice of the earlier Murf agents, which use

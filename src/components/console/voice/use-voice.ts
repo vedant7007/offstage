@@ -41,6 +41,9 @@ const WAKE = /^\s*(hey|hi|ok|okay|hello)[\s,.!]+(off\s?stage|of\s?stage|offset|o
 const AWAKE_MS = 10_000;
 /** "Hey Offstage" on its own: answered here, nothing goes to the Commander. */
 const WAKE_ONLY = "wake:only";
+/** Push to talk caught nothing usable: ask again here, nothing goes to the Commander. */
+const AGAIN_ONLY = "again:only";
+const SAY_AGAIN = "Sorry, say that again or type it.";
 
 // Shared with the Live Stage (node lights, glass box cost) without a context provider.
 type Shared = { last: Turn | null };
@@ -147,7 +150,7 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
       const turn: Turn = {
         id: newId(),
         at: new Date().toISOString(),
-        you: text === WAKE_ONLY ? "Hey Offstage" : text,
+        you: text === WAKE_ONLY ? "Hey Offstage" : text === AGAIN_ONLY ? "(not caught)" : text,
         via,
         replies: [],
         sttMs,
@@ -239,6 +242,10 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
           speakLine("Yes, I'm listening.", "answer");
           return;
         }
+        if (text === AGAIN_ONLY) {
+          speakLine(SAY_AGAIN, "answer");
+          return;
+        }
         const res = await fetch("/api/agents/voice/turn", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -318,9 +325,14 @@ export function useVoice(opts: { onOpenProposal: (id: string) => void }) {
       const sttMs = Math.round(performance.now() - t0);
       let text = stt.text.trim();
       if (!text || /^[\s.!?,]*$/.test(text) || /^(thank you\.?|you)$/i.test(text)) {
+        // Silence or a whisper hallucination on noise. Push to talk asks again; hands-free stays quiet.
+        if (!handsFreeRef.current || Date.now() < awakeUntil.current) {
+          void run(AGAIN_ONLY, "voice", endedAt, sttMs, stt.costUsd);
+          return;
+        }
         setCaption({ you: "", offstage: "" });
         settle();
-        return; // silence or a whisper hallucination on noise
+        return;
       }
       if (handsFreeRef.current && Date.now() > awakeUntil.current) {
         if (!WAKE.test(text)) {

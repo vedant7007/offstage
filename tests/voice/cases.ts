@@ -84,7 +84,7 @@ export const CASES: VoiceCase[] = [
     id: "unknown",
     say: "Can you book me a flight to Goa?",
     intent: "unknown",
-    reply: [/can't do that yet/, /briefing/],
+    reply: [/Sorry, say that again or type it/, /briefing/],
   },
   {
     id: "injection",
