@@ -4,6 +4,7 @@ import * as React from "react";
 import type { DemoScenario } from "@/contracts";
 import { api } from "@/lib/api-client";
 import { Button, toast } from "@/components/ui";
+import { Kicker } from "./fx";
 import { RealSendsToggle } from "./real-sends";
 
 const SCENARIOS: { scenario: DemoScenario; label: string }[] = [
@@ -21,11 +22,17 @@ export function DemoScenarios() {
   return (
     <section
       aria-labelledby="demo-scenarios"
-      className="flex flex-col gap-3 rounded-card border border-dashed border-agent p-4"
+      className="flex flex-col gap-4 rounded-card border border-dashed border-agent bg-surface p-5 shadow-card"
     >
-      <h2 id="demo-scenarios" className="text-base font-semibold">
-        Demo scenarios
-      </h2>
+      <div className="flex flex-col gap-1">
+        <Kicker className="text-agent-text">Demo only</Kicker>
+        <h2 id="demo-scenarios" className="text-lg font-medium tracking-[-0.02em]">
+          Demo scenarios
+        </h2>
+        <p className="text-sm text-fg-muted">
+          Fire a scripted disruption and watch the agents react on the stage.
+        </p>
+      </div>
       <div className="flex flex-wrap gap-2">
         {SCENARIOS.map(({ scenario, label }) => (
           <Button

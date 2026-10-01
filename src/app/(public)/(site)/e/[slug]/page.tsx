@@ -33,14 +33,24 @@ export default async function EventPage({ params, searchParams }: PageProps<"/e/
   const askedTrack = one(query.track);
   const track = askedTrack && data.tracks.some((tr) => tr.id === askedTrack) ? askedTrack : null;
 
+  // Cue numbers follow the sections actually shown, so there are never gaps.
+  const shown = [
+    "updates",
+    "schedule",
+    ...(data.speakers.length ? ["speakers"] : []),
+    ...(data.faq.length ? ["faq"] : []),
+    ...(data.sponsors.length ? ["sponsors"] : []),
+  ];
+  const cue = (id: string) => `Cue ${String(shown.indexOf(id) + 1).padStart(2, "0")}`;
+
   return (
-    <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 pt-8 md:px-8">
+    <div className="mx-auto flex max-w-6xl flex-col gap-16 px-4 pt-6 md:px-8 md:pt-8">
       <EventHero data={data} isDemo={res.source === "fixture"} />
-      <LiveUpdates data={data} />
-      <Schedule data={data} day={day} track={track} />
-      <Speakers data={data} />
-      <Faq data={data} />
-      <Sponsors data={data} />
+      <LiveUpdates data={data} cue={cue("updates")} />
+      <Schedule data={data} day={day} track={track} cue={cue("schedule")} />
+      <Speakers data={data} cue={cue("speakers")} />
+      <Faq data={data} cue={cue("faq")} />
+      <Sponsors data={data} cue={cue("sponsors")} />
     </div>
   );
 }

@@ -46,6 +46,7 @@ export function BriefingView({ eventId }: { eventId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Commander, every morning"
         title="Daily briefing"
         description="What is due today, what is at risk, and what waits for you. Every number comes from the event data."
         actions={
@@ -65,26 +66,29 @@ export function BriefingView({ eventId }: { eventId: string }) {
       ) : null}
       {briefing ? (
         <>
-          <p className="text-sm text-fg-muted">
+          <p className="font-mono text-xs tracking-[0.02em] text-fg-muted">
             {formatDate(briefing.generatedAt)}, {formatTime(briefing.generatedAt)}.{" "}
             {briefing.generatedBy === "model" ? "Written by the Commander" : "Written from rules"}, numbers
             from the database.
           </p>
           <div className="grid gap-4 md:grid-cols-2">
-            {briefing.sections.map((s) => (
+            {briefing.sections.map((s, n) => (
               <Card key={s.key}>
                 <CardHeader>
-                  <CardTitle>{s.title}</CardTitle>
+                  <span aria-hidden className="kicker text-curtain-text">
+                    {String(n + 1).padStart(2, "0")}
+                  </span>
+                  <CardTitle as="h2">{s.title}</CardTitle>
                 </CardHeader>
-                <CardContent className="flex flex-col gap-3">
-                  <p>{s.narrative}</p>
+                <CardContent className="flex flex-col gap-4">
+                  <p className="leading-relaxed">{s.narrative}</p>
                   <ul className="flex flex-wrap gap-2" aria-label={`Facts behind ${s.title}`}>
                     {s.factIds.map((id) => {
                       const f = facts.get(id);
                       return f ? (
                         <li key={id}>
                           <Badge tone="neutral">
-                            {f.label}: {String(f.value)}
+                            {f.label}: <span className="font-semibold tabular-nums">{String(f.value)}</span>
                           </Badge>
                         </li>
                       ) : null;

@@ -156,6 +156,8 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
         <Alert variant="info" title={t("common.sampleData")} className="mt-4" />
       </div>
 
+      <BackstageSamples />
+
       <Section id="tokens" title={t("design.sections.tokens")}>
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {COLOR_TOKENS.map(([bg, fg]) => (
@@ -181,7 +183,13 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
           ))}
           <li className="flex items-baseline gap-4">
             <span className="w-12 shrink-0 font-mono text-xs text-fg-muted">display</span>
-            <span className="truncate font-display text-3xl font-bold">{sampleEvent.name} · उत्सव</span>
+            <span className="truncate font-display text-3xl font-medium tracking-[-0.03em]">
+              {sampleEvent.name} · उत्सव
+            </span>
+          </li>
+          <li className="flex items-baseline gap-4">
+            <span className="w-12 shrink-0 font-mono text-xs text-fg-muted">mono</span>
+            <span className="truncate font-mono text-base">T2 · 10:30 IST · 320 / 320</span>
           </li>
         </ul>
       </Section>
@@ -541,6 +549,80 @@ export function DesignShowcase({ embedded }: { embedded: boolean }) {
         </Section>
       ) : null}
     </div>
+  );
+}
+
+/** The Backstage look in one place: kicker, pill buttons, cards and tier chips. English only, a review aid. */
+function BackstageSamples() {
+  return (
+    <Section id="backstage" title="Backstage samples">
+      <div className="flex flex-col gap-3">
+        <p className="kicker flex items-center gap-3 text-curtain-text">
+          Cue 01
+          <span aria-hidden className="h-px w-10 bg-current" />
+        </p>
+        <p className="text-3xl font-medium tracking-[-0.03em] md:text-4xl">The show goes on.</p>
+        <p className="kicker text-fg-muted">Kicker: mono, 12 px, tracked, uppercase</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button>Enter live demo</Button>
+        <Button variant="secondary">See the attendee side</Button>
+        <Button variant="ghost">About our AI</Button>
+        <span className="inline-flex min-h-11 items-center rounded-full bg-[#c1ff00] px-4 text-sm font-medium text-black">
+          Lime is a fill, never text
+        </span>
+      </div>
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="flex flex-col gap-2 rounded-card border border-border bg-surface p-6 shadow-card">
+          <p className="kicker text-fg-muted">Static card</p>
+          <p className="text-xl font-medium tracking-[-0.015em]">18 px radius, hairline border</p>
+          <p className="text-sm text-fg-muted">Soft long shadow. No lift, because it does nothing.</p>
+        </div>
+        <SpotlightCard />
+        <div className="dark flex flex-col gap-2 rounded-card bg-bg p-6 text-fg shadow-card">
+          <p className="kicker text-curtain-text">Ink stage</p>
+          <p className="text-xl font-medium tracking-[-0.015em]">A nested dark panel</p>
+          <p className="text-sm text-fg-muted">Tokens flip inside it, in both themes.</p>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {(["T0", "T1", "T2", "T3"] as const).map((tier) => (
+          <TierBadge key={tier} tier={tier} showMeaning />
+        ))}
+      </div>
+    </Section>
+  );
+}
+
+/** Interactive card: lifts on hover and follows the pointer with a soft curtain-coloured light. */
+function SpotlightCard() {
+  const [picked, setPicked] = React.useState(false);
+  return (
+    <button
+      type="button"
+      aria-pressed={picked}
+      onClick={() => setPicked((v) => !v)}
+      onPointerMove={(e) => {
+        const r = e.currentTarget.getBoundingClientRect();
+        e.currentTarget.style.setProperty("--x", `${e.clientX - r.left}px`);
+        e.currentTarget.style.setProperty("--y", `${e.clientY - r.top}px`);
+      }}
+      className="group relative flex flex-col gap-2 overflow-hidden rounded-card border border-border bg-surface p-6 text-left shadow-card transition-[transform,border-color] duration-(--duration-slow) ease-out hover:border-border-strong motion-safe:hover:-translate-y-0.5 aria-pressed:border-curtain"
+    >
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-(--duration-slow) group-hover:opacity-100"
+        style={{
+          background:
+            "radial-gradient(16rem circle at var(--x, 50%) var(--y, 0%), color-mix(in oklab, var(--curtain) 14%, transparent), transparent 70%)",
+        }}
+      />
+      <span className="kicker relative text-fg-muted">Interactive card</span>
+      <span className="relative text-xl font-medium tracking-[-0.015em]">Spotlight and lift</span>
+      <span className="relative text-sm text-fg-muted">
+        {picked ? "Selected. Click again to clear." : "Hover, or press to select."}
+      </span>
+    </button>
   );
 }
 

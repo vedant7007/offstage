@@ -16,6 +16,7 @@ import {
   PageHeader,
   TierBadge,
 } from "@/components/ui";
+import { CountUp, Kicker } from "./fx";
 
 const EXAMPLES = [
   "What if 30% more people show up?",
@@ -57,11 +58,12 @@ export function WhatIfView({ eventId }: { eventId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Sandbox, nothing real changes"
         title="What if"
         description="Try a scenario on a copy of the event. The agents re-plan in a sandbox; nothing real changes."
       />
       <form
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4 rounded-card border border-border bg-surface p-5 shadow-card"
         onSubmit={(e) => {
           e.preventDefault();
           run(scenario);
@@ -79,6 +81,9 @@ export function WhatIfView({ eventId }: { eventId: string }) {
           <Button type="submit" loading={busy}>
             Simulate
           </Button>
+          <span aria-hidden className="kicker mx-1 text-fg-muted">
+            or try
+          </span>
           {EXAMPLES.map((x) => (
             <Button
               key={x}
@@ -100,15 +105,29 @@ export function WhatIfView({ eventId }: { eventId: string }) {
       ) : null}
       {result ? (
         <section aria-label="Simulation result" className="flex flex-col gap-4">
-          <p className="text-sm text-fg-muted">
-            Simulation only. Confidence {Math.round(result.confidence * 100)}%.
-            {result.assumptions.map((a) => ` ${a.label}: ${a.value}.`).join("")}
-          </p>
+          <div className="flex flex-wrap items-end gap-x-6 gap-y-2">
+            <div className="flex flex-col gap-1">
+              <Kicker className="text-agent-text">Simulation only</Kicker>
+              <p className="flex items-baseline gap-2">
+                <CountUp
+                  to={Math.round(result.confidence * 100)}
+                  format={(n) => `${Math.round(n)}%`}
+                  className="font-mono text-4xl font-medium"
+                />
+                <span className="text-sm text-fg-muted">confidence</span>
+              </p>
+            </div>
+            {result.assumptions.length ? (
+              <p className="max-w-2xl text-sm text-fg-muted">
+                {result.assumptions.map((a) => `${a.label}: ${a.value}.`).join(" ")}
+              </p>
+            ) : null}
+          </div>
           <div className="grid gap-4 md:grid-cols-2">
             {result.impacts.map((i, n) => (
               <Card key={`${i.domain}-${n}`}>
                 <CardHeader>
-                  <CardTitle>{DOMAIN[i.domain] ?? i.domain}</CardTitle>
+                  <CardTitle as="h2">{DOMAIN[i.domain] ?? i.domain}</CardTitle>
                 </CardHeader>
                 <CardContent className="flex flex-col gap-3">
                   <p>{i.summary}</p>
@@ -116,7 +135,7 @@ export function WhatIfView({ eventId }: { eventId: string }) {
                     {i.metrics.map((m) => (
                       <React.Fragment key={m.label}>
                         <dt className="text-fg-muted">{m.label}</dt>
-                        <dd className="text-end tabular-nums">
+                        <dd className="text-end font-mono tabular-nums">
                           {m.before.toLocaleString("en-IN")} to{" "}
                           <strong>{m.after.toLocaleString("en-IN")}</strong>
                           {m.unit ? ` ${m.unit}` : ""}
@@ -131,7 +150,7 @@ export function WhatIfView({ eventId }: { eventId: string }) {
           {result.recommendations.length ? (
             <Card>
               <CardHeader>
-                <CardTitle>What the agents would propose</CardTitle>
+                <CardTitle as="h2">What the agents would propose</CardTitle>
               </CardHeader>
               <CardContent>
                 <ul className="flex flex-col gap-2">

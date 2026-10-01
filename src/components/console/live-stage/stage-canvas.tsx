@@ -130,8 +130,6 @@ function useStable<T extends Item>(items: T[]): T[] {
   });
 }
 
-export { useReducedMotion };
-
 const R = 330;
 const at = (x: number, y: number) => ({ x: Math.round(x), y: Math.round(y) });
 

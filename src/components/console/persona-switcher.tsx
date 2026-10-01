@@ -18,7 +18,9 @@ export function PersonaSwitcher({ role }: { role: string }) {
   const [busy, setBusy] = React.useState(false);
   return (
     <div className="flex items-center gap-2">
-      <span className="hidden text-sm text-fg-muted sm:inline">Signed in as {role.replace("_", " ")}</span>
+      <span className="hidden font-mono text-xs tracking-[0.04em] text-fg-muted sm:inline">
+        Signed in as {role.replace("_", " ")}
+      </span>
       <Select
         aria-label="Switch demo persona"
         placeholder="Switch persona"

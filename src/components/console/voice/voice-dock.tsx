@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { ChevronDown, ChevronUp, Mic, Square } from "lucide-react";
 import { Alert, Badge, Button, Input, type Tone } from "@/components/ui";
 import { formatTime } from "@/lib/time";
-import { useReducedMotion } from "../live-stage/stage-canvas";
+import { useReducedMotion } from "../fx";
 import { useVoice, VOICE_OPTIONS, type Mode, type Steps, type VoiceId } from "./use-voice";
 
 // Every voice state is a word and a colour (tokens only); the waveform is extra and stops with reduced motion.
@@ -87,7 +87,7 @@ function Strip({ steps }: { steps: Steps }) {
               {STEP_NAME[k]}
               <span className="sr-only">: {s.state === "todo" ? "not started" : s.state}</span>
             </Badge>
-            <span className="truncate text-[0.65rem] text-fg-muted" title={s.label}>
+            <span className="truncate font-mono text-[0.65rem] text-fg-muted" title={s.label}>
               {s.state === "todo" ? "" : s.label}
             </span>
           </li>
@@ -116,14 +116,14 @@ export function VoiceDock({ eventId }: { eventId: string }) {
   return (
     <section
       aria-label="Voice Commander"
-      className="fixed right-4 bottom-4 z-40 flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2 rounded-card border border-border bg-surface-raised p-3 shadow-lg"
+      className="fixed right-4 bottom-4 z-40 flex w-[min(26rem,calc(100vw-2rem))] flex-col gap-2.5 rounded-card border border-border bg-surface-raised p-3.5 shadow-[0_28px_56px_-24px_rgb(0_0_0/0.5)]"
     >
       <div className="flex items-center gap-3">
         <button
           type="button"
           onClick={() => (v.mode === "speaking" || v.mode === "thinking" ? v.stop() : void v.talk())}
           aria-label={v.mode === "speaking" || v.mode === "thinking" ? "Stop Offstage" : "Talk to Offstage"}
-          className={`flex size-14 shrink-0 items-center justify-center rounded-full border-4 ${s.ring} ${
+          className={`flex size-14 shrink-0 items-center justify-center rounded-full border-2 transition-colors duration-300 ${s.ring} ${
             !still && (v.mode === "listening" || v.mode === "thinking") ? "motion-safe:animate-pulse" : ""
           }`}
         >
@@ -176,7 +176,7 @@ export function VoiceDock({ eventId }: { eventId: string }) {
             <label className="flex items-center gap-1">
               <span className="text-fg-muted">Voice</span>
               <select
-                className="rounded-control border border-border bg-surface px-2 py-1"
+                className="rounded-control border-[1.5px] border-border-strong bg-surface px-2 py-1"
                 value={v.voiceId}
                 onChange={(e) => v.setVoiceId(e.target.value as VoiceId)}
               >
@@ -204,9 +204,9 @@ export function VoiceDock({ eventId }: { eventId: string }) {
                 key={t.id}
                 data-intent={t.intent ?? ""}
                 data-latency={t.latencyMs ?? ""}
-                className="rounded-card border border-border bg-surface p-2"
+                className="rounded-[12px] border border-border bg-surface p-2.5"
               >
-                <div className="flex flex-wrap items-center gap-1 text-xs text-fg-muted">
+                <div className="flex flex-wrap items-center gap-1 font-mono text-xs text-fg-muted">
                   <span className="tabular-nums">{formatTime(t.at)}</span>
                   <Badge tone="neutral">{t.via === "voice" ? "Voice" : "Typed"}</Badge>
                   {t.intent ? (

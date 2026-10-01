@@ -36,10 +36,6 @@ const DOT: Record<DemoPersona, string> = {
   sponsor: "bg-danger",
   viewer: "bg-neutral",
 };
-// The shared Button is rounded-control; `!` wins without depending on class order.
-const PILL = "rounded-full!";
-const LIFT =
-  "transition-[color,background-color,border-color,box-shadow,translate]! duration-200 ease-[cubic-bezier(.4,0,.1,1)] motion-safe:hover:-translate-y-0.5 hover:shadow-md";
 
 type Props = {
   next: string;
@@ -175,16 +171,10 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
             />
           </Field>
           <div className="flex flex-wrap gap-3">
-            <Button type="submit" size="lg" loading={busy === "signin"} className={PILL}>
+            <Button type="submit" size="lg" loading={busy === "signin"}>
               {t("login.signIn")}
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={() => void sendCode()}
-              disabled={busy !== null}
-              className={PILL}
-            >
+            <Button type="button" variant="ghost" onClick={() => void sendCode()} disabled={busy !== null}>
               {t("login.resend")}
             </Button>
             <Button
@@ -207,7 +197,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
             language={locale === "hi" ? "hi" : "en"}
             onToken={setToken}
           />
-          <Button type="submit" size="lg" loading={busy === "send"} className={cn(PILL, "w-full")}>
+          <Button type="submit" size="lg" loading={busy === "send"} block>
             {t("login.sendCode")}
           </Button>
         </>
@@ -238,7 +228,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
                 loading={busy === p}
                 disabled={busy !== null && busy !== p}
                 onClick={() => void persona(p)}
-                className={cn(PILL, LIFT, lead ? "sm:col-span-2" : "justify-start! text-sm")}
+                className={lead ? "sm:col-span-2" : "justify-start text-left text-sm whitespace-normal"}
               >
                 {busy === p ? null : <span aria-hidden className={cn("size-2 rounded-full", DOT[p])} />}
                 {t(`login.personas.${p}`)}
@@ -249,7 +239,9 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
       </section>
       <div className="flex items-center gap-3">
         <span aria-hidden className="h-px flex-1 bg-border" />
-        <p className="kicker text-fg-muted">or sign in with email</p>
+        <p lang="en" className="kicker text-fg-muted">
+          or sign in with email
+        </p>
         <span aria-hidden className="h-px flex-1 bg-border" />
       </div>
       {form}

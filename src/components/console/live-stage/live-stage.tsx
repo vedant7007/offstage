@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Badge, PageHeader } from "@/components/ui";
 import { formatTime } from "@/lib/time";
-import { Kicker } from "../fx";
 import { GlassBox } from "./glass-box";
 import { PersonaDock } from "./persona-dock";
 import { StageCanvas } from "./stage-canvas";
@@ -72,7 +71,7 @@ export function LiveStage({ eventId }: { eventId: string }) {
   return (
     <div className="flex flex-col gap-4">
       <PageHeader
-        eyebrow={<Kicker>Console, live</Kicker>}
+        eyebrow="Console, live"
         title="Live stage"
         description="The Commander and thirteen agents, live. Click any node to see what it did and why."
         actions={

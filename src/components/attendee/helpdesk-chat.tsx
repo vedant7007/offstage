@@ -105,6 +105,7 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
         document={known?.docTitle ?? c.label}
         section={known?.section}
         snippet={known?.snippet}
+        className="rounded-full px-3.5 font-mono text-xs"
       />
     );
   };
@@ -123,19 +124,25 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
       <div role="log" aria-live="polite" aria-label={t("chat.title")} className="flex flex-col gap-4">
         {messages.map((m) =>
           m.role === "user" ? (
-            <div key={m.id} className="flex justify-end">
-              <p className="max-w-[85%] rounded-card rounded-br-sm bg-curtain px-4 py-2.5 text-on-curtain">
+            <div
+              key={m.id}
+              className="flex justify-end motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300"
+            >
+              <p className="max-w-[85%] rounded-card rounded-br-md border border-border bg-surface-raised px-4 py-2.5 text-fg shadow-card">
                 <span className="sr-only">{t("chat.you")}: </span>
                 {m.text}
               </p>
             </div>
           ) : (
-            <div key={m.id} className="flex items-start gap-2">
+            <div
+              key={m.id}
+              className="flex items-start gap-2 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-2 motion-safe:duration-300"
+            >
               <AgentAvatar agent="helpdesk" size="sm" className="mt-1" />
               <div
                 className={cn(
-                  "flex max-w-[85%] flex-col gap-2 rounded-card rounded-tl-sm border bg-surface px-4 py-3",
-                  m.result?.escalationId ? "border-pending" : "border-border",
+                  "flex max-w-[85%] flex-col gap-2.5 rounded-card rounded-tl-md border bg-info-soft px-4 py-3 text-fg",
+                  m.result?.escalationId ? "border-pending" : "border-transparent",
                 )}
               >
                 <span className="sr-only">{t("chat.assistant")}: </span>
@@ -144,11 +151,22 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
                 ) : m.text ? (
                   <p className="whitespace-pre-line">{m.text}</p>
                 ) : (
-                  <p className="text-fg-muted">{t("chat.thinking")}</p>
+                  <p className="flex items-center gap-2 text-fg-muted">
+                    <span aria-hidden className="flex gap-1">
+                      {[0, 150, 300].map((d) => (
+                        <span
+                          key={d}
+                          style={{ animationDelay: `${d}ms` }}
+                          className="size-1.5 rounded-full bg-current motion-safe:animate-pulse"
+                        />
+                      ))}
+                    </span>
+                    {t("chat.thinking")}
+                  </p>
                 )}
                 {m.result?.blocked ? <p className="text-sm text-fg-muted">{t("chat.blockedHint")}</p> : null}
                 {m.result?.escalationId ? (
-                  <div className="flex items-start gap-2 rounded-control bg-pending-soft px-3 py-2 text-sm text-pending-soft-fg">
+                  <div className="flex items-start gap-2 rounded-card bg-pending-soft px-3 py-2 text-sm text-pending-soft-fg">
                     <LifeBuoy aria-hidden className="mt-0.5 size-4 shrink-0" />
                     <p>
                       {t("chat.escalated")}{" "}
@@ -160,14 +178,12 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
                 ) : null}
                 {m.result && m.result.answer.citations.length ? (
                   <div className="flex flex-col gap-1.5">
-                    <p className="text-xs font-semibold tracking-wide text-fg-muted uppercase">
-                      {t("chat.sources")}
-                    </p>
+                    <p className="kicker text-fg-muted">{t("chat.sources")}</p>
                     <div className="flex flex-wrap gap-2">{m.result.answer.citations.map(citationChip)}</div>
                   </div>
                 ) : null}
                 {m.result && !m.result.blocked ? (
-                  <p className="text-xs text-fg-muted">{t("chat.answeredBy")}</p>
+                  <p className="font-mono text-xs text-fg-muted">{t("chat.answeredBy")}</p>
                 ) : null}
               </div>
             </div>
@@ -178,10 +194,15 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
 
       {suggestions.length && messages.length === 0 ? (
         <div className="flex flex-col gap-2">
-          <p className="text-sm font-medium">{t("chat.suggestions")}</p>
+          <p className="kicker text-fg-muted">{t("chat.suggestions")}</p>
           <div className="flex flex-wrap gap-2">
             {suggestions.map((q) => (
-              <Chip key={q} onClick={() => void ask(q)} disabled={busy}>
+              <Chip
+                key={q}
+                onClick={() => void ask(q)}
+                disabled={busy}
+                className="h-auto py-2 text-left whitespace-normal"
+              >
                 {q}
               </Chip>
             ))}
@@ -194,7 +215,7 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
           e.preventDefault();
           void ask(input);
         }}
-        className="sticky bottom-20 flex items-end gap-2 rounded-card border border-border-strong bg-surface p-2 md:bottom-4"
+        className="sticky bottom-20 flex items-end gap-2 rounded-[1.75rem] border border-border-strong bg-surface-raised p-1.5 pl-3 shadow-card transition-colors duration-200 ease-out focus-within:border-fg md:bottom-4"
       >
         <label htmlFor="chat-input" className="sr-only">
           {t("chat.label")}

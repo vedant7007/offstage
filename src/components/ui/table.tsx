@@ -66,7 +66,10 @@ function DataTable<Row>({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={rowKey(row)} className="border-b border-border transition-colors duration-(--duration-fast) ease-out last:border-b-0 hover:bg-surface-raised">
+            <tr
+              key={rowKey(row)}
+              className="border-b border-border transition-colors duration-(--duration-fast) ease-out last:border-b-0 hover:bg-surface-raised"
+            >
               {columns.map((c) =>
                 c === primary ? (
                   <th key={c.key} scope="row" className={cn("px-3 py-3 font-medium", c.className)}>

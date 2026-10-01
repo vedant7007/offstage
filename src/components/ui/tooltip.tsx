@@ -25,7 +25,7 @@ function Tooltip({
           side={side}
           sideOffset={6}
           className={cn(
-            "z-(--z-tooltip) max-w-64 rounded-control bg-fg px-3 py-1.5 text-sm text-bg",
+            "z-(--z-tooltip) max-w-64 rounded-[0.625rem] bg-fg px-3 py-1.5 text-sm font-medium text-bg shadow-card",
             "data-[state=delayed-open]:animate-in data-[state=delayed-open]:fade-in-0 data-closed:animate-out data-closed:fade-out-0",
           )}
         >

@@ -55,7 +55,12 @@ function Alert({ variant = "info", title, onDismiss, action, className, children
       ) : null}
       <Icon aria-hidden className={cn("relative mt-0.5 shrink-0", emergency ? "size-6" : "size-5")} />
       <div className="relative flex min-w-0 flex-1 flex-col gap-1">
-        <p className={cn("font-medium", emergency ? "text-lg font-semibold uppercase tracking-wide" : "text-base")}>
+        <p
+          className={cn(
+            "font-medium",
+            emergency ? "text-lg font-semibold uppercase tracking-wide" : "text-base",
+          )}
+        >
           <span className="sr-only">{t(`alert.${variant}`)}: </span>
           {title}
         </p>

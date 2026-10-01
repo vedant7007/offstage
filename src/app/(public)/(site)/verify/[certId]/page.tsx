@@ -45,18 +45,25 @@ export default async function VerifyPage({ params }: PageProps<"/verify/[certId]
   const Icon = look.icon;
 
   return (
-    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-8 md:px-8">
-      <PageHeader title={t("verify.title")} description={t("verify.intro")} className="pb-0" />
+    <div className="mx-auto flex max-w-2xl flex-col gap-6 px-4 pt-10 md:px-8 md:pt-14">
+      <PageHeader
+        eyebrow="OFFSTAGE"
+        title={t("verify.title")}
+        description={t("verify.intro")}
+        className="pb-0"
+      />
 
       <section
         aria-labelledby="verify-result"
         data-state={state}
-        className={cn("flex flex-col gap-5 rounded-card border-2 p-5 md:p-6", look.box)}
+        className={cn("flex flex-col gap-5 rounded-card border-2 p-5 shadow-card md:p-7", look.box)}
       >
         <div className="flex items-start gap-3">
-          <Icon aria-hidden className="mt-0.5 size-8 shrink-0" />
+          <span className="flex size-12 shrink-0 items-center justify-center rounded-full border-2 border-current">
+            <Icon aria-hidden className="size-6" />
+          </span>
           <div className="flex flex-col gap-1">
-            <h2 id="verify-result" className="text-2xl font-bold">
+            <h2 id="verify-result" className="text-2xl md:text-3xl">
               {look.title}
             </h2>
             <p>{look.body}</p>
@@ -64,9 +71,14 @@ export default async function VerifyPage({ params }: PageProps<"/verify/[certId]
         </div>
 
         {cert ? (
-          <div className="rounded-control bg-surface p-4 text-fg">
-            <p className="text-sm text-fg-muted">{t("verify.recipient")}</p>
-            <p className={cn("font-display text-2xl font-bold", cert.revoked && "line-through")}>
+          <div className="rounded-card bg-surface-raised p-5 text-fg md:p-6">
+            <p className="kicker text-fg-muted">{t("verify.recipient")}</p>
+            <p
+              className={cn(
+                "mt-1 text-3xl font-medium tracking-[-0.03em] md:text-4xl",
+                cert.revoked && "line-through",
+              )}
+            >
               {cert.recipientName}
             </p>
             <KeyValueList

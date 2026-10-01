@@ -50,7 +50,9 @@ export async function EventHero({ data, isDemo }: Props) {
             >
               {event.name}
             </h1>
-            {event.tagline ? <p className="max-w-2xl text-lg text-fg-muted md:text-xl">{event.tagline}</p> : null}
+            {event.tagline ? (
+              <p className="max-w-2xl text-lg text-fg-muted md:text-xl">{event.tagline}</p>
+            ) : null}
           </div>
 
           <ul className="flex flex-col gap-3 border-y border-border py-4 font-mono text-sm">

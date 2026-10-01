@@ -46,7 +46,7 @@ function ChoiceRow({ id, label, description, control, disabled, reverse }: RowPr
 }
 
 const boxBase = cn(
-  "peer shrink-0 border-2 border-border-strong bg-surface transition-colors duration-(--duration-fast) ease-out",
+  "peer shrink-0 border-2 border-border-strong bg-surface-raised transition-colors duration-(--duration-fast) ease-out hover:border-fg",
   "disabled:cursor-not-allowed aria-invalid:border-danger",
 );
 
@@ -70,7 +70,7 @@ function Checkbox({ label, description, id, className, ...props }: CheckboxProps
           aria-describedby={description ? `${controlId}-desc` : undefined}
           className={cn(
             boxBase,
-            "size-5 rounded-sm data-checked:border-curtain data-checked:bg-curtain",
+            "size-5 rounded-control data-checked:border-curtain data-checked:bg-curtain",
             className,
           )}
           {...props}

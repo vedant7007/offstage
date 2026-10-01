@@ -62,7 +62,9 @@ function SheetContent({
           />
         ) : null}
         <div className="flex flex-col gap-1 p-6 pr-14">
-          <SheetPrimitive.Title className="text-xl font-medium tracking-[-0.02em]">{title}</SheetPrimitive.Title>
+          <SheetPrimitive.Title className="text-xl font-medium tracking-[-0.02em]">
+            {title}
+          </SheetPrimitive.Title>
           {description ? (
             <SheetPrimitive.Description className="text-sm text-fg-muted">
               {description}

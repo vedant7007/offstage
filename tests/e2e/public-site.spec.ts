@@ -25,19 +25,28 @@ for (const scheme of ["light", "dark"] as const) {
   });
 }
 
-test("landing tells the story in eleven cues and links to the live demo", async ({ page }) => {
+test("landing tells the story in seven cues and links to the live demo", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("OFFSTAGE");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The show goes on.");
   await expect(page.getByRole("link", { name: "Enter live demo" })).toHaveAttribute("href", "/console");
-  for (const cue of ["14 AI agents.", "The agents propose.", "The rule.", "The show goes on."]) {
-    await expect(
-      page.getByRole("heading", { level: 2, name: new RegExp(cue.replace(".", "\.")) }),
-    ).toBeAttached();
+  for (const cue of [
+    "The chaos before the show",
+    "Enter the Commander",
+    "The crew",
+    "The show must go on",
+    "The rule",
+  ]) {
+    await expect(page.getByRole("heading", { level: 2, name: cue })).toBeAttached();
   }
+  await expect(page.getByText("14 agents, every one with a human lead.")).toBeAttached();
   await expect(page.getByRole("link", { name: "Enter the live demo" })).toHaveAttribute("href", "/console");
+  await expect(page.getByRole("link", { name: "See the attendee side" })).toHaveAttribute(
+    "href",
+    "/e/hacknova-2026",
+  );
   await expect(page.getByRole("link", { name: "Demo event" })).toHaveAttribute("href", "/e/hacknova-2026");
   await expect(
-    page.getByText("Agents propose. Policy decides. Humans approve. Code executes."),
+    page.getByRole("contentinfo").getByText("Agents propose. Policy decides. Humans approve. Code executes."),
   ).toBeAttached();
 });
 
@@ -47,7 +56,8 @@ test("landing with reduced motion shows every cue as still text", async ({ brows
   const errors = collectErrors(page);
   await page.goto("/");
   await expect(page.locator("[data-mode='poster']")).toBeAttached();
-  await expect(page.getByRole("heading", { level: 2, name: /14 AI agents/ })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "The crew" })).toBeVisible();
+  await expect(page.getByText("Illustrative, from the seeded HackNova demo")).toBeVisible();
   await expect(page.locator("canvas")).toHaveCount(0);
   expect(errors).toEqual([]);
   await context.close();

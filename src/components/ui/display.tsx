@@ -166,7 +166,13 @@ function Section({
     <section aria-labelledby={headingId} className={cn("flex flex-col gap-4", className)} {...props}>
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div className="flex flex-col gap-1">
-          <Heading id={headingId} className={cn("font-medium tracking-[-0.02em]", Heading === "h2" ? "text-xl md:text-2xl" : "text-lg")}>
+          <Heading
+            id={headingId}
+            className={cn(
+              "font-medium tracking-[-0.02em]",
+              Heading === "h2" ? "text-xl md:text-2xl" : "text-lg",
+            )}
+          >
             {title}
           </Heading>
           {description ? <p className="text-sm text-fg-muted">{description}</p> : null}

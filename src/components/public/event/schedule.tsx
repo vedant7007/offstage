@@ -5,6 +5,7 @@ import { Badge, Button, EmptyState, TimeRange, type Tone } from "@/components/ui
 import { getT } from "@/lib/i18n/server";
 import { formatDayShort, istDateKey } from "@/lib/time";
 import { cn } from "@/lib/utils";
+import { Kicker } from "@/components/public/kicker";
 
 type PublicSession = PublicEventResponse["sessions"][number];
 
@@ -25,13 +26,14 @@ type Props = {
   data: PublicEventResponse;
   day: string;
   track: string | null;
+  cue: string;
 };
 
 /**
  * Day tabs and track filter are plain links with query parameters, so the schedule works with
  * JavaScript turned off and every filtered view has its own URL.
  */
-export async function Schedule({ data, day, track }: Props) {
+export async function Schedule({ data, day, track, cue }: Props) {
   const t = await getT();
   const base = `/e/${data.event.slug}`;
   const days = eventDays(data.sessions);
@@ -50,15 +52,16 @@ export async function Schedule({ data, day, track }: Props) {
 
   const pill = (active: boolean) =>
     cn(
-      "inline-flex min-h-11 items-center gap-1.5 rounded-full border px-4 text-sm font-medium whitespace-nowrap md:min-h-9",
+      "inline-flex min-h-11 items-center gap-1.5 rounded-full border-[1.5px] px-4 text-sm font-medium whitespace-nowrap transition-colors duration-(--duration-fast) ease-out md:min-h-9",
       active
-        ? "border-curtain bg-curtain-soft text-curtain-soft-fg"
-        : "border-border-strong bg-surface text-fg hover:bg-surface-sunken",
+        ? "border-curtain bg-curtain text-on-curtain"
+        : "border-border-strong bg-transparent text-fg hover:bg-surface",
     );
 
   return (
-    <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-4 flex-col gap-4">
-      <h2 id="schedule-title" className="text-2xl font-semibold">
+    <section id="schedule" aria-labelledby="schedule-title" className="flex scroll-mt-20 flex-col gap-4">
+      <Kicker>{cue}</Kicker>
+      <h2 id="schedule-title" className="text-2xl md:text-3xl">
         {t("event.scheduleTitle")}
       </h2>
 
@@ -123,18 +126,22 @@ export async function Schedule({ data, day, track }: Props) {
                 <article
                   aria-labelledby={titleId}
                   className={cn(
-                    "flex h-full flex-col gap-3 rounded-card border bg-surface p-4",
+                    "flex h-full flex-col gap-3 rounded-card border bg-surface p-5 shadow-card",
                     s.status === "delayed" ? "border-pending" : "border-border",
                   )}
                 >
                   <div className="flex flex-wrap items-center gap-2 text-sm">
-                    <TimeRange start={s.startsAt} end={s.endsAt} className="font-semibold" />
+                    <TimeRange
+                      start={s.startsAt}
+                      end={s.endsAt}
+                      className="font-mono text-xs font-medium tracking-[0.04em] text-curtain-text"
+                    />
                     <Badge tone="outline">{t(`event.sessionKind.${s.kind}`)}</Badge>
                     {tone ? <Badge tone={tone}>{t(`event.sessionStatus.${s.status}`)}</Badge> : null}
                   </div>
                   <h3
                     id={titleId}
-                    className={cn("text-lg font-semibold", s.status === "cancelled" && "line-through")}
+                    className={cn("text-lg leading-snug", s.status === "cancelled" && "line-through")}
                   >
                     {s.title}
                   </h3>
@@ -164,8 +171,8 @@ export async function Schedule({ data, day, track }: Props) {
                       </li>
                     ) : null}
                   </ul>
-                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 pt-1">
-                    <p className="text-sm text-fg-muted">
+                  <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                    <p className="font-mono text-xs text-fg-muted">
                       {t("event.seatsSession", { registered: s.registeredCount, capacity: s.capacity })}
                       {full ? (
                         <Badge tone="pending" className="ml-2">

@@ -26,20 +26,22 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <div aria-hidden className={styles.spot} />
         <div aria-hidden className={styles.valance} />
         <div aria-hidden className={styles.curtain} />
-        <p className={`kicker ${styles.kicker} ${styles.reveal}`}>Backstage pass</p>
-        <p className={`${styles.line} ${styles.reveal}`}>
-          The show goes on. <span className={styles.accent}>Sign in to run it.</span>
-        </p>
-        <ul className={`${styles.bullets} ${styles.reveal} font-mono text-sm`}>
-          {ROLES.map((role, i) => (
-            <li key={role}>
-              <span aria-hidden className={styles.num}>
-                0{i + 1}
-              </span>
-              <span>{role}</span>
-            </li>
-          ))}
-        </ul>
+        <div lang="en" className={styles.copy}>
+          <p className={`kicker ${styles.kicker} ${styles.reveal}`}>Backstage pass</p>
+          <p className={`${styles.line} ${styles.reveal}`}>
+            The show goes on. <span className={styles.accent}>Sign in to run it.</span>
+          </p>
+          <ul className={`${styles.bullets} ${styles.reveal} font-mono text-sm`}>
+            {ROLES.map((role, i) => (
+              <li key={role}>
+                <span aria-hidden className={styles.num}>
+                  0{i + 1}
+                </span>
+                <span>{role}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       <div className={`${styles.side} bg-bg`}>

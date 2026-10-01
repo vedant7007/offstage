@@ -69,7 +69,7 @@ export function MySchedule({ data }: { data: MyScheduleResponse }) {
       <section
         key={istDateKey(day[0]!.startsAt)}
         style={{ transitionDelay: `${Math.min(i, 4) * 60}ms` }}
-        className="flex flex-col gap-3 transition-[translate] duration-400 ease-[cubic-bezier(.4,0,.1,1)] starting:translate-y-3"
+        className="flex flex-col gap-3 transition-[translate] duration-400 ease-out motion-safe:starting:translate-y-3"
       >
         <h2 className="kicker flex items-center gap-3 text-fg-muted after:h-px after:flex-1 after:bg-border">
           {formatDayShort(day[0]!.startsAt)}
@@ -80,7 +80,7 @@ export function MySchedule({ data }: { data: MyScheduleResponse }) {
               key={s.id}
               className={cn(
                 "relative flex flex-col gap-2 overflow-hidden rounded-card border bg-surface p-4 pl-5 sm:p-5 sm:pl-6",
-                "shadow-[0_20px_40px_-32px_rgb(0_0_0/0.35)] transition-[translate,box-shadow,border-color] duration-300 ease-[cubic-bezier(.4,0,.1,1)]",
+                "shadow-[0_20px_40px_-32px_rgb(0_0_0/0.35)] transition-[translate,box-shadow,border-color] duration-300 ease-out",
                 "hover:border-border-strong hover:shadow-[0_28px_48px_-28px_rgb(7_27_223/0.3)] motion-safe:hover:-translate-y-0.5",
                 s.change ? "border-pending" : "border-border",
               )}

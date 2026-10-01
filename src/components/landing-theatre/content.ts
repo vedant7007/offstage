@@ -28,20 +28,48 @@ export const actLabel = (i: number) => {
   return act.cue ? `Cue ${act.cue}: ${act.label}` : act.label;
 };
 
-/** Chaos cards: text, where they sit on a wide stage, and how far they drift and turn. */
-export const CHAOS = [
-  { t: "Operations scattered across WhatsApp and five different people.", x: 4, y: 26, dx: 180, ry: -7, rz: -2 },
-  { t: "The same questions, asked again and again.", x: 38, y: 9, dx: -150, ry: 6, rz: 2 },
-  { t: "A speaker cancels. Nobody hears about it in time.", x: 71, y: 21, dx: 120, ry: -5, rz: -3, red: true },
-  { t: "Volunteers unsure where to be, or what to do next.", x: 8, y: 64, dx: -190, ry: 8, rz: 1 },
-  { t: "Money tracked across chat windows and memory.", x: 44, y: 54, dx: 160, ry: -6, rz: 3 },
-  { t: "No proper report when the event ends.", x: 74, y: 61, dx: -120, ry: 5, rz: -2 },
-  { t: "WiFi collapses at peak check-in.", x: 18, y: 82, dx: 200, ry: -8, rz: 2, red: true },
+/** Chaos cards: text, where they sit on a wide stage (percent, clear of the heading), and how far they drift, sink and turn. */
+export type ChaosCard = {
+  t: string;
+  x: number;
+  y: number;
+  dx: number;
+  dz: number;
+  ry: number;
+  rz: number;
+  red?: boolean;
+};
+export const CHAOS: ChaosCard[] = [
+  {
+    t: "Operations scattered across WhatsApp and five different people.",
+    x: 50,
+    y: 5,
+    dx: 180,
+    dz: 70,
+    ry: -7,
+    rz: -2,
+  },
+  { t: "The same questions, asked again and again.", x: 75, y: 13, dx: -150, dz: 110, ry: 6, rz: 2 },
+  {
+    t: "A speaker cancels. Nobody hears about it in time.",
+    x: 54,
+    y: 33,
+    dx: 120,
+    dz: -60,
+    ry: -5,
+    rz: -3,
+    red: true,
+  },
+  { t: "Volunteers unsure where to be, or what to do next.", x: 78, y: 41, dx: -190, dz: 40, ry: 8, rz: 1 },
+  { t: "Money tracked across chat windows and memory.", x: 4, y: 50, dx: 160, dz: -90, ry: -6, rz: 3 },
+  { t: "No proper report when the event ends.", x: 29, y: 58, dx: -120, dz: 130, ry: 5, rz: -2 },
+  { t: "WiFi collapses at peak check-in.", x: 53, y: 64, dx: 200, dz: 20, ry: -8, rz: 2, red: true },
   {
     t: "Faculty approvals, OD letters, certificates: a paper trail with no end.",
-    x: 54,
-    y: 84,
+    x: 77,
+    y: 71,
     dx: -160,
+    dz: -120,
     ry: 7,
     rz: -1,
   },
@@ -84,7 +112,7 @@ export const CREW_OUT: Agent[] = [
 export const CHAIN: Step[] = [
   { t: "The keynote speaker cancels at 2:03 PM.", a: "Input" },
   { t: "The cancellation wakes the Commander.", a: "Commander" },
-  { t: "It pulls in the Scheduler, Crew Chief, Herald and Helpdesk.", a: "Commander" },
+  { t: "It pulls in the Scheduler, Speaker Liaison, Crew Chief, Herald and Helpdesk.", a: "Commander" },
   { t: "The solver checks every room and slot.", a: "Scheduler" },
   { t: "Three valid slots come back.", a: "Scheduler" },
   { t: "Ripple shows everyone the move touches.", a: "Commander" },

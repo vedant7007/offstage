@@ -34,7 +34,9 @@ function Chip({ selected = false, icon, count, className, children, ...props }: 
     >
       {selected ? <Check aria-hidden /> : icon}
       {children}
-      {count !== undefined ? <span className="font-mono text-xs tabular-nums opacity-80">{count}</span> : null}
+      {count !== undefined ? (
+        <span className="font-mono text-xs tabular-nums opacity-80">{count}</span>
+      ) : null}
     </button>
   );
 }

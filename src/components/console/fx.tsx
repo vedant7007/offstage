@@ -4,6 +4,7 @@
 // Everything here stands still under prefers-reduced-motion.
 
 import * as React from "react";
+import { cn } from "@/lib/utils";
 
 /** Whether the viewer asked for less motion. */
 export function useReducedMotion() {
@@ -48,7 +49,13 @@ export function CountUp({
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
   }, [to, still]);
-  return <span className={`tabular-nums ${className ?? ""}`}>{format(still ? to : shown)}</span>;
+  // Screen readers get the final value only, never the frames in between.
+  return (
+    <span className={cn("tabular-nums", className)}>
+      <span aria-hidden>{format(still ? to : shown)}</span>
+      <span className="sr-only">{format(to)}</span>
+    </span>
+  );
 }
 
 /**
@@ -74,7 +81,10 @@ export const spotlight = {
 export function Kicker({ children, className }: { children: React.ReactNode; className?: string }) {
   return (
     <span
-      className={`kicker inline-flex items-center gap-2 text-curtain-text after:h-px after:w-8 after:bg-current ${className ?? ""}`}
+      className={cn(
+        "kicker inline-flex items-center gap-2 text-curtain-text after:h-px after:w-8 after:bg-current",
+        className,
+      )}
     >
       {children}
     </span>

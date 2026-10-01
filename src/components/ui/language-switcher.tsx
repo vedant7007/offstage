@@ -36,8 +36,8 @@ function LanguageSwitcher({ className }: { className?: string }) {
           startTransition(() => router.refresh());
         }}
         className={cn(
-          "min-h-11 appearance-none rounded-control border border-border-strong bg-surface py-2 pr-9 pl-9 text-sm text-fg",
-          "hover:bg-surface-sunken disabled:opacity-55",
+          "min-h-11 appearance-none rounded-full border-[1.5px] border-border-strong bg-surface py-2 pr-9 pl-9 text-sm font-medium text-fg",
+          "transition-colors duration-(--duration-fast) ease-out hover:border-fg disabled:opacity-55",
         )}
       >
         {LOCALES.map((l) => (

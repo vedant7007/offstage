@@ -55,6 +55,7 @@ export function ProposalDetail({ eventId, proposalId }: { eventId: string; propo
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
+        eyebrow={bundle ? "Plan for approval" : plan ? "Event plan" : "Proposal"}
         title={bundle ? bundle.title : p.summary}
         description={bundle ? "One plan. Approving it runs every step below together." : undefined}
         actions={
@@ -115,9 +116,16 @@ export function ProposalDetail({ eventId, proposalId }: { eventId: string; propo
               ))}
             </div>
           ) : (
-            <ol className="flex list-decimal flex-col gap-2 pl-5">
+            <ol className="flex flex-col gap-2">
               {bundle.children.map((c, i) => (
-                <li key={i}>
+                <li
+                  key={i}
+                  className="flex items-baseline gap-3 rounded-card border border-border bg-surface px-4 py-3 shadow-card"
+                >
+                  <span aria-hidden className="font-mono text-xs text-fg-muted tabular-nums">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="sr-only">Step {i + 1}: </span>
                   <span className="font-medium">{c.summary}</span>
                   {c.proposedBy ? (
                     <span className="text-sm text-fg-muted"> ({c.proposedBy.replace("_", " ")})</span>

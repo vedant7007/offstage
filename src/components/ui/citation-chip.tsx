@@ -25,8 +25,8 @@ function CitationChip({ document, section, snippet, className }: CitationChipPro
           section ? t("citation.open", { document, section }) : t("citationExtra.openDoc", { document })
         }
         className={cn(
-          "inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-card border border-agent bg-agent-soft px-3 py-1.5 text-left text-sm font-medium text-agent-soft-fg md:min-h-9",
-          "transition-colors duration-(--duration-fast) ease-out hover:bg-surface-sunken",
+          "inline-flex min-h-11 max-w-full items-center gap-1.5 rounded-[1.375rem] border border-agent bg-agent-soft px-3.5 py-1.5 text-left font-mono text-xs font-medium text-agent-soft-fg md:min-h-9",
+          "transition-[background-color,transform] duration-(--duration-slow) ease-out hover:bg-surface-sunken motion-safe:hover:-translate-y-0.5",
           className,
         )}
       >
@@ -34,11 +34,9 @@ function CitationChip({ document, section, snippet, className }: CitationChipPro
         <span className="min-w-0">{section ? `${document}, ${section}` : document}</span>
       </SheetTrigger>
       <SheetContent title={document} description={section ? t("citation.section", { section }) : undefined}>
-        <p className="mb-2 text-xs font-semibold tracking-wide text-fg-muted uppercase">
-          {t("citation.title")}
-        </p>
+        <p className="kicker mb-3 text-fg-muted">{t("citation.title")}</p>
         {snippet ? (
-          <blockquote className="border-l-4 border-agent pl-4 text-base leading-relaxed whitespace-pre-line">
+          <blockquote className="rounded-r-[0.75rem] border-l-4 border-agent bg-surface py-3 pr-4 pl-4 text-base leading-relaxed whitespace-pre-line">
             {snippet}
           </blockquote>
         ) : (

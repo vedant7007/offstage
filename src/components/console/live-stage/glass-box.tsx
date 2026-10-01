@@ -54,41 +54,57 @@ function StepLine({ s }: { s: AgentStep }) {
     case "llm":
       return (
         <>
-          <Badge tone={s.ok ? "info" : "danger"} className={CHIP}>Model</Badge> {s.provider} {s.model}: {s.inputTokens} in,{" "}
-          {s.outputTokens} out, {usd(s.costUsd)}, {s.latencyMs} ms
+          <Badge tone={s.ok ? "info" : "danger"} className={CHIP}>
+            Model
+          </Badge>{" "}
+          {s.provider} {s.model}: {s.inputTokens} in, {s.outputTokens} out, {usd(s.costUsd)}, {s.latencyMs} ms
           {s.ok ? "" : ` (failed: ${s.error ?? "error"})`}
         </>
       );
     case "tool":
       return (
         <>
-          <Badge tone="neutral" className={CHIP}>Tool</Badge> {s.tool}, {s.latencyMs} ms{s.ok ? "" : ` (failed)`}
+          <Badge tone="neutral" className={CHIP}>
+            Tool
+          </Badge>{" "}
+          {s.tool}, {s.latencyMs} ms{s.ok ? "" : ` (failed)`}
         </>
       );
     case "propose":
       return (
         <>
-          <Badge tone="agent" className={CHIP}>Proposed</Badge> {s.actionKind}: {s.result}
+          <Badge tone="agent" className={CHIP}>
+            Proposed
+          </Badge>{" "}
+          {s.actionKind}: {s.result}
           {s.status ? `, ${s.status}` : ""}
         </>
       );
     case "guard":
       return (
         <>
-          <Badge tone={s.verdict === "block" ? "danger" : "neutral"} className={CHIP}>Guard</Badge> {s.verdict} by{" "}
-          {s.by.replace("_", " ")}
+          <Badge tone={s.verdict === "block" ? "danger" : "neutral"} className={CHIP}>
+            Guard
+          </Badge>{" "}
+          {s.verdict} by {s.by.replace("_", " ")}
         </>
       );
     case "fallback":
       return (
         <>
-          <Badge tone="pending" className={CHIP}>Rules fallback</Badge> {s.reason.replace("_", " ")}
+          <Badge tone="pending" className={CHIP}>
+            Rules fallback
+          </Badge>{" "}
+          {s.reason.replace("_", " ")}
         </>
       );
     default:
       return (
         <>
-          <Badge tone="neutral" className={CHIP}>Note</Badge> {"text" in s ? s.text : ""}
+          <Badge tone="neutral" className={CHIP}>
+            Note
+          </Badge>{" "}
+          {"text" in s ? s.text : ""}
         </>
       );
   }
@@ -146,7 +162,8 @@ function RunTrace({ eventId, agent }: { eventId: string; agent: AgentName }) {
               <li key={e.ref} className="flex flex-wrap items-center gap-1.5">
                 <Badge tone="neutral" className={CHIP}>
                   {e.type}
-                </Badge> {e.label}
+                </Badge>{" "}
+                {e.label}
                 <span className="font-mono text-xs text-fg-muted">{e.ref}</span>
               </li>
             ))}

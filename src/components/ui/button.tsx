@@ -102,7 +102,11 @@ function IconButton({
       aria-label={label}
       aria-busy={loading || undefined}
       disabled={disabled || loading}
-      className={cn(buttonVariants({ variant }), "size-11 min-h-11 p-0 motion-safe:hover:translate-y-0", className)}
+      className={cn(
+        buttonVariants({ variant }),
+        "size-11 min-h-11 p-0 motion-safe:hover:translate-y-0",
+        className,
+      )}
       {...props}
     >
       {loading ? <LoaderCircle aria-hidden className="animate-spin" /> : icon}

@@ -59,7 +59,9 @@ function DialogContent({ title, description, footer, className, children, ...pro
         {...props}
       >
         <div className="flex flex-col gap-1 p-6 pr-14">
-          <DialogPrimitive.Title className="text-xl font-medium tracking-[-0.02em]">{title}</DialogPrimitive.Title>
+          <DialogPrimitive.Title className="text-xl font-medium tracking-[-0.02em]">
+            {title}
+          </DialogPrimitive.Title>
           {description ? (
             <DialogPrimitive.Description className="text-sm text-fg-muted">
               {description}

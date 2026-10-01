@@ -21,7 +21,7 @@ export function PlanPreview({ plan }: { plan: PlanPayload }) {
   const on = plan.agentTeam.filter((a) => a.enabled);
   return (
     <>
-      {plan.summary ? <p>{plan.summary}</p> : null}
+      {plan.summary ? <p className="max-w-3xl text-lg leading-relaxed">{plan.summary}</p> : null}
       <Section
         id="team"
         title={`Agent team (${on.length} of ${plan.agentTeam.length})`}
@@ -31,14 +31,16 @@ export function PlanPreview({ plan }: { plan: PlanPayload }) {
           {plan.agentTeam.map((a) => (
             <li
               key={a.agent}
-              className={`flex flex-col gap-2 rounded-card border border-border p-3 ${a.enabled ? "" : "opacity-60"}`}
+              className={`flex flex-col gap-2.5 rounded-card border border-border bg-surface p-4 shadow-card ${a.enabled ? "" : "opacity-60"}`}
             >
               <div className="flex items-center justify-between gap-2">
                 <AgentAvatar agent={a.agent} showName />
                 <Badge tone={a.enabled ? "info" : "neutral"}>{a.enabled ? "On" : "Off"}</Badge>
               </div>
               <p className="text-sm">{a.mandate}</p>
-              <p className="text-xs text-fg-muted">Answers to: {ROLE[a.humanLeadRole] ?? a.humanLeadRole}</p>
+              <p className="mt-auto border-t border-border pt-2 font-mono text-xs text-fg-muted">
+                Answers to: {ROLE[a.humanLeadRole] ?? a.humanLeadRole}
+              </p>
             </li>
           ))}
         </ul>
@@ -77,13 +79,17 @@ export function PlanPreview({ plan }: { plan: PlanPayload }) {
       </Section>
       {plan.risks.length ? (
         <Section id="risks" title="Risks">
-          <ul className="flex flex-col gap-2">
+          <ul className="grid gap-3 md:grid-cols-2">
             {plan.risks.map((r) => (
-              <li key={r.title}>
-                <span className="font-medium">{r.title}</span>{" "}
-                <span className="text-sm text-fg-muted">
-                  ({r.likelihood} likelihood, {r.impact} impact). {r.mitigation}
+              <li
+                key={r.title}
+                className="flex flex-col gap-1.5 rounded-card border border-border bg-surface p-4 shadow-card"
+              >
+                <span className="font-medium">{r.title}</span>
+                <span className="font-mono text-xs text-fg-muted">
+                  {r.likelihood} likelihood, {r.impact} impact
                 </span>
+                <span className="text-sm text-fg-muted">{r.mitigation}</span>
               </li>
             ))}
           </ul>

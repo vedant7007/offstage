@@ -20,7 +20,10 @@ function DraftedByLabel({ approvedBy, className }: DraftedByLabelProps) {
   return (
     <p
       data-slot="drafted-by"
-      className={cn("inline-flex items-center gap-1.5 text-xs text-fg-muted", className)}
+      className={cn(
+        "inline-flex items-center gap-1.5 font-mono text-xs tracking-[0.02em] text-fg-muted",
+        className,
+      )}
     >
       <PenLine aria-hidden className="size-3.5 shrink-0" />
       {approvedBy ? t("drafted.approvedBy", { role: t(`role.${approvedBy}`) }) : t("drafted.awaiting")}

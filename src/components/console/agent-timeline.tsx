@@ -4,7 +4,10 @@ import * as React from "react";
 import type { AgentRun, AgentRunResponse, AgentStep } from "@/contracts";
 import { api } from "@/lib/api-client";
 import { Alert, AgentAvatar, Badge, EmptyState, PageHeader, Skeleton } from "@/components/ui";
+import { ChevronDown } from "lucide-react";
 import { formatDateTime } from "@/lib/time";
+import { cn } from "@/lib/utils";
+import { SPOT, spotlight } from "./fx";
 
 const usd = (n: number) => `$${n.toFixed(n < 0.01 ? 5 : 3)}`;
 
@@ -48,13 +51,16 @@ function RunDetail({ eventId, run }: { eventId: string; run: AgentRun }) {
   if (error) return <p className="text-sm text-danger-text">{error}</p>;
   if (!data) return <Skeleton className="h-16" />;
   return (
-    <ol className="flex flex-col gap-2 border-l-2 border-border pl-4">
+    <ol className="flex flex-col gap-2.5 border-l border-border-strong pl-4">
       {data.steps.map((s) => {
         const { label, detail } = stepLine(s);
         return (
-          <li key={s.id} className="text-sm">
+          <li
+            key={s.id}
+            className="relative text-sm before:absolute before:top-2 before:-left-[19.5px] before:size-1.5 before:rounded-full before:bg-curtain"
+          >
             <span className="font-medium">{label}</span>
-            <span className="text-fg-muted">: {detail}</span>
+            <span className="font-mono text-xs text-fg-muted">: {detail}</span>
           </li>
         );
       })}
@@ -76,6 +82,7 @@ export function AgentTimeline({ eventId }: { eventId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Glass box"
         title="Timeline"
         description="Every agent run: what it read, which model answered, what it cost and what it proposed."
       />
@@ -90,12 +97,16 @@ export function AgentTimeline({ eventId }: { eventId: string }) {
       ) : null}
       <ul className="flex flex-col gap-3">
         {(runs ?? []).map((r) => (
-          <li key={r.id} className="rounded-card border border-border bg-surface">
+          <li
+            key={r.id}
+            {...spotlight}
+            className={cn(SPOT, "rounded-card border border-border bg-surface shadow-card")}
+          >
             <details className="group">
-              <summary className="flex min-h-14 cursor-pointer list-none flex-wrap items-center gap-3 p-4 [&::-webkit-details-marker]:hidden">
+              <summary className="flex min-h-14 cursor-pointer list-none flex-wrap items-center gap-3 rounded-card p-4 [&::-webkit-details-marker]:hidden">
                 <AgentAvatar agent={r.agent} size="sm" />
-                <span className="font-medium">{r.agent.replace("_", " ")}</span>
-                <span className="text-sm text-fg-muted">
+                <span className="font-medium capitalize">{r.agent.replace("_", " ")}</span>
+                <span className="font-mono text-xs text-fg-muted">
                   {r.trigger.eventType ?? r.trigger.type}, {formatDateTime(r.startedAt)}
                 </span>
                 <Badge
@@ -104,11 +115,15 @@ export function AgentTimeline({ eventId }: { eventId: string }) {
                   {r.status}
                 </Badge>
                 {r.simulation ? <Badge tone="agent">simulation</Badge> : null}
-                <span className="ml-auto text-sm tabular-nums text-fg-muted">
+                <span className="ml-auto font-mono text-xs text-fg-muted tabular-nums">
                   {r.inputTokens + r.outputTokens} tokens, {usd(r.costUsd)}
                   {r.latencyMs !== undefined ? `, ${(r.latencyMs / 1000).toFixed(1)} s` : ""}
                   {r.proposalIds.length ? `, ${r.proposalIds.length} proposed` : ""}
                 </span>
+                <ChevronDown
+                  aria-hidden
+                  className="size-4 text-fg-muted transition-transform duration-300 group-open:rotate-180"
+                />
               </summary>
               <div className="border-t border-border p-4">
                 <RunDetail eventId={eventId} run={r} />

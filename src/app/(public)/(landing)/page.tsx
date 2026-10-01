@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { LandingPage } from "@/components/landing/landing-page";
+import { TheatrePage } from "@/components/landing-theatre/theatre-page";
 
 export const metadata: Metadata = {
-  title: "OFFSTAGE",
+  title: { absolute: "OFFSTAGE: the show goes on" },
   description:
-    "The show goes on. We run everything behind it. An AI event operations team with a human lead on every agent.",
+    "OFFSTAGE runs everything behind the show: fourteen AI agents, each with a human lead, on one shared source of truth. Built for Indian colleges, ready for any event.",
 };
 
 export default function Page() {
-  return <LandingPage />;
+  return <TheatrePage />;
 }

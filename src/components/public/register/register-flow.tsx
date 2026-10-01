@@ -285,9 +285,9 @@ export function RegisterFlow({ event, sessions, turnstileSiteKey }: Props) {
           e.preventDefault();
           void (step === "verify" ? verify() : next());
         }}
-        className="flex flex-col gap-5"
+        className="flex flex-col gap-5 rounded-card border border-border bg-surface p-5 shadow-card md:p-7"
       >
-        <h2 ref={headingRef} tabIndex={-1} className="text-xl font-semibold outline-none">
+        <h2 ref={headingRef} tabIndex={-1} className="text-2xl outline-none">
           {stepTitle}
         </h2>
 
@@ -371,8 +371,8 @@ export function RegisterFlow({ event, sessions, turnstileSiteKey }: Props) {
                 <div
                   key={s.id}
                   className={cn(
-                    "rounded-card border px-4 py-1",
-                    checked ? "border-curtain bg-curtain-soft/40" : "border-border bg-surface",
+                    "rounded-card border-[1.5px] px-4 py-1 transition-colors duration-(--duration-fast) ease-out",
+                    checked ? "border-curtain bg-curtain-soft/40" : "border-border bg-surface-raised",
                   )}
                 >
                   <Checkbox
@@ -450,9 +450,9 @@ export function RegisterFlow({ event, sessions, turnstileSiteKey }: Props) {
 
             <section
               aria-labelledby="consent-title"
-              className="flex flex-col gap-2 rounded-card border border-border bg-surface p-4"
+              className="flex flex-col gap-2 rounded-card border border-border bg-bg p-4"
             >
-              <h3 id="consent-title" className="font-semibold">
+              <h3 id="consent-title" className="kicker text-fg-muted">
                 {t("register.consentTitle")}
               </h3>
               <ul className="flex list-disc flex-col gap-2 pl-5 text-sm leading-relaxed">
@@ -590,7 +590,7 @@ function Done({
           <CircleCheck aria-hidden className="mt-1 size-7 shrink-0 text-approved" />
         )}
         <div className="flex flex-col gap-1">
-          <h2 ref={headingRef} tabIndex={-1} className="text-2xl font-semibold outline-none">
+          <h2 ref={headingRef} tabIndex={-1} className="text-3xl outline-none">
             {waitlisted ? t("register.doneWaitlistTitle") : t("register.doneTitle")}
           </h2>
           {waitlisted && result.waitlistPosition ? (
@@ -604,9 +604,9 @@ function Done({
       {result.ticket ? (
         <section
           aria-labelledby="ticket-title"
-          className="flex flex-col items-center gap-3 rounded-card border border-border bg-surface p-5 text-center"
+          className="dark flex flex-col items-center gap-4 rounded-card bg-bg p-6 text-center text-fg shadow-card"
         >
-          <h3 id="ticket-title" className="flex items-center gap-2 text-lg font-semibold">
+          <h3 id="ticket-title" className="kicker flex items-center gap-2 text-curtain-text">
             <Ticket aria-hidden className="size-5" />
             {t("register.ticketTitle")}
           </h3>
@@ -617,7 +617,7 @@ function Done({
             alt={t("register.ticketFor", { name })}
             width={240}
             height={240}
-            className="rounded-control bg-white p-3"
+            className="rounded-card bg-white p-3 ring-2 ring-curtain ring-offset-4 ring-offset-bg"
           />
           <p className="max-w-sm text-sm text-fg-muted">{t("register.ticketHint")}</p>
         </section>

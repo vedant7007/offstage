@@ -65,7 +65,7 @@ function ProposalCard({
       data-slot="proposal-card"
       data-status={status}
       className={cn(
-        "flex flex-col gap-4 rounded-card border bg-surface p-4 md:p-5",
+        "flex flex-col gap-4 rounded-card border bg-surface p-5 shadow-card md:p-6",
         status === "simulated" ? "border-2 border-dashed border-agent" : "border-border",
         status === "emergency" && "border-2 border-emergency",
         (status === "stale" || status === "rejected" || status === "undone" || status === "expired") &&
@@ -85,22 +85,20 @@ function ProposalCard({
       </header>
 
       <div className="flex flex-col gap-1">
-        <Heading id={headingId} className="text-lg font-semibold">
+        <Heading id={headingId} className="text-lg font-medium tracking-[-0.02em] text-balance">
           {summary}
         </Heading>
         {meta ? <p className="text-sm text-fg-muted">{meta}</p> : null}
       </div>
 
       <div className="flex flex-col gap-1">
-        <p className="text-xs font-semibold tracking-wide text-fg-muted uppercase">{t("proposal.why")}</p>
+        <p className="kicker text-fg-muted">{t("proposal.why")}</p>
         <p className="text-base">{rationale}</p>
       </div>
 
       {evidence.length ? (
         <div className="flex flex-col gap-1.5">
-          <p className="text-xs font-semibold tracking-wide text-fg-muted uppercase">
-            {t("proposal.evidence")}
-          </p>
+          <p className="kicker text-fg-muted">{t("proposal.evidence")}</p>
           <ul className="flex flex-wrap gap-2">
             {evidence.map((e) => {
               const Icon = EVIDENCE_ICON[e.type];
@@ -120,15 +118,15 @@ function ProposalCard({
       {impact ? <ImpactChips impact={impact} /> : null}
 
       {diff?.length ? (
-        <details className="group rounded-control border border-border">
-          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 px-3 font-medium [&::-webkit-details-marker]:hidden">
+        <details className="group rounded-[0.75rem] border border-border bg-surface-raised">
+          <summary className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-2 rounded-[0.75rem] px-4 font-medium transition-colors duration-(--duration-fast) ease-out hover:bg-surface-sunken [&::-webkit-details-marker]:hidden">
             {t("proposal.changes")}
             <ChevronDown
               aria-hidden
-              className="size-4 transition-transform duration-(--duration-fast) group-open:rotate-180"
+              className="size-4 transition-transform duration-(--duration-slow) ease-out group-open:rotate-180"
             />
           </summary>
-          <div className="border-t border-border p-3">
+          <div className="border-t border-border p-4">
             <DiffView diff={diff} labels={diffLabels} />
           </div>
         </details>

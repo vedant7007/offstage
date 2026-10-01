@@ -48,7 +48,10 @@ export function Field({ label, hint, error, required = false, hideLabel, classNa
   return (
     <FieldContext.Provider value={{ id, hintId, errorId, invalid: Boolean(error), required }}>
       <div data-slot="field" className={cn("flex flex-col gap-1.5", className)}>
-        <label htmlFor={id} className={cn("text-sm font-medium tracking-[-0.01em] text-fg", hideLabel && "sr-only")}>
+        <label
+          htmlFor={id}
+          className={cn("text-sm font-medium tracking-[-0.01em] text-fg", hideLabel && "sr-only")}
+        >
           {label}
           {required ? (
             <span className="ml-1 text-fg-muted" aria-hidden>

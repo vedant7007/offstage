@@ -4,7 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import type { ActionProposal, RiskTier } from "@/contracts";
 import { api } from "@/lib/api-client";
-import { Alert, Button, EmptyState, PageHeader, ProposalCard, Skeleton } from "@/components/ui";
+import { Alert, Button, EmptyState, PageHeader, ProposalCard, Skeleton, TierBadge } from "@/components/ui";
+import { CountUp } from "./fx";
 import { agentOf, ApproveButton, metaOf, RejectButton } from "./proposal-bits";
 
 const TIERS: { tier: RiskTier; title: string; hint: string }[] = [
@@ -41,6 +42,7 @@ export function ApprovalQueue({ eventId }: { eventId: string }) {
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
+        eyebrow="Policy gate"
         title="Approvals"
         description="What the agents want to do. Nothing that touches people or money happens until someone approves it."
       />
@@ -50,6 +52,24 @@ export function ApprovalQueue({ eventId }: { eventId: string }) {
         </Alert>
       ) : null}
       {!items && !error ? <Skeleton className="h-40" /> : null}
+      {items?.length ? (
+        <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          {TIERS.map(({ tier, title }) => (
+            <div
+              key={tier}
+              className="flex flex-col gap-2 rounded-card border border-border bg-surface p-4 shadow-card"
+            >
+              <dt className="flex items-center gap-2 text-sm text-fg-muted">
+                <TierBadge tier={tier} />
+                {title}
+              </dt>
+              <dd className="font-mono text-3xl font-medium">
+                <CountUp to={items.filter((p) => p.riskTier === tier).length} />
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
       {items && !items.length ? (
         <EmptyState title="Nothing waiting" description="New proposals appear here as agents make them." />
       ) : null}
@@ -58,8 +78,11 @@ export function ApprovalQueue({ eventId }: { eventId: string }) {
         if (!group.length) return null;
         return (
           <section key={tier} aria-label={title} className="flex flex-col gap-3">
-            <h2 className="text-lg font-semibold">
-              {title} <span className="text-sm font-normal text-fg-muted">({hint})</span>
+            <h2 className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-xl font-medium tracking-[-0.02em]">
+              {title}{" "}
+              <span className="kicker text-fg-muted">
+                ({hint}, <span className="tabular-nums">{group.length}</span>)
+              </span>
             </h2>
             {group.map((p) => (
               <ProposalCard

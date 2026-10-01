@@ -111,6 +111,11 @@
   }
 }
 
+.copy {
+  position: relative;
+  z-index: 3;
+}
+
 .kicker {
   display: flex;
   align-items: center;
