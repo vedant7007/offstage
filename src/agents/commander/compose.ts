@@ -23,8 +23,8 @@ const ACTIVE = new Set(["assigned", "checked_in"]);
 /** What a volunteer reads when their shift moves. Seeded role names often already carry the room. */
 export const movedText = (role: string, room: string, at: string) =>
   role.includes(room)
-    ? `Your shift moved: ${role}, now ${at}. Reply OK to confirm.`
-    : `Your shift moved: ${role} is now at ${room}, ${at}. Reply OK to confirm.`;
+    ? `Your shift moved: ${role}, now ${at}. Tell your lead if you cannot make it.`
+    : `Your shift moved: ${role} is now at ${room}, ${at}. Tell your lead if you cannot make it.`;
 
 export const releasedText = (role: string, at: string) =>
   `You're released from ${role} at ${at}. Crew Chief may reassign you soon.`;
