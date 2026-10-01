@@ -4,6 +4,9 @@ import { Providers } from "@/components/ui/providers";
 import { getLocale } from "@/lib/i18n/server";
 import { getMessages } from "@/lib/i18n/messages";
 import { HTML_LANG } from "@/lib/i18n/translate";
+import { isShowcase } from "@/showcase/flag";
+import { NetworkGuard } from "@/showcase/guard/network-guard";
+import { ShowcaseBanner } from "@/showcase/banner/showcase-banner";
 import "./globals.css";
 
 // Inter Tight for every heading and paragraph, IBM Plex Mono for kickers, labels and numbers.
@@ -48,7 +51,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       className={`${grotesk.variable} ${plexMono.variable} ${notoDevanagari.variable} antialiased`}
     >
       <body>
+        {isShowcase() && <NetworkGuard />}
         <Providers locale={locale} messages={getMessages(locale)}>
+          {isShowcase() && <ShowcaseBanner />}
           {children}
         </Providers>
       </body>
