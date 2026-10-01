@@ -57,10 +57,20 @@ export function ApproveButton({
             params: { eventId, proposalId: proposal.id },
             body: { diffHash: proposal.diffHash },
           });
-          toast.success("Approved");
+          const left = proposal.requiredApprovals - proposal.approvals.length - 1;
+          toast.success(
+            left > 0
+              ? `Approved. ${left} more person must approve before it runs: switch persona to the Event head or Program Lead.`
+              : "Approved",
+          );
           onDone();
         } catch (e) {
-          toast.error(message(e));
+          const text = message(e);
+          if (/already approved/i.test(text))
+            toast.info(
+              "You approved this. A second person must approve it: switch persona to the Event head or Program Lead.",
+            );
+          else toast.error(text);
         } finally {
           setBusy(false);
         }

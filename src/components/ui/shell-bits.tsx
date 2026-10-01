@@ -41,16 +41,27 @@ function ScrollHeader({ className, children }: { className?: string; children: R
   );
 }
 
-/** Signs out and returns to the shared sign-in page. */
+/** Signs out and returns to the shared sign-in page. In demo mode it first resets the demo data (404 otherwise). */
 function SignOutButton() {
   const t = useT();
   const router = useRouter();
+  const [busy, setBusy] = React.useState(false);
   const signOut = async () => {
+    setBusy(true);
+    await fetch("/api/demo/reset", { method: "POST", credentials: "include" }).catch(() => undefined);
     await fetch("/api/auth/sign-out", { method: "POST", credentials: "include" }).catch(() => undefined);
     router.replace("/login");
     router.refresh();
   };
-  return <IconButton label={t("me.signOut")} icon={<LogOut aria-hidden />} onClick={() => void signOut()} />;
+  return (
+    <IconButton
+      label={t("me.signOut")}
+      icon={<LogOut aria-hidden />}
+      disabled={busy}
+      aria-busy={busy}
+      onClick={() => void signOut()}
+    />
+  );
 }
 
 const menuRow =

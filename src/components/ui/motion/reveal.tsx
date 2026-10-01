@@ -24,7 +24,7 @@ const ref = (el: HTMLElement | null) => (el ? observeOnce(el) : undefined);
  * Never wrap an overlay, a fixed element or a popover in it.
  */
 function Reveal({ as = "div", variant = "rise", delay, index, style, ...props }: RevealProps) {
-  const Tag = as as React.ElementType;
+  const Tag = as as "div";
   const vars: Record<string, string | number> = {};
   if (index) vars["--i"] = index;
   if (delay) vars["--reveal-delay"] = `${delay}ms`;

@@ -19,7 +19,7 @@ const ref = (el: HTMLElement | null) => (el ? observeOnce(el) : undefined);
  * Static under reduced motion and without JavaScript.
  */
 function TextReveal({ text, as = "h1", variant = "rise", ...props }: TextRevealProps) {
-  const Tag = as as React.ElementType;
+  const Tag = as as "h1";
   const words = text.split(/\s+/).filter(Boolean);
   const mode = variant === "blur" && words.length <= 6 ? "blur" : "rise";
   return (

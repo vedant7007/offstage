@@ -592,7 +592,7 @@ export function VoiceDock({ eventId }: { eventId: string }) {
               >
                 <div className="flex flex-wrap items-center justify-between gap-2 px-4 pt-2 pb-3 md:px-5">
                   <h3 className="kicker text-fg-muted">This session</h3>
-                  {median !== null ? (
+                  {median != null ? (
                     <Badge tone="neutral" className="tabular-nums">
                       Median {ms(median)} to first sound
                     </Badge>

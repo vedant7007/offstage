@@ -1,60 +1,29 @@
 import "@/server/load-env";
-import { HACKNOVA_NOW } from "@/contracts/fixtures";
-import { ownerDb, ownerSql } from "@/db/client";
-import { seed } from "@/db/seed";
-import { indexPendingPg } from "@/ai/rag/pg";
 import { logger } from "@/lib/logger";
-import { setDemoClock } from "@/server/clock";
+import { resetDemo } from "./reset-core";
 
 const log = logger.child({ module: "demo.reset" });
 
 /**
- * Wipes every table in the public schema except telegram_links (real people's linked chats), and queued jobs, and reseeds both demo events.
- * Target: under 30 seconds. Connects as the owner because TRUNCATE is not granted to the app role.
+ * Wipes the demo database and reseeds both demo events. Target: under 30 seconds.
  *
  *   pnpm demo:reset              clock set to 10:30 IST on HackNova day 1, running forward
  *   pnpm demo:reset --real-time  keep real time
  */
 async function main() {
   const started = Date.now();
-  const realTime = process.argv.includes("--real-time");
-  const client = ownerSql();
-  try {
-    const tables = await client<{ table_name: string }[]>`
-      select table_name from information_schema.tables
-      where table_schema = 'public' and table_type = 'BASE TABLE' and table_name <> 'telegram_links'`;
-    if (tables.length === 0) throw new Error("No tables found. Run pnpm db:migrate first.");
-    await client.unsafe(
-      `truncate table ${tables.map((t) => `"${t.table_name}"`).join(", ")} restart identity cascade`,
-    );
-    const [{ exists } = { exists: false }] = await client<{ exists: boolean }[]>`
-      select exists(select 1 from information_schema.tables where table_schema = 'pgboss' and table_name = 'job') as exists`;
-    if (exists) await client.unsafe(`delete from pgboss.job`);
-
-    const db = ownerDb(client);
-    const result = await seed(db);
-    // Index the seeded documents now, so the helpdesk never starts a demo with an unindexed FAQ.
-    const indexed = await indexPendingPg(db);
-    const clock = await setDemoClock(db, realTime ? null : new Date(HACKNOVA_NOW));
-    const ms = Date.now() - started;
-    log.info(
-      { ms, tables: tables.length, events: result.events, clockAnchor: clock?.anchor ?? "real time" },
-      "demo reset complete",
-    );
-    console.log(
-      `demo reset: ${tables.length} tables wiped, seeded ${result.events.join(" and ")} in ${ms} ms`,
-    );
-    console.log(
-      `knowledge base: indexed ${indexed.length} documents, ${indexed.reduce((s, d) => s + d.chunks, 0)} chunks`,
-    );
-    console.log(
-      clock
-        ? `demo clock: now reads as ${clock.anchor} (10:30 IST, HackNova day 1)`
-        : "demo clock: real time",
-    );
-  } finally {
-    await client.end({ timeout: 5 });
-  }
+  const { tables, events, indexed, clock } = await resetDemo({
+    realTime: process.argv.includes("--real-time"),
+  });
+  const ms = Date.now() - started;
+  log.info({ ms, tables, events, clockAnchor: clock?.anchor ?? "real time" }, "demo reset complete");
+  console.log(`demo reset: ${tables} tables wiped, seeded ${events.join(" and ")} in ${ms} ms`);
+  console.log(
+    `knowledge base: indexed ${indexed.length} documents, ${indexed.reduce((s, d) => s + d.chunks, 0)} chunks`,
+  );
+  console.log(
+    clock ? `demo clock: now reads as ${clock.anchor} (10:30 IST, HackNova day 1)` : "demo clock: real time",
+  );
 }
 
 main().catch((err: unknown) => {

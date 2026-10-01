@@ -2,6 +2,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { Button, EmptyState, ThemeToggle } from "@/components/ui";
 import { ConsoleShell } from "@/components/ui/console-shell";
+import { SignOutButton } from "@/components/ui/shell-bits";
 import { EmergencyBanner } from "@/components/console/emergency-banner";
 import { PersonaSwitcher } from "@/components/console/persona-switcher";
 import { RealSendsBadge } from "@/components/console/real-sends";
@@ -42,6 +43,7 @@ export default async function ConsoleLayout({ children, params }: LayoutProps<"/
           {demoMode ? <RealSendsBadge eventId={eventId} /> : null}
           {demoMode && role ? <PersonaSwitcher role={role} /> : null}
           <ThemeToggle />
+          <SignOutButton />
         </div>
       }
     >
