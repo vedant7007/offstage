@@ -242,6 +242,26 @@
   color: var(--ink);
 }
 
+.btnInk {
+  background: var(--ink);
+  color: var(--white);
+}
+
+.btnInk:hover {
+  background: var(--blue-dark);
+}
+
+.btnLine {
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+
+.btnLine:hover {
+  background: var(--ink);
+  color: var(--white);
+}
+
 .btnLg {
   padding: 1rem 2rem;
   font-size: 1.125rem;
@@ -500,26 +520,8 @@
   will-change: transform, opacity;
 }
 
-.heroKicker {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-  color: var(--lime);
-}
-
-.heroKicker::before,
-.heroKicker::after {
-  content: "";
-  width: clamp(20px, 5vw, 52px);
-  height: 1.5px;
-  background: currentColor;
-  opacity: 0.7;
-}
-
 .heroTitle {
-  font-size: clamp(3.2rem, 12.5vw, 10.5rem);
+  font-size: clamp(2.9rem, 10.5vw, 8.75rem);
   font-weight: 500;
   line-height: 0.93;
   letter-spacing: -0.045em;
@@ -527,33 +529,48 @@
 }
 
 .heroSub {
-  margin-top: 1.5rem;
-  font-size: clamp(1.375rem, 3.2vw, 2.375rem);
-  line-height: 1.3;
-  color: var(--paper-2);
+  max-width: 40rem;
+  margin: 1.5rem auto 0;
+  font-size: clamp(1.0625rem, 1.6vw, 1.375rem);
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--paper-2) 86%, var(--ink));
+  text-wrap: pretty;
 }
 
-.heroMeta {
+.heroCtas {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
-  gap: 0.75rem 2rem;
-  margin-top: 2rem;
-  color: color-mix(in srgb, var(--paper) 72%, var(--ink));
+  gap: 0.75rem 1rem;
+  margin-top: 2.25rem;
 }
 
-.heroMeta li {
-  display: flex;
+.heroCtas .btnLime {
+  box-shadow: 0 10px 40px color-mix(in srgb, var(--lime) 28%, transparent);
+}
+
+/* The award: a gold pill with a star, in the hero and at the curtain call. */
+.badge {
+  display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.6rem;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 1rem 0.5rem 0.8rem;
+  border: 1px solid color-mix(in srgb, var(--gold) 55%, transparent);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--gold) 9%, transparent);
+  color: var(--gold);
+  font-size: 0.75rem;
+  letter-spacing: 0.1em;
+  line-height: 1.3;
+  text-align: left;
 }
 
-.heroMeta li:not(:last-child)::after {
-  content: "";
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--lime);
+.badgeIcon {
+  flex: none;
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
 }
 
 .hint {
@@ -637,6 +654,25 @@
   right: 0;
   transform-origin: 100% 50%;
   box-shadow: -23px 0 46px rgb(0 0 0 / 0.55);
+}
+
+/* Resting frame before any scroll, the same as CURTAIN_START in use-theatre.ts. */
+.stageHero .curtainL {
+  transform: translateX(calc(-80% - 1.6vw));
+}
+
+.stageHero .curtainR {
+  transform: translateX(calc(80% + 1.6vw));
+}
+
+@media (max-width: 860px) {
+  .stageHero .curtainL {
+    transform: translateX(calc(-100% - 2vw));
+  }
+
+  .stageHero .curtainR {
+    transform: translateX(calc(100% + 2vw));
+  }
 }
 
 /* ----- cue 01: chaos ----- */
@@ -796,6 +832,10 @@
   perspective: 1000px;
   background: var(--ink);
   color: var(--paper);
+}
+
+.stageRule .cueHead {
+  margin-bottom: clamp(0.75rem, 2.5vh, 1.75rem);
 }
 
 .stageRule .cueKicker {
@@ -1174,8 +1214,15 @@
 .team {
   position: relative;
   z-index: 5;
-  margin: 1rem 0;
+  display: grid;
+  justify-items: center;
+  gap: 0.6rem;
+  margin: 1.25rem 0 1.5rem;
   color: var(--lime);
+}
+
+.team .badge {
+  margin: 0;
 }
 
 /* Above the closing curtains: the house goes dark, the way in stays lit. */
@@ -1199,6 +1246,134 @@
 .ctaRow:focus-within {
   opacity: 1 !important;
   pointer-events: auto !important;
+}
+
+/* ----- proof ----- */
+
+.proof {
+  padding: clamp(4rem, 9vw, 8rem) var(--pad) clamp(2rem, 4vw, 3.5rem);
+}
+
+.proofGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: clamp(1.5rem, 3vw, 2.5rem);
+  border-top: 1.5px solid var(--ink);
+}
+
+.proofGrid li {
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  padding: clamp(1.5rem, 2.5vw, 2.25rem) clamp(1rem, 2vw, 2rem) 0 0;
+}
+
+.proofGrid li + li {
+  padding-left: clamp(1rem, 2vw, 2rem);
+  border-left: 1px solid rgb(0 0 0 / 0.14);
+}
+
+.proofN {
+  font-size: clamp(2.6rem, 5.2vw, 5rem);
+  font-weight: 500;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+  color: var(--blue-dark);
+  white-space: nowrap;
+}
+
+.proofGrid li:nth-child(even) .proofN {
+  color: var(--purple-text);
+}
+
+.proofT {
+  max-width: 16rem;
+  font-size: clamp(1rem, 1.3vw, 1.125rem);
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--ink) 78%, var(--paper));
+}
+
+@media (max-width: 960px) {
+  .proofGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .proofGrid li:nth-child(3) {
+    padding-left: 0;
+    border-left: 0;
+  }
+
+  .proofGrid li:nth-child(n + 3) {
+    border-top: 1px solid rgb(0 0 0 / 0.14);
+    margin-top: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .proofGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .proofGrid li:nth-child(n) {
+    padding: 1.25rem 0;
+    border-left: 0;
+    margin: 0;
+  }
+
+  .proofGrid li + li {
+    border-top: 1px solid rgb(0 0 0 / 0.14);
+  }
+}
+
+/* ----- showcase notice and contact ----- */
+
+.notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem 1.5rem;
+  padding: clamp(1.75rem, 3vw, 2.5rem) var(--pad);
+  background: var(--gold);
+  color: var(--ink);
+}
+
+.noticeH {
+  font-size: 0.75rem;
+}
+
+.noticeP {
+  font-size: clamp(1rem, 1.4vw, 1.1875rem);
+  font-weight: 500;
+}
+
+.contact {
+  padding: clamp(4.5rem, 10vw, 9rem) var(--pad);
+  background: var(--paper);
+}
+
+.contactT {
+  max-width: 18ch;
+  font-size: clamp(2.4rem, 6.4vw, 5.5rem);
+  font-weight: 500;
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.contactP {
+  max-width: 34rem;
+  margin-top: 1.5rem;
+  font-size: clamp(1.0625rem, 1.6vw, 1.375rem);
+  line-height: 1.4;
+  color: color-mix(in srgb, var(--ink) 76%, var(--paper));
+}
+
+.contactRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin-top: 2.25rem;
 }
 
 /* ----- footer ----- */
@@ -1281,7 +1456,10 @@
 
 /* Right-aligned plates stop short of the cue rail. */
 @media (min-width: 1101px) {
-  .stageRule {
+  .stageRule,
+  .proof,
+  .notice,
+  .contact {
     padding-right: max(var(--pad), 6rem);
   }
 }
@@ -1382,10 +1560,6 @@
 }
 
 @media (max-width: 560px) {
-  .heroMeta {
-    gap: 0.5rem 1.25rem;
-  }
-
   .btnLg {
     padding: 0.9rem 1.5rem;
     font-size: 1rem;

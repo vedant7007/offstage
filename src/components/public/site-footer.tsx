@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getT } from "@/lib/i18n/server";
-import { CONSOLE_PATH, DEMO_EVENT_SLUG, eventPath } from "./links";
+import { CONTACT_MAILTO, DEMO_EVENT_SLUG, LOGIN_PATH, REPO_URL, eventPath } from "./links";
 import { Wordmark } from "./site-header";
 
 const link =
@@ -19,6 +19,11 @@ export async function SiteFooter() {
           </p>
           <ul className="flex flex-wrap gap-x-6 text-fg-muted">
             <li>
+              <Link href={LOGIN_PATH} className={link}>
+                {t("site.demo")}
+              </Link>
+            </li>
+            <li>
               <Link href={eventPath(DEMO_EVENT_SLUG)} className={link}>
                 {t("landing.demoCta")}
               </Link>
@@ -29,9 +34,14 @@ export async function SiteFooter() {
               </Link>
             </li>
             <li>
-              <Link href={CONSOLE_PATH} className={link}>
-                Enter live demo
-              </Link>
+              <a href={CONTACT_MAILTO} className={link}>
+                {t("site.contact")}
+              </a>
+            </li>
+            <li>
+              <a href={REPO_URL} className={link} target="_blank" rel="noopener noreferrer">
+                {t("site.github")}
+              </a>
             </li>
           </ul>
         </div>

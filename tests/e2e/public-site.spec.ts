@@ -25,24 +25,34 @@ for (const scheme of ["light", "dark"] as const) {
   });
 }
 
-test("landing tells the story in seven cues and links to the live demo", async ({ page }) => {
+test("landing tells the story and links to the live demo", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("The show goes on.");
-  await expect(page.getByRole("link", { name: "Enter live demo" })).toHaveAttribute("href", "/console");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Your event, run offstage.");
+  await expect(page.getByRole("link", { name: "Try the live demo" }).first()).toHaveAttribute(
+    "href",
+    "/login",
+  );
+  await expect(page.getByRole("link", { name: "How it works" })).toHaveAttribute("href", "#how");
   for (const cue of [
     "The chaos before the show",
     "Enter the Commander",
+    "How it works",
     "The crew",
     "The show must go on",
-    "The rule",
+    "Measured during the hackathon",
+    "Want OFFSTAGE for your event?",
   ]) {
     await expect(page.getByRole("heading", { level: 2, name: cue })).toBeAttached();
   }
   await expect(page.getByText("14 agents, every one with a human lead.")).toBeAttached();
-  await expect(page.getByRole("link", { name: "Enter the live demo" })).toHaveAttribute("href", "/console");
+  await expect(page.getByText("Team MASTICODE: Vedant Idlgave, Abhinav Nakka, V Thanishka")).toBeAttached();
   await expect(page.getByRole("link", { name: "See the attendee side" })).toHaveAttribute(
     "href",
     "/e/hacknova-2026",
+  );
+  await expect(page.getByRole("link", { name: "Contact us" }).first()).toHaveAttribute(
+    "href",
+    "mailto:vedantidlgave16@gmail.com?subject=OFFSTAGE%20enquiry",
   );
   await expect(page.getByRole("link", { name: "Demo event" })).toHaveAttribute("href", "/e/hacknova-2026");
   await expect(

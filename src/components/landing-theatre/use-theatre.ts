@@ -20,6 +20,13 @@ const TAU = Math.PI * 2;
  */
 const DP_LERP = 0.3;
 
+/**
+ * How far open the opening curtains sit before any scroll, as a share of their full travel.
+ * theatre.module.css sets the same resting transform, so the first paint matches the first frame.
+ */
+const CURTAIN_START = 0.8;
+const CURTAIN_START_NARROW = 1;
+
 /** Acts that keep a slow drift while on screen. While one is visible the loop keeps running. */
 const AMBIENT = new Set(["chaos", "crew"]);
 
@@ -96,11 +103,17 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
 
     const update: Record<string, (dp: number, t: number) => void> = {
       opening(dp) {
-        const o = easeOut(clamp(dp / 0.5));
-        tf($.curtL, `translateX(calc(${-100 * o}% - ${2 * o}vw)) rotateY(${-22 * o}deg)`);
-        tf($.curtR, `translateX(calc(${100 * o}% + ${2 * o}vw)) rotateY(${22 * o}deg)`);
-        op($.hero, clamp((o - 0.1) / 0.42));
-        tf($.hero, `translateZ(${lerp(-170, 60, easeOut(dp))}px) scale(${lerp(0.94, 1, o)})`);
+        // The house opens already lit: the curtains frame the hero at load and part the rest of
+        // the way as the visitor scrolls, while the hero settles back into the dark.
+        const start = D < 1 ? CURTAIN_START_NARROW : CURTAIN_START;
+        const e = easeOut(clamp(dp / 0.5));
+        const o = lerp(start, 1, e);
+        // Flat at rest so the folds read as a frame; they swing back only as they part.
+        tf($.curtL, `translateX(calc(${-100 * o}% - ${2 * o}vw)) rotateY(${-22 * e}deg)`);
+        tf($.curtR, `translateX(calc(${100 * o}% + ${2 * o}vw)) rotateY(${22 * e}deg)`);
+        const out = easeOut(clamp((dp - 0.45) / 0.55));
+        op($.hero, 1 - 0.9 * out);
+        tf($.hero, `translate3d(0,${-40 * out}px,${-160 * out}px)`);
         op($.hint, clamp(1 - dp / 0.07));
       },
       chaos(dp, t) {
@@ -138,7 +151,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
         });
       },
       show: (dp, t) => updateShow(show, dp, t),
-      rule(dp) {
+      how(dp) {
         // The four lines arrive one after another out of the dark, then hold still to be read.
         $.plates.forEach((el, i) => {
           const a = easeOut(clamp((dp + 0.15 - i * 0.12) / 0.35));
