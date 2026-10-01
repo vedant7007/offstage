@@ -38,6 +38,7 @@
     "voice:audio": "tsx tests/voice/make-audio.ts",
     "voice:test": "tsx tests/voice/run.ts",
     "db:counts": "tsx src/db/counts.ts",
+    "showcase:fixtures": "tsx scripts/export-showcase-fixtures.ts",
     "test:db": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
