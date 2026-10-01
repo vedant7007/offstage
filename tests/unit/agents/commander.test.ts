@@ -214,10 +214,10 @@ describe("commander on speaker_cancel", () => {
 describe("crew notes", () => {
   it("names the room once when the role already carries it", () => {
     expect(movedText("Hall support, Main Auditorium", "Main Auditorium", "Sat, 24 Oct, 3:45 PM")).toBe(
-      "Your shift moved: Hall support, Main Auditorium, now Sat, 24 Oct, 3:45 PM. Reply OK to confirm.",
+      "Your shift moved: Hall support, Main Auditorium, now Sat, 24 Oct, 3:45 PM. Tell your lead if you cannot make it.",
     );
     expect(movedText("Registration desk", "Foyer", "Sat, 24 Oct, 9:00 AM")).toBe(
-      "Your shift moved: Registration desk is now at Foyer, Sat, 24 Oct, 9:00 AM. Reply OK to confirm.",
+      "Your shift moved: Registration desk is now at Foyer, Sat, 24 Oct, 9:00 AM. Tell your lead if you cannot make it.",
     );
   });
 
