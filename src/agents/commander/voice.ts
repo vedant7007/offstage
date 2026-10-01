@@ -83,11 +83,11 @@ export function ruleRoute(text: string, history: HistoryTurn[] = []): Route | nu
   if (/^(message|tell|ping|notify) (all |the )?volunteers\b/.test(t))
     return r("message_volunteers", { message: after(raw, /^.*?\bvolunteers\b(\s+(that|to))?/i) });
   if (
-    /^remind (the )?(speakers?|them)\b.*\b(confirm|not confirmed|hasn'?t)/.test(t) ||
+    /^remi?y?nd (the )?(speakers?|them)\b.*\b(confirm|not confirmed|hasn'?t)/.test(t) ||
     (/^remind them\b/.test(t) && last === "unconfirmed")
   )
     return r("remind_unconfirmed");
-  const remind = /^remind ([a-z][a-z.]*(?: [a-z][a-z.]*)?) (about|to|of) (.+)$/i.exec(
+  const remind = /^remi?y?nd ([a-z][a-z.]*(?: [a-z][a-z.]*)?) (about|to|of) (.+)$/i.exec(
     raw.replace(/[.!?]+$/, ""),
   );
   if (remind && !/^(the|all|them|everyone)\b/i.test(remind[1]!))

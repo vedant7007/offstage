@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { FILLER, ruleIntent, sentences } from "@/agents/commander/voice";
+import { FILLER, ruleIntent, ruleRoute, sentences } from "@/agents/commander/voice";
 import { narrateProposal } from "@/server/services/voice-turn";
 import { CASES } from "../../voice/cases";
 
@@ -87,5 +87,23 @@ describe("narrateProposal", () => {
     const lines = narrateProposal(p as never, []);
     expect(lines).toHaveLength(1);
     expect(lines[0]).toMatch(/^Herald proposes: /);
+  });
+});
+
+describe("voice actions routing", () => {
+  it("keeps whisper's misspelling of remind on the reminder path", () => {
+    expect(ruleRoute("Remynd Abhinav about the speaker list.")).toMatchObject({
+      intent: "remind_member",
+      args: { person: "Abhinav" },
+    });
+  });
+  it("reads the session and the time out of a move", () => {
+    expect(ruleRoute("Move the LLM talk to 4pm.")).toMatchObject({
+      intent: "move_session",
+      args: { session: "LLM talk", time: "4pm" },
+    });
+  });
+  it("is an announcement, not lunch confusion, when it starts with send an announcement", () => {
+    expect(ruleRoute("Send an announcement: lunch is moved to 1 PM")?.intent).toBe("announce");
   });
 });
