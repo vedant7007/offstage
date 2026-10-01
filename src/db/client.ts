@@ -28,16 +28,33 @@ function createAppSql(): Sql {
   });
 }
 
-/** Raw postgres.js client. Connects lazily on first query. */
-export const sql: Sql = globalForDb.__sutradharSql ?? createAppSql();
-
-export const db: Db = globalForDb.__sutradharDb ?? drizzle(sql, { schema, casing: "snake_case" });
-
-// Reuse one pool across hot reloads in dev.
-if (process.env.NODE_ENV !== "production") {
-  globalForDb.__sutradharSql = sql;
-  globalForDb.__sutradharDb = db;
+/**
+ * Created on first use, not at import, so a build (or the showcase, which never queries) needs
+ * no DATABASE_URL. Once created, the same pool is reused, across hot reloads in dev too.
+ */
+function appSql(): Sql {
+  return (globalForDb.__sutradharSql ??= createAppSql());
 }
+
+function appDb(): Db {
+  return (globalForDb.__sutradharDb ??= drizzle(appSql(), { schema, casing: "snake_case" }));
+}
+
+/** Forwards every use of `target` to the real client, created on first touch. */
+function lazy<T extends object>(real: () => T, target: T): T {
+  return new Proxy(target, {
+    get: (_t, prop) => Reflect.get(real(), prop) as unknown,
+    has: (_t, prop) => Reflect.has(real(), prop),
+    getPrototypeOf: () => Reflect.getPrototypeOf(real()),
+    apply: (_t, thisArg, args: unknown[]) =>
+      Reflect.apply(real() as (...a: unknown[]) => unknown, thisArg, args),
+  });
+}
+
+/** Raw postgres.js client. Connects lazily on first query. */
+export const sql: Sql = lazy(appSql, (() => {}) as unknown as Sql);
+
+export const db: Db = lazy(appDb, {} as Db);
 
 /**
  * A connection as the database owner, for migrations and demo reset only (DDL and TRUNCATE).
