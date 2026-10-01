@@ -12,25 +12,26 @@ Every number the judges see comes from the running app. Say "mock" out loud when
 
 Do this 30 minutes before, in order. Tick each line.
 
-1. **Services.** `docker compose up -d db mailpit`, then `pnpm dev` and `pnpm worker` in two terminals. The worker prints `worker started` and `telegram polling: on` or `off`.
-2. **Stop any second worker.** Only one worker may poll the Telegram bot: another `pnpm worker` on the same token (another worktree, or the server) logs `telegram getUpdates 409` and steals replies. On the laptop set `TELEGRAM_POLLING=on` only when the server's worker is stopped; otherwise keep it `off` and let the server poll.
-3. **Profile.** `.env` has `AI_PROFILE=demo` and `DEMO_MODE=true`. Run `pnpm ai:smoke`; every provider says ok.
-4. **Reset.** `pnpm demo:reset`. It prints `demo clock: now reads as ... 10:30 IST, HackNova day 1`. The app picks up the new clock at once.
-5. **WhatsApp sandbox.** Each phone in `DEMO_REAL_RECIPIENTS` sends the join phrase to the sandbox number on demo morning (the join lasts 72 hours).
-6. **Real sends stay off until the demo.** The Twilio trial has a daily cap (about 50 messages); once it is spent every WhatsApp send fails with code 63038 until the next day. Rehearse with real sends off (the default). Right before the audience arrives, click "Turn real sends on" in the Demo scenarios panel; the header then shows "REAL SENDS ON".
-7. **Telegram.** Each team phone opened the bot once, sent `/start` and shared its number ("You're linked."). Links survive a reset.
-8. **Personas.** Laptop: open `/login`, click "Event head" under Demo personas. Faculty phone: `/login`, "Faculty approver". Sneha's phone: `/login`, "Attendee". Volunteer phone (Android, Chrome): `/login`, "Volunteer"; it opens the check-in screen at `/crew/checkin` and downloads the event key.
-9. **Two spare tickets to scan.** Print two more attendee QR codes for the offline check-in (run from the repo folder):
+1. **Preflight.** Run `pnpm demo:preflight` (on the server: `sudo docker compose --profile cloud exec app pnpm demo:preflight`) and fix every FAIL before going on.
+2. **Services.** `docker compose up -d db mailpit`, then `pnpm dev` and `pnpm worker` in two terminals. The worker prints `worker started` and `telegram polling: on` or `off`.
+3. **Stop any second worker.** Only one worker may poll the Telegram bot: another `pnpm worker` on the same token (another worktree, or the server) logs `telegram getUpdates 409` and steals replies. On the laptop set `TELEGRAM_POLLING=on` only when the server's worker is stopped; otherwise keep it `off` and let the server poll.
+4. **Profile.** `.env` has `AI_PROFILE=demo` and `DEMO_MODE=true`. Run `pnpm ai:smoke`; every provider says ok.
+5. **Reset.** `pnpm demo:reset`. It prints `demo clock: now reads as ... 10:30 IST, HackNova day 1`. The app picks up the new clock at once.
+6. **WhatsApp sandbox.** Each phone in `DEMO_REAL_RECIPIENTS` sends the join phrase to the sandbox number on demo morning (the join lasts 72 hours).
+7. **Real sends stay off until the demo.** The Twilio trial has a daily cap (about 50 messages); once it is spent every WhatsApp send fails with code 63038 until the next day. Rehearse with real sends off (the default). Right before the audience arrives, click "Turn real sends on" in the Demo scenarios panel; the header then shows "REAL SENDS ON".
+8. **Telegram.** Each team phone opened the bot once, sent `/start` and shared its number ("You're linked."). Links survive a reset.
+9. **Personas.** Laptop: open `/login`, click "Event head" under Demo personas. Faculty phone: `/login`, "Faculty approver". Sneha's phone: `/login`, "Attendee". Volunteer phone (Android, Chrome): `/login`, "Volunteer"; it opens the check-in screen at `/crew/checkin` and downloads the event key.
+10. **Two spare tickets to scan.** Print two more attendee QR codes for the offline check-in (run from the repo folder):
    ```
    docker exec sutradhar-db-1 psql -U sutradhar -d sutradhar -At -c "select t.token from tickets t join registrations r on r.id = t.registration_id where r.status = 'confirmed' and not exists (select 1 from checkins c where c.ticket_id = t.id) limit 2" > spare-tickets.txt
    node -e "require('qrcode').toFile('ticket-1.png', process.argv[1])" "$(sed -n 1p spare-tickets.txt)"
    node -e "require('qrcode').toFile('ticket-2.png', process.argv[1])" "$(sed -n 2p spare-tickets.txt)"
    ```
-10. **Briefing.** In the console, open Briefing and click "Write one now" so today's briefing is ready.
-11. **Evals.** Open Evals and click "Run evals" (owner only, about 3 minutes). Every card should read Pass.
-12. **Browser.** Laptop at 90% zoom, one window, full screen. The Live Stage fits with the phone dock open. Close every other tab except Mailpit (`localhost:8025`).
-13. **Tabs in order.** Live stage, then Plan a new event, Briefing, What if, Close-out report in the console sidebar.
-14. **Backup video** of this script is on the laptop desktop.
+11. **Briefing.** In the console, open Briefing and click "Write one now" so today's briefing is ready.
+12. **Evals.** Open Evals and click "Run evals" (owner only, about 3 minutes). Every card should read Pass.
+13. **Browser.** Laptop at 90% zoom, one window, full screen. The Live Stage fits with the phone dock open. Close every other tab except Mailpit (`localhost:8025`).
+14. **Tabs in order.** Live stage, then Plan a new event, Briefing, What if, Close-out report in the console sidebar.
+15. **Backup video** of this script is on the laptop desktop.
 
 ## The run
 

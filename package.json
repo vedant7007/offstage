@@ -27,6 +27,7 @@
     "db:seed": "tsx src/db/seed/run.ts",
     "demo:reset": "tsx src/db/demo/reset.ts",
     "demo:trigger": "tsx src/db/demo/trigger.ts",
+    "demo:preflight": "tsx scripts/demo-preflight.ts",
     "keys": "tsx scripts/gen-keys.ts",
     "ses:smtp-password": "tsx scripts/ses-smtp-password.ts",
     "sync": "tsx scripts/sync.ts",
