@@ -31,6 +31,12 @@ const NOTCH_MASK = {
   WebkitMaskComposite: "source-in",
 } as React.CSSProperties;
 
+// Foil bands sit on a 300% canvas; --gx/--gy (0 to 100%) slide them across the pass.
+const FOIL = {
+  background:
+    "linear-gradient(115deg, transparent 22%, rgb(255 64 160 / 0.55) 32%, rgb(64 200 255 / 0.55) 42%, rgb(190 255 0 / 0.5) 52%, rgb(150 96 255 / 0.55) 62%, transparent 74%) var(--gx, 50%) var(--gy, 50%) / 300% 300% no-repeat",
+} as React.CSSProperties;
+
 /** Keeps --notch-y on the perforation line as the pass resizes (long names, narrow phones). */
 function notch(el: HTMLElement | null) {
   const line = el?.querySelector<HTMLElement>("[data-perforation]");
@@ -76,8 +82,8 @@ export function TicketCard({ name, college, eventName, dates, venue, qrPngDataUr
   return (
     <>
       {/* The long shadow sits on a still wrapper: the pass itself is masked (real notches), and a mask
-          would clip its own shadow. */}
-      <div className="rounded-card shadow-[0_40px_80px_-40px_rgb(7_27_223/0.5)]">
+          would clip its own shadow. It also slides the pass up into place once, when it mounts. */}
+      <div className="rounded-card shadow-[0_40px_80px_-40px_rgb(7_27_223/0.5)] motion-safe:transition-[translate,opacity] motion-safe:duration-(--duration-slower) motion-safe:ease-(--ease-out-expo) motion-safe:starting:translate-y-4 motion-safe:starting:opacity-0">
         {/* The pass is always ink: the nested .dark scope flips every token inside it. It leans toward
             the cursor (data-tilt, driven by PointerFx) and sweeps once on touch. The 1px transparent
             border gives the edge hairline room inside the mask. */}
@@ -87,12 +93,22 @@ export function TicketCard({ name, college, eventName, dates, venue, qrPngDataUr
           data-tilt=""
           data-max={5}
           style={NOTCH_MASK}
-          className="edge dark flex flex-col rounded-card border border-transparent bg-bg text-fg"
+          className="group/pass edge dark flex flex-col rounded-card border border-transparent bg-bg text-fg"
         >
           {/* Stage light from above, so the pass has depth on a black page too. */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-64 rounded-t-card bg-[radial-gradient(120%_100%_at_50%_0%,rgb(26_47_251/0.34),transparent_70%)]"
+          />
+          {/* Card stock: static grain, so the ink reads as printed rather than flat. */}
+          <div aria-hidden className="grain pointer-events-none absolute inset-0 -z-10 rounded-[inherit]" />
+          {/* Holographic foil: iridescent bands that slide with the cursor while the pass leans (desktop
+              mouse only; PointerFx sets data-fx-active and --gx/--gy). Below the QR (z-2), so the code
+              stays crisp and scannable. Never shown on touch or under reduced motion. */}
+          <div
+            aria-hidden
+            style={FOIL}
+            className="pointer-events-none absolute inset-0 z-1 rounded-[inherit] opacity-0 mix-blend-color-dodge transition-opacity duration-(--duration-slow) ease-(--ease-out) group-data-[fx-active]/pass:opacity-25"
           />
           <div className="flex flex-col p-6">
             <p className="kicker flex items-center gap-3 text-curtain-text">
@@ -163,31 +179,31 @@ export function TicketCard({ name, college, eventName, dates, venue, qrPngDataUr
 
       {full
         ? createPortal(
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label={alt}
-          // Close is the only control, so Tab stays on it instead of reaching the page behind.
-          onKeyDown={(e) => {
-            if (e.key !== "Tab") return;
-            e.preventDefault();
-            closeRef.current?.focus();
-          }}
-          className="light fixed inset-0 z-(--z-modal) flex flex-col items-center justify-center gap-4 bg-white p-4 text-black motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-300"
-        >
-          <IconButton
-            ref={closeRef}
-            label={t("me.ticket.close")}
-            icon={<X aria-hidden className="size-6" />}
-            onClick={() => setFull(false)}
-            className="absolute top-3 right-3 rounded-full text-black hover:bg-black/10"
-          />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={qrPngDataUrl} alt={alt} className="aspect-square w-full max-w-[min(90vw,70vh)]" />
-          <p className="text-3xl font-medium tracking-[-0.03em]">{name}</p>
-          <p className="kicker">{eventName}</p>
-          <p className="max-w-xs text-center text-sm text-balance">{t("me.ticket.brightness")}</p>
-        </div>,
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label={alt}
+              // Close is the only control, so Tab stays on it instead of reaching the page behind.
+              onKeyDown={(e) => {
+                if (e.key !== "Tab") return;
+                e.preventDefault();
+                closeRef.current?.focus();
+              }}
+              className="light fixed inset-0 z-(--z-modal) flex flex-col items-center justify-center gap-4 bg-white p-4 text-black motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95 motion-safe:duration-300"
+            >
+              <IconButton
+                ref={closeRef}
+                label={t("me.ticket.close")}
+                icon={<X aria-hidden className="size-6" />}
+                onClick={() => setFull(false)}
+                className="absolute top-3 right-3 rounded-full text-black hover:bg-black/10"
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrPngDataUrl} alt={alt} className="aspect-square w-full max-w-[min(90vw,70vh)]" />
+              <p className="text-3xl font-medium tracking-[-0.03em]">{name}</p>
+              <p className="kicker">{eventName}</p>
+              <p className="max-w-xs text-center text-sm text-balance">{t("me.ticket.brightness")}</p>
+            </div>,
             document.body,
           )
         : null}

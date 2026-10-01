@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowRight, DoorOpen } from "lucide-react";
 import type { MyScheduleResponse } from "@/contracts";
 import { TimeRange } from "@/components/ui";
+import { LivePulse } from "@/components/ui/motion";
 import { useT } from "@/lib/i18n/provider";
 import { formatRelative } from "@/lib/time";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,13 @@ export function phaseOf(s: Session, now: number): Phase {
   if (s.status === "done" || Date.parse(s.endsAt) <= now) return "done";
   if (s.status === "running" || Date.parse(s.startsAt) <= now) return "now";
   return "upcoming";
+}
+
+/** How far through a session `now` is, 0 to 1. */
+export function progressOf(s: Session, now: number) {
+  const start = Date.parse(s.startsAt);
+  const span = Date.parse(s.endsAt) - start;
+  return span > 0 ? Math.min(1, Math.max(0, (now - start) / span)) : 0;
 }
 
 /** The session I am in right now, or my next one. Cancelled sessions never count. */
@@ -64,19 +72,14 @@ export function UpNext({ sessions, rooms, nowIso, clockOffsetMs, href, className
     <section
       aria-labelledby="up-next-title"
       className={cn(
-        "relative isolate flex flex-col gap-3 overflow-hidden rounded-card border border-border bg-surface-raised p-5 shadow-card",
+        "relative isolate flex flex-col gap-3 overflow-hidden rounded-card border border-border bg-surface-raised p-5 depth-2",
         "motion-safe:transition-[translate,opacity] motion-safe:duration-400 motion-safe:ease-out motion-safe:starting:translate-y-2 motion-safe:starting:opacity-0",
         className,
       )}
     >
       <span aria-hidden className="absolute inset-y-0 left-0 w-1 bg-curtain" />
       <h2 id="up-next-title" className="kicker flex items-center gap-2 text-curtain-text">
-        {live ? (
-          <span aria-hidden className="relative flex size-2">
-            <span className="absolute inset-0 rounded-full bg-curtain motion-safe:animate-ping" />
-            <span className="relative size-2 rounded-full bg-curtain" />
-          </span>
-        ) : null}
+        {live ? <LivePulse /> : null}
         {live ? t("event.sessionStatus.running") : t("board.next")}
         {!live ? <span className="text-fg-muted normal-case">{formatRelative(s.startsAt, now)}</span> : null}
       </h2>
@@ -90,6 +93,14 @@ export function UpNext({ sessions, rooms, nowIso, clockOffsetMs, href, className
         </span>
       </div>
       {s.change ? <p className="text-sm text-pending-text">{s.change.text}</p> : null}
+      {/* How far through the session we are: fills from the left once, then follows the clock. */}
+      {live ? (
+        <span
+          aria-hidden
+          style={{ "--p": progressOf(s, now) } as React.CSSProperties}
+          className="absolute inset-x-0 bottom-0 h-0.5 origin-left scale-x-(--p) bg-curtain motion-safe:transition-[scale] motion-safe:duration-(--duration-reveal) motion-safe:ease-(--ease-out-expo) motion-safe:starting:scale-x-0"
+        />
+      ) : null}
       {href ? (
         <Link
           href={href}

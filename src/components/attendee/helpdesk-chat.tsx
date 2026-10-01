@@ -13,7 +13,15 @@ export type KnownPassages = Record<string, { docTitle: string; section: string; 
 
 type Message =
   | { id: string; role: "user"; text: string }
-  | { id: string; role: "assistant"; text: string; result?: ChatResult; failed?: boolean };
+  | {
+      id: string;
+      role: "assistant";
+      text: string;
+      /** Streamed chunks while the answer arrives, so each new one can fade in. Gone once done. */
+      parts?: string[];
+      result?: ChatResult;
+      failed?: boolean;
+    };
 
 type Props = {
   suggestions: string[];
@@ -63,14 +71,16 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
 
   const stream = async (client: ReturnType<typeof createApiClient>, message: string, id: string) => {
     let text = "";
+    const parts: string[] = [];
     const body = { message, conversationId: conversationId.current, language: locale };
     for await (const chunk of client.chat(body) as AsyncGenerator<ChatStreamChunk>) {
       if (chunk.type === "delta") {
         text += chunk.text;
-        patch(id, { text });
+        parts.push(chunk.text);
+        patch(id, { text, parts: [...parts] });
       } else if (chunk.type === "done") {
         conversationId.current = chunk.result.conversationId;
-        patch(id, { text: chunk.result.answer.answer, result: chunk.result });
+        patch(id, { text: chunk.result.answer.answer, parts: undefined, result: chunk.result });
       } else {
         patch(id, { failed: true });
       }
@@ -108,23 +118,29 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
     }
   };
 
-  const citationChip = (c: Citation) => {
+  // Sources pop in one after another with a small spring once the answer is done.
+  const citationChip = (c: Citation, i: number) => {
     const known = passages[c.ref];
     return (
-      <CitationChip
+      <span
         key={c.ref}
-        document={known?.docTitle ?? c.label}
-        section={known?.section}
-        snippet={known?.snippet}
-        className="rounded-full px-3.5 font-mono text-xs"
-      />
+        style={{ transitionDelay: `${Math.min(i, 8) * 60}ms` }}
+        className="inline-flex max-w-full motion-safe:transition-[scale,opacity] motion-safe:duration-400 motion-safe:ease-spring motion-safe:starting:scale-90 motion-safe:starting:opacity-0"
+      >
+        <CitationChip
+          document={known?.docTitle ?? c.label}
+          section={known?.section}
+          snippet={known?.snippet}
+          className="rounded-full px-3.5 font-mono text-xs"
+        />
+      </span>
     );
   };
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-        <div className="flex flex-1 items-start gap-3 rounded-card border border-border bg-surface p-4">
+        <div className="flex flex-1 items-start gap-3 rounded-card border border-border bg-surface p-4 depth-1">
           <span
             aria-hidden
             className="flex size-8 shrink-0 items-center justify-center rounded-full bg-curtain text-on-curtain [&_svg]:size-4"
@@ -158,13 +174,25 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
               <AgentAvatar agent="helpdesk" size="sm" className="mt-1" />
               <div
                 className={cn(
-                  "flex max-w-[85%] flex-col gap-3 rounded-card rounded-tl-md border bg-surface-raised px-4 py-3 text-fg shadow-card",
+                  "flex max-w-[85%] flex-col gap-3 rounded-card rounded-tl-md border bg-surface-raised px-4 py-3 text-fg depth-2",
                   m.result?.escalationId ? "border-pending" : "border-border",
                 )}
               >
                 <span className="sr-only">{t("chat.assistant")}: </span>
                 {m.failed ? (
                   <p className="text-danger-text">{t("chat.error")}</p>
+                ) : m.parts?.length ? (
+                  // Each streamed chunk fades in on arrival; no per-letter effects.
+                  <p className="whitespace-pre-line">
+                    {m.parts.map((part, i) => (
+                      <span
+                        key={i}
+                        className="motion-safe:animate-in motion-safe:fade-in-0 motion-safe:duration-150"
+                      >
+                        {part}
+                      </span>
+                    ))}
+                  </p>
                 ) : m.text ? (
                   <p className="whitespace-pre-line">{m.text}</p>
                 ) : (
@@ -238,7 +266,7 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
           e.preventDefault();
           void ask(input);
         }}
-        className="sticky bottom-20 flex items-end gap-2 rounded-[1.75rem] border border-border-strong bg-surface-raised p-1.5 pl-3 shadow-card transition-colors duration-200 ease-out focus-within:border-fg md:bottom-4"
+        className="sticky bottom-20 flex items-end gap-2 rounded-[1.75rem] border border-border-strong bg-surface-raised p-1.5 pl-3 depth-3 transition-colors duration-200 ease-out focus-within:border-fg md:bottom-4"
       >
         <label htmlFor="chat-input" className="sr-only">
           {t("chat.label")}
