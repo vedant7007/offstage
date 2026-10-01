@@ -51,6 +51,7 @@ describe("sentences", () => {
   });
   it("keeps a trailing fragment", () => {
     expect(sentences("Done. And then")).toEqual(["Done.", "And then"]);
+    expect(sentences("214 attended (66.9%). Good.")).toEqual(["214 attended (66.9%).", "Good."]);
   });
 });
 

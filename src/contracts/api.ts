@@ -275,6 +275,7 @@ export const VoiceIntent = z.enum([
   "projector_voice_note",
   "budget_breach",
   "volunteer_noshow",
+  "queue_spike",
   "whatif",
   "closeout",
   "approve",
