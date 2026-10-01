@@ -39,6 +39,8 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
   const [messages, setMessages] = React.useState<Message[]>([]);
   const [input, setInput] = React.useState("");
   const [busy, setBusy] = React.useState(false);
+  /** True once a question has waited 8 s, so the wait reads as expected rather than stuck. */
+  const [slow, setSlow] = React.useState(false);
   const conversationId = React.useRef<string | undefined>(undefined);
   const endRef = React.useRef<HTMLDivElement>(null);
   const inputRef = React.useRef<HTMLTextAreaElement>(null);
@@ -46,6 +48,15 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
   React.useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
   }, [messages]);
+
+  React.useEffect(() => {
+    if (!busy) return;
+    const timer = setTimeout(() => setSlow(true), 8000);
+    return () => {
+      clearTimeout(timer);
+      setSlow(false);
+    };
+  }, [busy]);
 
   const patch = (id: string, change: Partial<Extract<Message, { role: "assistant" }>>) =>
     setMessages((all) => all.map((m) => (m.id === id && m.role === "assistant" ? { ...m, ...change } : m)));
@@ -167,7 +178,7 @@ export function HelpdeskChat({ suggestions, passages }: Props) {
                         />
                       ))}
                     </span>
-                    {t("chat.thinking")}
+                    {slow ? t("chat.slow") : t("chat.thinking")}
                   </p>
                 )}
                 {m.result?.blocked ? <p className="text-sm text-fg-muted">{t("chat.blockedHint")}</p> : null}

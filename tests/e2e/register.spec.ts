@@ -67,7 +67,7 @@ test("registers on the fixture event, verifies the code and reaches the ticket",
   await page.getByRole("button", { name: "Continue" }).click();
 
   // Step 3: preferences and consent
-  await expect(page.getByRole("heading", { level: 2, name: "Preferences and consent" })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 2, name: "Preferences" })).toBeVisible();
   await expect(page.getByText("90 days after the event", { exact: false })).toBeVisible();
   await page.getByRole("radio", { name: "Vegetarian", exact: true }).check();
   await page.getByRole("radio", { name: "I am 18 or older" }).check();
@@ -111,7 +111,7 @@ test("explains what is missing and moves focus to the first problem", async ({ p
   await page.goto(REGISTER);
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(
-    page.getByRole("alert").filter({ hasText: "Please fix the highlighted fields." }),
+    page.getByRole("alert").filter({ hasText: "Fix the highlighted fields to continue." }),
   ).toBeVisible();
   await expect(page.getByLabel("Full name")).toBeFocused();
   await expect(page.getByLabel("Full name")).toHaveAttribute("aria-invalid", "true");

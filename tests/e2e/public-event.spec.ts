@@ -35,7 +35,7 @@ test("drafted announcements carry the drafted-by label", async ({ page }) => {
   await page.goto(EVENT);
   const updates = page.getByRole("region", { name: "Live updates" });
   await expect(
-    updates.getByText("Drafted by Sutradhar, approved by", { exact: false }).first(),
+    updates.getByText("Drafted by the OFFSTAGE assistant, approved by", { exact: false }).first(),
   ).toBeVisible();
 });
 

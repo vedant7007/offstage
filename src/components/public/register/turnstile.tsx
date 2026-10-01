@@ -83,7 +83,7 @@ export function Turnstile({ siteKey, label, onToken, language }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <p className="text-sm font-medium">{label}</p>
-      <div ref={ref} />
+      <div ref={ref} className="min-h-[65px]" />
     </div>
   );
 }

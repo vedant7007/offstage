@@ -31,7 +31,10 @@
   },
   "nav": {
     "main": "Main navigation",
-    "sections": "Sections"
+    "sections": "Sections",
+    "collapse": "Menu chhota karo",
+    "expand": "Menu bada karo",
+    "menu": "Menu"
   },
   "status": {
     "pending": "Pending",
@@ -79,7 +82,7 @@
   "role": {
     "owner": "Owner",
     "organizer": "Organizer",
-    "lead": "Lead",
+    "lead": "Event lead",
     "faculty_approver": "Faculty approver",
     "volunteer": "Volunteer",
     "attendee": "Attendee",
@@ -134,8 +137,8 @@
     "section": "Section {section}"
   },
   "drafted": {
-    "approvedBy": "Sutradhar ne likha, {role} ne approve kiya",
-    "awaiting": "Sutradhar ne likha, approval ka intezaar hai"
+    "approvedBy": "OFFSTAGE assistant ne likha, {role} ne approve kiya",
+    "awaiting": "OFFSTAGE assistant ne likha, approval ka intezaar hai"
   },
   "alert": {
     "info": "Jaankari",
@@ -216,10 +219,10 @@
     "seatsTaken": "{total} mein se {registered} seats bhar gayi",
     "seatsLeft": "{count} seats bachi hain",
     "seatsLeft_one": "{count} seat bachi hai",
-    "full": "Saari seats bhar gayi hain. Phir bhi waitlist join kar sakte ho.",
+    "full": "Saari seats bhar gayi hain. Waitlist join karo, seat khaali hote hi hum email karenge.",
     "statusBoard": "Live status board",
     "updatesTitle": "Live updates",
-    "noUpdates": "Abhi koi update nahi hai.",
+    "noUpdates": "Abhi koi update nahi hai. Badlaav hote hi yahan dikhenge.",
     "runningLate": "{minutes} min late chal raha hai",
     "cancelledNote": "Cancel ho gaya",
     "scheduleTitle": "Schedule",
@@ -282,7 +285,7 @@
     "next": "Aage",
     "stepDetails": "Tumhari details",
     "stepChoices": "Sessions",
-    "stepConsent": "Preferences aur consent",
+    "stepConsent": "Preferences",
     "stepVerify": "Email verify karo",
     "name": "Poora naam",
     "nameHint": "Jaisa tumhare certificate par hona chahiye",
@@ -346,7 +349,14 @@
     "fixErrors": "Highlight kiye fields theek karo.",
     "required": "Yeh zaroori hai.",
     "invalidEmail": "name@college.edu jaisa email daalo",
-    "invalidPhone": "10 se 12 digit ka phone number daalo"
+    "invalidPhone": "10 se 12 digit ka phone number daalo",
+    "nameError": "Apna poora naam likho.",
+    "collegeError": "Apne college ka naam likho.",
+    "departmentError": "Apna department likho.",
+    "yearError": "Apna year of study chuno.",
+    "sectionError": "Apna section likho, jaise A.",
+    "foodError": "Food preference chuno.",
+    "botCheckError": "Aage badhne ke liye chhota check poora karo."
   },
   "verify": {
     "title": "Certificate check",
@@ -421,8 +431,8 @@
     "wrongCode": "Yeh code nahi chala. Email check karo ya naya code maango.",
     "error": "Kuch gadbad ho gayi. Phir se try karo.",
     "rateLimited": "Bahut zyaada tries. Kuch minute ruk kar phir try karo.",
-    "demoTitle": "Demo personas",
-    "demoIntro": "Yeh demo hai. Kisi bhi seeded person ke roop mein seedha andar jao.",
+    "demoTitle": "Demo try karo",
+    "demoIntro": "Explore karne ke liye ek role chuno. Email ki zaroorat nahi.",
     "personas": {
       "attendee": "Sneha, attendee",
       "volunteer": "Ravi, volunteer",
@@ -432,7 +442,15 @@
       "faculty": "Faculty approver",
       "sponsor": "Sponsor",
       "viewer": "Judge, sirf dekhne ke liye"
-    }
+    },
+    "personaHints": {
+      "owner": "Console. Agents jo propose karein, use approve karo.",
+      "attendee": "Ticket, schedule aur sources ke saath jawaab",
+      "volunteer": "Gate check-in aur phone par tasks"
+    },
+    "startHere": "Yahan se shuru karo",
+    "moreRoles": "Aur console roles",
+    "orEmail": "Ya email se sign in karo"
   },
   "me": {
     "tabs": {
@@ -463,7 +481,7 @@
       "title": "Schedule",
       "mine": "Mere sessions",
       "all": "Saare sessions",
-      "empty": "Tumne abhi koi session nahi chuna.",
+      "empty": "Abhi koi session nahi chuna. All sessions mein dekh kar ek chuno.",
       "changed": "Badla",
       "change": {
         "moved": "Time badla",
@@ -494,12 +512,13 @@
     "assistant": "Helpdesk",
     "thinking": "Event documents mein dekh rahe hain",
     "sources": "Sources",
-    "escalated": "Mujhe pakka nahi pata, isliye maine yeh team ko bhej diya. Woh yahan aur email par reply karenge.",
+    "escalated": "Humne yeh sawaal team ko bhej diya hai. Koi insaan yahan aur email par reply karega.",
     "escalationRef": "Reference {ref}",
     "blockedHint": "Main event ki har cheez mein madad kar sakta hoon: schedule, venue, khana, rules ya tumhara ticket.",
     "error": "Helpdesk tak nahi pahunch paye. Connection check karo aur phir try karo.",
     "demo": "Jab tak live helpdesk connect nahi hota, demo jawaab dikh rahe hain.",
-    "answeredBy": "Event assistant ne event documents se jawaab diya"
+    "answeredBy": "Event assistant ne event documents se jawaab diya",
+    "slow": "Abhi bhi check kar rahe hain. Jawaab mein ek minute tak lag sakta hai."
   },
   "demoInbox": {
     "link": "Demo inbox: bheja gaya code kholiye",

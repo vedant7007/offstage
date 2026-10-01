@@ -153,19 +153,19 @@ export function RegisterFlow({ event, sessions, turnstileSiteKey }: Props) {
   const validate = (s: Step): Errors => {
     const e: Errors = {};
     if (s === "details") {
-      if (form.name.trim().length < 2) e.name = t("register.required");
+      if (form.name.trim().length < 2) e.name = t("register.nameError");
       if (!EMAIL.test(form.email.trim())) e.email = t("register.invalidEmail");
       if (form.phone.trim() && !PHONE.test(form.phone.trim())) e.phone = t("register.invalidPhone");
-      if (form.college.trim().length < 2) e.college = t("register.required");
-      if (!form.department.trim()) e.department = t("register.required");
-      if (!form.year) e.year = t("register.required");
-      if (!form.section.trim()) e.section = t("register.required");
+      if (form.college.trim().length < 2) e.college = t("register.collegeError");
+      if (!form.department.trim()) e.department = t("register.departmentError");
+      if (!form.year) e.year = t("register.yearError");
+      if (!form.section.trim()) e.section = t("register.sectionError");
     }
     if (s === "consent") {
-      if (!form.foodPref) e.foodPref = t("register.required");
+      if (!form.foodPref) e.foodPref = t("register.foodError");
       if (!form.age) e.age = t("register.ageError");
       if (!form.consent) e.consent = t("register.consentError");
-      if (turnstileSiteKey && !turnstileToken) e.turnstile = t("register.required");
+      if (turnstileSiteKey && !turnstileToken) e.turnstile = t("register.botCheckError");
     }
     if (s === "verify" && !/^\d{6}$/.test(code)) e.code = t("register.codeError");
     return e;

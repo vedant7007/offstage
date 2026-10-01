@@ -15,8 +15,9 @@ const buttonVariants = cva(
     variants: {
       variant: {
         // Filled pill: lifts a little on hover and presses back down. No motion with reduced motion.
+        // Disabled (not loading) drops to a neutral fill: a faded curtain reads as olive on ink.
         primary:
-          "bg-curtain text-on-curtain hover:bg-curtain-hover hover:shadow-card motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0",
+          "bg-curtain text-on-curtain hover:bg-curtain-hover hover:shadow-card motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0 disabled:not-aria-busy:bg-surface-sunken disabled:not-aria-busy:text-fg-muted disabled:not-aria-busy:opacity-100",
         // Outline pill that fills with ink on hover.
         secondary:
           "border-[1.5px] border-fg bg-transparent text-fg hover:bg-fg hover:text-bg motion-safe:hover:-translate-y-0.5 motion-safe:active:translate-y-0",

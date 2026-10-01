@@ -24,14 +24,11 @@ const PERSONA_HOME: Record<DemoPersona, string> = {
   viewer: "/console",
 };
 const PERSONAS = Object.keys(PERSONA_HOME) as DemoPersona[];
-/**
- * The three doors a judge needs first, each with where it leads. The event head is the lead card.
- * ponytail: hints are English until en.json gains login.personaHints.*; lang="en" marks them.
- */
-const DOORS: { p: DemoPersona; icon: LucideIcon; hint: string }[] = [
-  { p: "owner", icon: LayoutDashboard, hint: "The console. Approve what the agents propose." },
-  { p: "attendee", icon: Ticket, hint: "Ticket, schedule and answers with sources" },
-  { p: "volunteer", icon: ScanLine, hint: "Gate check-in and tasks on the phone" },
+/** The three doors a judge needs first, each with where it leads. The event head is the lead card. */
+const DOORS: { p: "owner" | "attendee" | "volunteer"; icon: LucideIcon }[] = [
+  { p: "owner", icon: LayoutDashboard },
+  { p: "attendee", icon: Ticket },
+  { p: "volunteer", icon: ScanLine },
 ];
 /** Every other persona opens the console with a narrower role. */
 const MORE = PERSONAS.filter((p) => !DOORS.some((d) => d.p === p));
@@ -235,7 +232,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
           <p className="text-sm text-fg-muted">{t("login.demoIntro")}</p>
         </div>
         <div className="grid gap-2">
-          {DOORS.map(({ p, icon: Icon, hint }) => {
+          {DOORS.map(({ p, icon: Icon }) => {
             const lead = p === "owner";
             const label = t(`login.personas.${p}`);
             return (
@@ -266,16 +263,13 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
                   <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-base font-medium">
                     {label}
                     {lead ? (
-                      <span
-                        lang="en"
-                        className="rounded-full border border-current/40 px-2 py-0.5 font-mono text-[0.6875rem] tracking-[0.12em] uppercase"
-                      >
-                        Start here
+                      <span className="rounded-full border border-current/40 px-2 py-0.5 font-mono text-[0.6875rem] tracking-[0.12em] uppercase">
+                        {t("login.startHere")}
                       </span>
                     ) : null}
                   </span>
-                  <span id={`persona-${p}-hint`} lang="en" className="text-sm font-normal opacity-80">
-                    {hint}
+                  <span id={`persona-${p}-hint`} className="text-sm font-normal opacity-80">
+                    {t(`login.personaHints.${p}`)}
                   </span>
                 </span>
                 <ArrowRight
@@ -287,9 +281,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
           })}
         </div>
         <div className="flex flex-col gap-2 pt-1">
-          <p lang="en" className="text-sm text-fg-muted">
-            More console roles
-          </p>
+          <p className="text-sm text-fg-muted">{t("login.moreRoles")}</p>
           <div className="flex flex-wrap gap-2">
             {MORE.map((p) => (
               <Button
@@ -311,9 +303,7 @@ export function LoginForm({ next, demoMode, demoEventSlug, turnstileSiteKey }: P
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-3">
           <span aria-hidden className="h-px flex-1 bg-border" />
-          <p lang="en" className="kicker text-fg-muted">
-            or sign in with email
-          </p>
+          <p className="kicker text-fg-muted">{t("login.orEmail")}</p>
           <span aria-hidden className="h-px flex-1 bg-border" />
         </div>
         <p className="text-center text-sm text-fg-muted">{t("login.intro")}</p>

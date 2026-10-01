@@ -68,7 +68,7 @@ function SiteMenu({
   return (
     <Sheet>
       <SheetTrigger asChild>
-        <IconButton label={t("common.more")} icon={<Menu aria-hidden />} className="md:hidden" />
+        <IconButton label={t("nav.menu")} icon={<Menu aria-hidden />} className="md:hidden" />
       </SheetTrigger>
       <SheetContent side="bottom" title="OFFSTAGE">
         <nav aria-label={t("nav.main")} className="flex flex-col gap-1">

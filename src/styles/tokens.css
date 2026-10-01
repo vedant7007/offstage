@@ -149,7 +149,7 @@
 
 /* Non-colour scales. Tailwind reads these as theme values and also emits them as CSS variables. */
 @theme static {
-  /* Type scale (px): 12 14 16 18 22 28 36 48, with line heights that leave room for Devanagari */
+  /* Type scale (px): 12 14 16 18 22 28 36 48 56 72, with line heights that leave room for Devanagari */
   --text-*: initial;
   --text-xs: 0.75rem;
   --text-xs--line-height: 1.125rem;
@@ -167,6 +167,10 @@
   --text-3xl--line-height: 2.75rem;
   --text-4xl: 3rem;
   --text-4xl--line-height: 3.5rem;
+  --text-5xl: 3.5rem;
+  --text-5xl--line-height: 3.875rem;
+  --text-6xl: 4.5rem;
+  --text-6xl--line-height: 4.75rem;
 
   /* Spacing: 4px base. p-1 is 4px, p-4 is 16px. */
   --spacing: 0.25rem;

@@ -66,7 +66,7 @@ test("landing with reduced motion shows every cue as still text", async ({ brows
 test("about our AI reads in all three languages", async ({ page, context }) => {
   await page.goto("/about-ai");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("About our AI");
-  await expect(page.getByText("Drafted by Sutradhar, approved by Lead")).toBeVisible();
+  await expect(page.getByText("Drafted by the OFFSTAGE assistant, approved by Event lead")).toBeVisible();
 
   await page.getByLabel("Language").selectOption("hi");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("हमारे AI के बारे में");

@@ -31,7 +31,10 @@
   },
   "nav": {
     "main": "Main navigation",
-    "sections": "Sections"
+    "sections": "Sections",
+    "collapse": "Collapse menu",
+    "expand": "Expand menu",
+    "menu": "Menu"
   },
   "status": {
     "pending": "Pending",
@@ -79,7 +82,7 @@
   "role": {
     "owner": "Owner",
     "organizer": "Organizer",
-    "lead": "Lead",
+    "lead": "Event lead",
     "faculty_approver": "Faculty approver",
     "volunteer": "Volunteer",
     "attendee": "Attendee",
@@ -134,8 +137,8 @@
     "section": "Section {section}"
   },
   "drafted": {
-    "approvedBy": "Drafted by Sutradhar, approved by {role}",
-    "awaiting": "Drafted by Sutradhar, waiting for approval"
+    "approvedBy": "Drafted by the OFFSTAGE assistant, approved by {role}",
+    "awaiting": "Drafted by the OFFSTAGE assistant, waiting for approval"
   },
   "alert": {
     "info": "Information",
@@ -188,7 +191,7 @@
   },
   "aboutAi": {
     "title": "About our AI",
-    "intro": "OFFSTAGE uses AI to help run events. Here is, in plain words, what it does, what it never does, and what happens to your data.",
+    "intro": "OFFSTAGE uses AI to help run events. Here, in plain words, is what it does, what it never does and what happens to your data.",
     "decideTitle": "AI suggests, people decide",
     "decideBody": "Agents draft plans, messages and changes. Anything that affects people, money or the event's reputation waits for a named person to approve it. Small internal records run on their own, and those can be undone for 10 minutes.",
     "tiersTitle": "How much approval a change needs",
@@ -216,10 +219,10 @@
     "seatsTaken": "{registered} of {total} seats taken",
     "seatsLeft": "{count} seats left",
     "seatsLeft_one": "{count} seat left",
-    "full": "All seats are taken. You can still join the waitlist.",
+    "full": "All seats are taken. Join the waitlist and we will email you if one opens.",
     "statusBoard": "Live status board",
     "updatesTitle": "Live updates",
-    "noUpdates": "No updates right now.",
+    "noUpdates": "No updates yet. Changes will show here as they happen.",
     "runningLate": "Running {minutes} min late",
     "cancelledNote": "Cancelled",
     "scheduleTitle": "Schedule",
@@ -231,7 +234,7 @@
     "seatsSession": "{registered} of {capacity} registered",
     "sessionFull": "Full",
     "addToSchedule": "Add to my schedule",
-    "addToScheduleHint": "You will be asked to log in first.",
+    "addToScheduleHint": "You will be asked to sign in first.",
     "speakersTitle": "Speakers",
     "faqTitle": "Questions people ask",
     "sponsorsTitle": "Supported by",
@@ -282,7 +285,7 @@
     "next": "Continue",
     "stepDetails": "Your details",
     "stepChoices": "Sessions",
-    "stepConsent": "Preferences and consent",
+    "stepConsent": "Preferences",
     "stepVerify": "Verify email",
     "name": "Full name",
     "nameHint": "As it should appear on your certificate",
@@ -301,7 +304,7 @@
     "choicesNone": "This event has no sessions to choose.",
     "seatsLeft": "{count} seats left",
     "seatsLeft_one": "{count} seat left",
-    "waitlistHint": "Full: you will join the waitlist",
+    "waitlistHint": "Full, you will join the waitlist",
     "food": "Food preference",
     "foodVeg": "Vegetarian",
     "foodNonVeg": "Non-vegetarian",
@@ -313,14 +316,14 @@
     "age": "Age confirmation",
     "adult": "I am 18 or older",
     "guardian": "I am under 18 and my parent or guardian has agreed to this registration",
-    "ageError": "Please confirm one of these to continue.",
+    "ageError": "Choose one to continue.",
     "consentTitle": "How we use your details",
     "consentPurposes": "We use your details to run this event: your ticket and check-in, session seats, meals, reminders and changes about sessions you picked, answers from the helpdesk, and your certificate or OD letter if you ask for one.",
     "consentRetention": "We delete your personal details 90 days after the event, unless you asked for a certificate; then we keep only what the certificate shows.",
     "consentSecurity": "Your phone and email are stored encrypted. The event assistant works with an ID and masked details, never your contact information. We do not sell or share your details.",
     "consentRights": "You can see, download or delete your data at any time from your attendee portal.",
     "consentAgree": "I have read how my details are used and agree",
-    "consentError": "Please agree to continue.",
+    "consentError": "Tick the box to agree before you continue.",
     "consentVersion": "Notice version {version}",
     "botCheck": "Quick check that you are a person",
     "verifyIntro": "We sent a 6-digit code to {email}.",
@@ -331,8 +334,8 @@
     "changeEmail": "Change email",
     "sending": "Sending your code",
     "codeError": "Enter the 6 digits from the email.",
-    "errorGeneric": "Something went wrong. Your answers are kept; please try again.",
-    "errorRateLimited": "Too many tries. Please wait {seconds} s and try again.",
+    "errorGeneric": "Something went wrong. Your answers are saved, so try again.",
+    "errorRateLimited": "Too many tries. Wait {seconds} s, then try again.",
     "doneTitle": "You are registered",
     "doneWaitlistTitle": "You are on the waitlist",
     "doneWaitlist": "You are number {position} on the waitlist. We will email you if a seat opens.",
@@ -343,10 +346,17 @@
     "addToCalendar": "Add to calendar",
     "openPortal": "Open my portal",
     "askHelpdesk": "Questions? Ask the helpdesk",
-    "fixErrors": "Please fix the highlighted fields.",
-    "required": "This field is needed.",
+    "fixErrors": "Fix the highlighted fields to continue.",
+    "required": "Fill this in to continue.",
     "invalidEmail": "Enter an email like name@college.edu",
-    "invalidPhone": "Enter a phone number with 10 to 12 digits"
+    "invalidPhone": "Enter a phone number with 10 to 12 digits",
+    "nameError": "Enter your full name.",
+    "collegeError": "Enter your college name.",
+    "departmentError": "Enter your department.",
+    "yearError": "Choose your year of study.",
+    "sectionError": "Enter your section, such as A.",
+    "foodError": "Choose a food preference.",
+    "botCheckError": "Complete the quick check to continue."
   },
   "verify": {
     "title": "Certificate check",
@@ -419,10 +429,10 @@
     "invalidEmail": "Enter an email like name@college.edu",
     "codeError": "Enter the 6 digits from the email.",
     "wrongCode": "That code did not work. Check the email or ask for a new code.",
-    "error": "Something went wrong. Please try again.",
+    "error": "That did not work. Try again.",
     "rateLimited": "Too many tries. Wait a few minutes and try again.",
-    "demoTitle": "Demo personas",
-    "demoIntro": "This is a demo. Jump straight in as one of the seeded people.",
+    "demoTitle": "Try the demo",
+    "demoIntro": "Pick a role to explore. No email needed.",
     "personas": {
       "attendee": "Sneha, attendee",
       "volunteer": "Ravi, volunteer",
@@ -432,7 +442,15 @@
       "faculty": "Faculty approver",
       "sponsor": "Sponsor",
       "viewer": "Judge, read only"
-    }
+    },
+    "personaHints": {
+      "owner": "The console. Approve what the agents propose.",
+      "attendee": "Ticket, schedule and answers with sources",
+      "volunteer": "Gate check-in and tasks on the phone"
+    },
+    "startHere": "Start here",
+    "moreRoles": "More console roles",
+    "orEmail": "Or sign in with email"
   },
   "me": {
     "tabs": {
@@ -441,7 +459,7 @@
       "chat": "Chat",
       "more": "More"
     },
-    "demoData": "Part of this page shows demo data until the live service is connected.",
+    "demoData": "Parts of this page use demo data until the live service is connected.",
     "signOut": "Sign out",
     "noEvent": "You are not registered for an event yet.",
     "findEvent": "See the demo event",
@@ -451,9 +469,9 @@
       "checkedIn": "Checked in at {time}",
       "notCheckedIn": "Not checked in yet",
       "showToVolunteer": "Show to volunteer",
-      "showHint": "Opens the code full screen on a white background so it scans easily.",
+      "showHint": "Opens full screen on white, so it scans first time.",
       "close": "Close",
-      "brightness": "Turn your screen brightness up if the scan fails.",
+      "brightness": "Scan not working? Turn your screen brightness up.",
       "offlineNote": "Your ticket works offline once you have opened it here.",
       "revoked": "This ticket was cancelled. Ask the registration desk for help.",
       "none": "No ticket yet. It appears here once your registration is confirmed.",
@@ -463,7 +481,7 @@
       "title": "Schedule",
       "mine": "My sessions",
       "all": "All sessions",
-      "empty": "You have not picked any sessions yet.",
+      "empty": "No sessions picked yet. Browse all sessions to find one.",
       "changed": "Changed",
       "change": {
         "moved": "Moved",
@@ -472,7 +490,7 @@
         "delayed": "Running late"
       },
       "reminders": "Remind me 15 minutes before each of my sessions",
-      "remindersSoon": "Reminders on this screen are not connected yet. Your choice is saved on this phone.",
+      "remindersSoon": "Reminders are not live yet. We save your choice on this phone.",
       "add": "Add",
       "added": "In my schedule",
       "addSoon": "Adding sessions from here is coming soon. Ask the helpdesk to add one for you.",
@@ -485,21 +503,22 @@
   },
   "chat": {
     "title": "Helpdesk",
-    "honest": "This assistant answers from the event's own documents and shows where each answer came from. When it is not sure, it passes your question to a person.",
+    "honest": "The helpdesk answers from the event's own documents and shows its sources. When it is not sure, it hands your question to a person.",
     "label": "Your question",
     "placeholder": "Ask about the event",
     "send": "Send",
     "suggestions": "Common questions",
     "you": "You",
     "assistant": "Helpdesk",
-    "thinking": "Looking through the event documents",
+    "thinking": "Checking the event documents",
     "sources": "Sources",
-    "escalated": "I'm not sure, so I passed this to the team. They will reply here and by email.",
+    "escalated": "We passed this to the team. A person will reply here and by email.",
     "escalationRef": "Reference {ref}",
     "blockedHint": "I can help with anything about the event: the schedule, venue, food, rules or your ticket.",
     "error": "Could not reach the helpdesk. Check your connection and try again.",
     "demo": "Showing demo answers until the live helpdesk is connected.",
-    "answeredBy": "Answered by the event assistant from event documents"
+    "answeredBy": "Answered by the event assistant from event documents",
+    "slow": "Still checking. Answers can take up to a minute."
   },
   "design": {
     "title": "Design system",

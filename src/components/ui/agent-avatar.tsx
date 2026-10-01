@@ -94,7 +94,7 @@ function AgentAvatar({ agent, size = "md", showName = false, className }: AgentA
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
       {badge}
-      <span className="font-medium text-agent-text">{name}</span>
+      <span className="font-medium text-fg">{name}</span>
     </span>
   );
 }

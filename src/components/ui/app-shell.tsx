@@ -274,7 +274,7 @@ function AppShell({ title, homeHref = "/", nav, actions, status, children, previ
               >
                 {collapsed ? <PanelLeftOpen aria-hidden /> : <PanelLeftClose aria-hidden />}
                 <span className={cn(collapsed && "sr-only")}>
-                  {collapsed ? "Expand menu" : "Collapse menu"}
+                  {collapsed ? t("nav.expand") : t("nav.collapse")}
                 </span>
               </button>
             </div>

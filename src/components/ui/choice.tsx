@@ -87,16 +87,22 @@ function Checkbox({ label, description, id, className, ...props }: CheckboxProps
 type RadioGroupProps = React.ComponentProps<typeof RadioPrimitive.Root> & {
   /** Visible group label, announced as the group name. */
   legend: React.ReactNode;
+  /** Extra classes for the list of items, for example a grid of cards. */
+  itemsClassName?: string;
 };
 
-function RadioGroup({ legend, className, children, ...props }: RadioGroupProps) {
+function RadioGroup({ legend, className, itemsClassName, children, ...props }: RadioGroupProps) {
   const legendId = React.useId();
   return (
     <div className={cn("flex flex-col gap-1", className)}>
       <p id={legendId} className="text-sm font-medium text-fg">
         {legend}
       </p>
-      <RadioPrimitive.Root aria-labelledby={legendId} className="flex flex-col" {...props}>
+      <RadioPrimitive.Root
+        aria-labelledby={legendId}
+        className={cn("flex flex-col", itemsClassName)}
+        {...props}
+      >
         {children}
       </RadioPrimitive.Root>
     </div>
