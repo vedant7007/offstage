@@ -6,7 +6,7 @@ import { SignOutButton } from "@/components/ui/shell-bits";
 
 /** The crew app is for signed-in volunteers and staff; the check-in API checks the scan permission. */
 export default async function CrewLayout({ children }: LayoutProps<"/crew">) {
-  const me = await getMe();
+  const me = await getMe("volunteer");
   if (!me) redirect("/login?next=/crew");
   return (
     <AppShell

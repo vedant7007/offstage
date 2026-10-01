@@ -6,6 +6,9 @@ import { usePathname, useRouter } from "next/navigation";
 import { ArrowUpRight, LogOut, Menu } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useT } from "@/lib/i18n/provider";
+import { isShowcase } from "@/showcase/flag";
+import { ResetDemoButton } from "@/showcase/reset-demo";
+import { setLedger } from "@/showcase/store";
 import { IconButton, buttonVariants } from "./button";
 import { LanguageSwitcher } from "./language-switcher";
 import { Sheet, SheetClose, SheetContent, SheetTrigger } from "./sheet";
@@ -60,12 +63,19 @@ function SignOutButton() {
   const [busy, setBusy] = React.useState(false);
   const signOut = async () => {
     setBusy(true);
+    if (isShowcase()) {
+      // No session in the showcase: forget the persona and go back to the chooser. The demo state stays.
+      setLedger((l) => ({ ...l, persona: null }));
+      router.replace("/login");
+      router.refresh();
+      return;
+    }
     await fetch("/api/demo/reset", { method: "POST", credentials: "include" }).catch(() => undefined);
     await fetch("/api/auth/sign-out", { method: "POST", credentials: "include" }).catch(() => undefined);
     router.replace("/login");
     router.refresh();
   };
-  return (
+  const button = (
     <IconButton
       label={t("me.signOut")}
       icon={<LogOut aria-hidden />}
@@ -73,6 +83,14 @@ function SignOutButton() {
       aria-busy={busy}
       onClick={() => void signOut()}
     />
+  );
+  return isShowcase() ? (
+    <>
+      <ResetDemoButton />
+      {button}
+    </>
+  ) : (
+    button
   );
 }
 

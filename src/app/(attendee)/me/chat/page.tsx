@@ -5,6 +5,8 @@ import { HelpdeskChat, type KnownPassages } from "@/components/attendee/helpdesk
 import { getMe } from "@/components/attendee/server";
 import { getPublicEvent } from "@/components/public/data";
 import { getT } from "@/lib/i18n/server";
+import kb from "@/showcase/fixtures/kb.json";
+import { isShowcase } from "@/showcase/flag";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getT();
@@ -14,6 +16,16 @@ export async function generateMetadata(): Promise<Metadata> {
 // Passages for demo citations until citations carry their own text (#66). Server side only,
 // so the fixtures never reach the browser bundle.
 function demoPassages(): KnownPassages {
+  if (isShowcase()) {
+    // The showcase helpdesk cites the recorded knowledge base by these refs (src/showcase/helpdesk.ts).
+    const title = new Map(kb.docs.map((d) => [d.id, d.title]));
+    return Object.fromEntries(
+      kb.chunks.map((c) => [
+        `kb:${c.docId}#${c.heading}`,
+        { docTitle: title.get(c.docId) ?? c.docId, section: c.heading, snippet: c.text },
+      ]),
+    );
+  }
   const chunk = fixtures.kbChunkRef();
   const ref = fixtures.api.chatAnswered().answer.citations[0]?.ref;
   return ref ? { [ref]: { docTitle: chunk.docTitle, section: chunk.section, snippet: chunk.snippet } } : {};

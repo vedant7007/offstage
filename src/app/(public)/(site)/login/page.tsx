@@ -4,6 +4,9 @@ import { safeNext } from "@/components/attendee/next-path";
 import { DEMO_EVENT_SLUG } from "@/components/public/links";
 import { TextReveal } from "@/components/ui";
 import { getT } from "@/lib/i18n/server";
+import { WORLD } from "@/showcase/data";
+import { isShowcase } from "@/showcase/flag";
+import { PersonaLogin } from "@/showcase/persona-login";
 import styles from "./login.module.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -41,14 +44,18 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           <header className="flex flex-col gap-3 pb-8">
             <h1 className="text-3xl font-medium md:text-4xl">{t("login.title")}</h1>
             {/* In demo mode the form repeats this line beside the email field, where it belongs. */}
-            {demoMode ? null : <p className="text-base text-fg-muted">{t("login.intro")}</p>}
+            {demoMode || isShowcase() ? null : <p className="text-base text-fg-muted">{t("login.intro")}</p>}
           </header>
-          <LoginForm
-            next={next}
-            demoMode={demoMode}
-            demoEventSlug={DEMO_EVENT_SLUG}
-            turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || null}
-          />
+          {isShowcase() ? (
+            <PersonaLogin next={next} eventId={WORLD.eventId} />
+          ) : (
+            <LoginForm
+              next={next}
+              demoMode={demoMode}
+              demoEventSlug={DEMO_EVENT_SLUG}
+              turnstileSiteKey={process.env.TURNSTILE_SITE_KEY || null}
+            />
+          )}
         </div>
       </div>
     </div>

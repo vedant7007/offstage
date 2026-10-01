@@ -16,6 +16,7 @@ import {
 import { ConfirmBurst, prefersReducedMotion } from "@/components/ui/motion";
 import { formatDateTime, formatTime, istDateKey } from "@/lib/time";
 import { Check } from "lucide-react";
+import { isShowcase } from "@/showcase/flag";
 
 /** Which agent card to show: the proposing agent, or the Commander for a person's own proposal. */
 export function agentOf(p: ActionProposal): string {
@@ -83,7 +84,12 @@ export function ApproveButton({
             const left = proposal.requiredApprovals - proposal.approvals.length - 1;
             toast.success(
               left > 0
-                ? `Approved. ${left} more person must approve before it runs: switch persona to the Event head or Program Lead.`
+                ? `Approved. ${left} more person must approve before it runs: switch persona to ${
+                    // The showcase recordings need the faculty approver as the second sign-off.
+                    isShowcase() && proposal.facultyApprovalRequired
+                      ? "the Faculty approver"
+                      : "the Event head or Program Lead"
+                  }.`
                 : "Approved",
             );
             setOk(true);

@@ -7,16 +7,40 @@ import { EmergencyBanner } from "@/components/console/emergency-banner";
 import { PersonaSwitcher } from "@/components/console/persona-switcher";
 import { RealSendsBadge } from "@/components/console/real-sends";
 import { VoiceDock } from "@/components/console/voice/voice-dock";
+import { createApiClient } from "@/lib/api-client";
 import { getSessionInfo, membershipFor } from "@/server/authz";
+import { isShowcase } from "@/showcase/flag";
+import { AS_HEADER } from "@/showcase/store";
 
-const demoMode = process.env.DEMO_MODE === "true" || process.env.DEMO_MODE === "1";
+const demoMode = process.env.DEMO_MODE === "true" || process.env.DEMO_MODE === "1" || isShowcase();
 const mockApi = process.env.NEXT_PUBLIC_API_MOCK === "1" || process.env.NEXT_PUBLIC_API_MOCK === "true";
 
 /** Console chrome. Only members of this event get in; every action still goes through the authorized API. */
 export default async function ConsoleLayout({ children, params }: LayoutProps<"/console/[eventId]">) {
   const { eventId } = await params;
   let role: string | null = null;
-  if (!mockApi) {
+  if (isShowcase()) {
+    // The persona chosen in this browser, read from its cookie; before choosing, the read-only judge view.
+    const h = await headers();
+    const me = await createApiClient({ headers: { cookie: h.get("cookie") ?? "", [AS_HEADER]: "viewer" } })
+      .me()
+      .catch(() => null);
+    role = me?.memberships.find((m) => m.eventId === eventId)?.role ?? null;
+    if (!role)
+      return (
+        <main id="main" className="mx-auto max-w-lg px-4 py-16">
+          <EmptyState
+            title="Choose a persona to open the console"
+            description="Sign in as the Event head to run the demo, or as a judge to look around."
+            action={
+              <Button asChild>
+                <Link href={`/login?next=/console/${eventId}`}>Choose a persona</Link>
+              </Button>
+            }
+          />
+        </main>
+      );
+  } else if (!mockApi) {
     const info = await getSessionInfo(await headers());
     const member = info ? await membershipFor(info.userId, eventId) : null;
     role = member?.role ?? null;

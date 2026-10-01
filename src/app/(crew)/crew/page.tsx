@@ -150,7 +150,7 @@ function ShiftCard({ row, now }: { row: ShiftRow; now: number }) {
 }
 
 export default async function CrewHome() {
-  const me = await getMe();
+  const me = await getMe("volunteer");
   if (!me) redirect("/login?next=/crew");
   const event = me.memberships.find((m) => m.eventId === me.activeEventId) ?? me.memberships[0];
   if (!event) return <Alert variant="info" title="You are not on an event crew yet." />;
