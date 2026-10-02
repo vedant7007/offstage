@@ -3,19 +3,9 @@
 import Lenis from "lenis";
 import "lenis/dist/lenis.css";
 import Link from "next/link";
-import {
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode } from "react";
 import { CONTACT_MAILTO, DEMO_EVENT_SLUG, LOGIN_PATH, REPO_URL, eventPath } from "@/components/public/links";
-import en from "@/lib/i18n/en.json";
-import { useT } from "@/lib/i18n/provider";
-import type { MessageKey, Translate } from "@/lib/i18n/translate";
+import type { Messages } from "@/lib/i18n/translate";
 import { isShowcase } from "@/showcase/flag";
 import { ActCommander } from "./act-commander";
 import { ActFeatures } from "./act-features";
@@ -54,16 +44,6 @@ const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ")
 const vars = (v: Record<string, string | number>) => v as unknown as CSSProperties;
 const nn = (i: number) => String(i + 1).padStart(2, "0");
 
-/** Translates every leaf of an en.json subtree by its dot path, keeping the tree's shape. */
-function translateTree<T>(t: Translate, tree: T, path: string): T {
-  return Object.fromEntries(
-    Object.entries(tree as Record<string, unknown>).map(([k, v]) => [
-      k,
-      typeof v === "string" ? t(`${path}.${k}` as MessageKey) : translateTree(t, v, `${path}.${k}`),
-    ]),
-  ) as T;
-}
-
 /** The kicker and h2 of a cue, from the one label each act uses everywhere. */
 function CueHead({
   id,
@@ -85,14 +65,23 @@ function CueHead({
   );
 }
 
-/** The award, as a gold pill. Shown in the hero and again at the curtain call. */
+/**
+ * The award, as a gold pill. Shown in the hero and again at the curtain call. On a phone the
+ * venue after the last comma drops to its own line instead of wrapping mid-name.
+ */
 function Badge({ text }: { text: string }) {
+  const cut = text.lastIndexOf(", ");
+  const head = cut > 0 ? text.slice(0, cut + 1) : text;
+  const tail = cut > 0 ? text.slice(cut + 2) : "";
   return (
     <p className={cx(s.badge, s.mono)}>
       <svg viewBox="0 0 24 24" aria-hidden className={s.badgeIcon}>
         <path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5L2.5 9.4l6.6-.9z" />
       </svg>
-      {text}
+      <span>
+        <span className={s.badgePart}>{head}</span>
+        {tail ? <span className={cx(s.badgePart, s.badgeTail)}> {tail}</span> : null}
+      </span>
     </p>
   );
 }
@@ -157,7 +146,8 @@ function Flip({ film }: { film: boolean }) {
   );
 }
 
-export function TheatrePage() {
+/** `copy` is the "theatre" subtree of the visitor's locale, picked on the server so no locale file ships to the browser. */
+export function TheatrePage({ copy }: { copy: Messages["theatre"] }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const reduced = useSyncExternalStore(
     subscribe,
@@ -166,8 +156,6 @@ export function TheatrePage() {
   );
   const film = !reduced;
   useTheatre(rootRef, film);
-  const t = useT();
-  const copy = useMemo(() => translateTree(t, en.theatre, "theatre"), [t]);
   const L = copy.landing;
 
   // Smooth wheel scrolling on this page only. It moves the real window scroll, so the theatre's
