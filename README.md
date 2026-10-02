@@ -15,6 +15,8 @@ Agents propose, policy decides, humans approve, code executes.
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![PostgreSQL 17 + pgvector](https://img.shields.io/badge/PostgreSQL-17_%2B_pgvector-4169e1?style=flat-square&logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 
+<a href="docs/assets/offstage-demo.mp4"><img src="docs/assets/offstage-demo.gif" alt="A keynote speaker cancels: the Commander wakes, Radar and the stage log light up, the glass box shows its cited facts and steps, and the T3 plan with its ripple waits for the event head to approve" width="960"></a>
+
 ## [Live Demo](https://offstage-live.vercel.app) · [Watch the 60s demo](docs/assets/offstage-demo.mp4) · [Architecture](docs/architecture.md)
 
 </div>
