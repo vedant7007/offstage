@@ -265,7 +265,7 @@ Repo: `github.com/vedant7007/offstage` (codename `sutradhar` in the source).
 
 ```
 sutradhar/
-  README.md  COORDINATION.md
+  README.md
   docs/00-BLUEPRINT.md  docs/decisions/  docs/demo-script.md
   docker-compose.yml  Caddyfile  .env.example  package.json  tsconfig.json  drizzle.config.ts
   src/
@@ -289,7 +289,7 @@ sutradhar/
   pitch/                                                                  [Thanishka]
 ```
 
-Read anything; edit only what you own; request changes elsewhere via COORDINATION.md.
+During the hackathon each area had one owner; changes elsewhere went through that owner.
 
 ---
 
@@ -380,12 +380,9 @@ A gate passes only when its flows work in the running app, clicked through by so
 
 ### Git rules
 - `main` protected, PRs only, CI green. Branches `vedant/<topic>`, `abhinav/<topic>`, `thanishka/<topic>`. Small PRs, rebase before PR.
-- Contract changes need a COORDINATION.md note and a reviewer from the consuming side. Migrations only by Abhinav.
+- Contract changes need a reviewer from the consuming side. Migrations only by Abhinav.
 - **No tool attribution anywhere in git.** No co-author trailers and no "generated with" lines in commits, PRs, comments, README or credits. Commits are authored by the human teammate. Verify before every push: `git log --format=%B | grep -i -E "generated with"` returns nothing.
 - Conventional commits, human tone. No em dashes anywhere.
-
-### COORDINATION.md protocol
-Append-only. Entry format: `## <date time IST> | <name> | <area>` then bullets: what changed, who it affects, blockers. Read the last 50 lines before every work block; write after every merge.
 
 ### Sync ritual
 Huddle at every gate: each person demos live, agree the next split. Blocked on someone? Mock against the contract and keep going.
