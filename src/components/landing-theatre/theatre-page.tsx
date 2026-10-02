@@ -40,6 +40,13 @@ const subscribe = (cb: () => void) => {
   return () => m.removeEventListener("change", cb);
 };
 
+/**
+ * The server cannot know the visitor's motion setting, so it renders the film. For reduced
+ * motion this runs while the HTML parses, before first paint, and switches the root to the still
+ * layout, so the page does not jump when React hydrates into poster mode.
+ */
+const POSTER_FIRST = `if(matchMedia("${REDUCE}").matches)document.currentScript.parentElement.dataset.mode="poster"`;
+
 const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ");
 const vars = (v: Record<string, string | number>) => v as unknown as CSSProperties;
 const nn = (i: number) => String(i + 1).padStart(2, "0");
@@ -179,7 +186,9 @@ export function TheatrePage({ copy }: { copy: Messages["theatre"] }) {
   };
 
   return (
-    <div ref={rootRef} className={s.root} data-mode={film ? "film" : "poster"}>
+    // suppressHydrationWarning: POSTER_FIRST may already have flipped data-mode before hydration.
+    <div ref={rootRef} className={s.root} data-mode={film ? "film" : "poster"} suppressHydrationWarning>
+      <script dangerouslySetInnerHTML={{ __html: POSTER_FIRST }} />
       <a href="#main" className={s.skip}>
         Skip to content
       </a>

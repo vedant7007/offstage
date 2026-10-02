@@ -515,3 +515,12 @@
     display: none;
   }
 }
+
+/*
+ * Reduced motion before hydration: the root is already a poster (see POSTER_FIRST in
+ * theatre-page.tsx) but this stage still carries the server's film class. Keep it unpainted
+ * until React swaps in the still layout, so the swap is not a layout shift.
+ */
+[data-mode="poster"] .film {
+  visibility: hidden;
+}
