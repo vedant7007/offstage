@@ -451,7 +451,7 @@ test("what-if, briefing, close-out and evals show the recorded numbers", async (
   await shot(page, info, "closeout");
 
   await page.goto(`${STAGE}/evals`);
-  await expect(main.getByText("42 of 42")).toBeVisible();
+  await expect(main.getByText("42 of 42", { exact: true })).toBeVisible();
   await expect(main.getByText("97.5%").first()).toBeVisible();
   await expect(main.getByText(/20 attacks/)).toBeVisible();
   await shot(page, info, "evals");
