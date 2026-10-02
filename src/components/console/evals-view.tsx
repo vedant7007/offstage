@@ -4,6 +4,7 @@ import * as React from "react";
 import type { EvalsResponse } from "@/contracts";
 import { FlaskConical } from "lucide-react";
 import { api } from "@/lib/api-client";
+import { isShowcase } from "@/showcase/flag";
 import { formatDayShort, formatTime } from "@/lib/time";
 import {
   AgentAvatar,
@@ -102,6 +103,14 @@ export function EvalsView({ eventId }: { eventId: string }) {
           )
         }
       />
+      {isShowcase() ? (
+        <Alert variant="info" title="Recorded showcase run">
+          The numbers below come from a re-recording of the demo on small local models (the{" "}
+          {g?.profile ?? "dev"} profile). Measured during the hackathon on the demo profile (Groq and
+          Bedrock): helpdesk grounding 95%, no-source refusal 100%, 20 of 20 injections blocked, 42 of 42
+          solver checks, retrieval 97.5%.
+        </Alert>
+      ) : null}
       {running ? (
         <Alert variant="info" title="Running the golden set">
           The golden helpdesk questions and guard cases run on the real models. This takes two to three
