@@ -29,6 +29,14 @@ Where the flag changes behaviour:
 | `/demo/tickets` | Three signed sample tickets to scan (this page exists only in the showcase) |
 | Voice dock | Browser speech instead of paid speech services |
 
+## Deploying the showcase
+
+The hosted demo is deployed with the Vercel CLI. There is no GitHub integration, so a push to `main` does not deploy anything.
+
+1. Link a checkout to the Vercel project once: `vercel link`.
+2. Set `NEXT_PUBLIC_SHOWCASE=1` in the Vercel project's environment variables (Production). No other variables are needed.
+3. From the linked checkout, run `vercel deploy --prod`. Vercel builds the app with the flag on and serves it.
+
 ## Fixtures recorded from real runs
 
 The fixtures are in `src/showcase/fixtures/`. They are recorded data and are not edited by hand.
