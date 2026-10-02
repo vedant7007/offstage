@@ -236,11 +236,10 @@ export function TheatrePage({ copy }: { copy: Messages["theatre"] }) {
           id="opening"
           data-act="opening"
           className={cx(s.act, s.dark)}
-          style={vars({ "--acth": "170vh" })}
+          style={vars({ "--acth": "220vh" })}
         >
           <div className={cx(s.stage, s.stageHero, s.persp)}>
             <div className={s.hero} data-t="hero">
-              <Badge text={L.badge} />
               <h1 className={s.heroTitle}>
                 <span className={s.line}>{L.heroTitleA}</span>{" "}
                 <span className={s.line}>
