@@ -680,23 +680,13 @@
   box-shadow: -23px 0 46px rgb(0 0 0 / 0.55);
 }
 
-/* Resting frame before any scroll, the same as CURTAIN_START in use-theatre.ts. */
+/* Resting frame before any scroll: drawn shut, the same as CURTAIN_START in use-theatre.ts. */
 .stageHero .curtainL {
-  transform: translateX(calc(-80% - 1.6vw));
+  transform: translateX(0);
 }
 
 .stageHero .curtainR {
-  transform: translateX(calc(80% + 1.6vw));
-}
-
-@media (max-width: 860px) {
-  .stageHero .curtainL {
-    transform: translateX(calc(-100% - 2vw));
-  }
-
-  .stageHero .curtainR {
-    transform: translateX(calc(100% + 2vw));
-  }
+  transform: translateX(0);
 }
 
 /* ----- cue 01: chaos ----- */

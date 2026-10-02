@@ -25,8 +25,7 @@ const DP_LERP = 0.3;
  * How far open the opening curtains sit before any scroll, as a share of their full travel.
  * theatre.module.css sets the same resting transform, so the first paint matches the first frame.
  */
-const CURTAIN_START = 0.8;
-const CURTAIN_START_NARROW = 1;
+const CURTAIN_START = 0;
 
 /** Acts that keep a slow drift while on screen. While one is visible the loop keeps running. */
 const AMBIENT = new Set(["chaos", "crew"]);
@@ -110,15 +109,14 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
 
     const update: Record<string, (dp: number, t: number) => void> = {
       opening(dp) {
-        // The house opens already lit: the curtains frame the hero at load and part the rest of
-        // the way as the visitor scrolls, while the hero settles back into the dark.
-        const start = D < 1 ? CURTAIN_START_NARROW : CURTAIN_START;
-        const e = easeOut(clamp(dp / 0.5));
-        const o = lerp(start, 1, e);
+        // The house opens dark: the curtains are drawn at load and part as the visitor scrolls,
+        // the hero holds the stage, then settles back into the dark.
+        const e = easeOut(clamp(dp / 0.35));
+        const o = lerp(CURTAIN_START, 1, e);
         // Flat at rest so the folds read as a frame; they swing back only as they part.
         tf($.curtL, `translateX(calc(${-100 * o}% - ${2 * o}vw)) rotateY(${-22 * e}deg)`);
         tf($.curtR, `translateX(calc(${100 * o}% + ${2 * o}vw)) rotateY(${22 * e}deg)`);
-        const out = easeOut(clamp((dp - 0.45) / 0.55));
+        const out = easeOut(clamp((dp - 0.62) / 0.38));
         op($.hero, 1 - 0.9 * out);
         tf($.hero, `translate3d(0,${-40 * out}px,${-160 * out}px)`);
         op($.hint, clamp(1 - dp / 0.07));
