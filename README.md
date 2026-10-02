@@ -125,7 +125,7 @@ Every agent is a config on one shared runtime ([src/agents/index.ts](src/agents/
 
 **Confusion Radar.** When many people ask the same thing in a few minutes, Radar opens an incident and proposes a fix.
 
-<!-- TODO: add docs/showcase-shots/confusion-radar.png (Radar panel during the lunch_confusion scenario); no dedicated shot exists yet -->
+<img src="docs/showcase-shots/desktop-confusion-radar.png" alt="Radar panel during the lunch confusion scenario: 14 helpdesk questions in 10 minutes, 12 about the lunch location, two open incidents, and Radar proposing a lunch announcement that waits for approval" width="100%">
 
 </td>
 <td valign="top">
@@ -233,7 +233,7 @@ More diagrams (proposal flow, SSE stream, router chains): [docs/architecture.md]
 
 ### Showcase vs full version
 
-The [live demo](https://offstage-live.vercel.app) is a zero-cost build of the same app. How it works: [docs/showcase-mode.md](docs/showcase-mode.md).
+The [live demo](https://offstage-live.vercel.app) is a zero-cost build of the same app. How it works: [docs/showcase-mode.md](docs/showcase-mode.md). How it is deployed: [Deploying the showcase](docs/showcase-mode.md#deploying-the-showcase).
 
 | | Showcase (`NEXT_PUBLIC_SHOWCASE=1`) | Full version |
 |---|---|---|

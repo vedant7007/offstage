@@ -15,6 +15,8 @@ export default defineConfig({
   use: {
     baseURL: `http://localhost:${PORT}`,
     trace: "retain-on-failure",
+    // Entrance fades and slides would otherwise still be running when axe checks contrast.
+    reducedMotion: "reduce",
   },
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] } },
