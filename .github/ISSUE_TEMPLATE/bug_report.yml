@@ -1,0 +1,49 @@
+name: Bug report
+description: Something does not work as expected.
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for the report. For security problems, do not file an issue; follow SECURITY.md instead.
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Where did it happen?
+      options:
+        - Hosted showcase (offstage-live.vercel.app)
+        - Showcase build run locally (NEXT_PUBLIC_SHOWCASE=1)
+        - Full stack run locally (Docker, Postgres, worker)
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you saw, and what you expected instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Sign in as Event head
+        2. Trigger "Speaker cancels" on the Live Stage
+        3. ...
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: v1.0.0 or a commit SHA
+  - type: input
+    id: env
+    attributes:
+      label: Browser and OS
+      placeholder: Chrome 140 on Windows 11
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or screenshots
+      description: Remove any personal data, keys or tokens first.
