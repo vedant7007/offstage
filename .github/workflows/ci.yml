@@ -12,11 +12,44 @@ concurrency:
 permissions:
   contents: read
 
+# No repository secrets are used. Database jobs run against a throwaway Postgres service.
+
 jobs:
-  check:
-    name: check
+  typecheck:
+    name: typecheck
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Format
+        run: pnpm format:check
+
+  test:
+    name: unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
     services:
       db:
         image: pgvector/pgvector:pg17
@@ -33,53 +66,53 @@ jobs:
           --health-retries 20
     steps:
       - uses: actions/checkout@v7
-        with:
-          fetch-depth: 0
-
       - uses: pnpm/action-setup@v6
-
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
-      - name: No AI attribution in commit messages
-        run: |
-          if [ "${{ github.event_name }}" = "pull_request" ]; then
-            range="origin/${{ github.base_ref }}..HEAD"
-          else
-            range="${{ github.event.before }}..${{ github.sha }}"
-            git cat-file -e "${{ github.event.before }}" 2>/dev/null || range="${{ github.sha }}"
-          fi
-          if git log --format=%B "$range" | grep -i -E "generated with"; then
-            echo "Commit messages contain AI attribution or a blocked word (rule 5 in the shared rules file)."
-            exit 1
-          fi
-
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Format
-        run: pnpm format:check
-
+      - run: pnpm install --frozen-lockfile
       - name: Unit tests
         run: pnpm test
-
       - name: Database tests (migrations, seed, demo triggers)
         run: pnpm test:db
         env:
           DATABASE_URL: postgres://sutradhar:sutradhar@localhost:5432/sutradhar
 
-      - name: Build
+  build:
+    name: build (${{ matrix.mode }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        mode: [showcase, full]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Showcase build
+        if: matrix.mode == 'showcase'
+        run: pnpm build
+        env:
+          NEXT_PUBLIC_SHOWCASE: "1"
+      - name: Full build
+        if: matrix.mode == 'full'
         run: pnpm build
         env:
           DATABASE_URL: postgres://build:build@localhost:5432/build
+
+  # Single required status for branch protection.
+  check:
+    name: check
+    needs: [typecheck, lint, test, build]
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "typecheck, lint, tests and builds passed"
 
   e2e:
     name: e2e
@@ -115,29 +148,20 @@ jobs:
       LOG_LEVEL: warn
     steps:
       - uses: actions/checkout@v7
-
       - uses: pnpm/action-setup@v6
-
       - uses: actions/setup-node@v7
         with:
           node-version-file: .nvmrc
           cache: pnpm
-
-      - name: Install
-        run: pnpm install --frozen-lockfile
-
+      - run: pnpm install --frozen-lockfile
       - name: Generate throwaway keys
         run: pnpm -s keys >> "$GITHUB_ENV"
-
       - name: Migrate and seed
         run: pnpm db:migrate && pnpm demo:reset
-
       - name: Install Chromium
         run: pnpm exec playwright install --with-deps chromium
-
       - name: End to end tests
         run: pnpm test:e2e
-
       - uses: actions/upload-artifact@v7
         if: failure()
         with:

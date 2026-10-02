@@ -6,7 +6,7 @@ import fs from "node:fs";
 
 const BASE = process.env.BASE ?? "http://localhost:3100/";
 const chapters = (process.argv[2] ?? "0,1,2,3,4,5,6,7,8,9,10").split(",").map(Number);
-const outDir = process.argv[3] ?? "C:/CODING/sutradhar-landing/docs/landing-shots";
+const outDir = process.argv[3] ?? "docs/landing-shots";
 const viewports = (process.argv[4] ?? "desktop,phone").split(",");
 const POINTS = (process.env.POINTS ?? "0.05,0.5,0.95").split(",").map(Number);
 const FORMAT = process.env.FORMAT === "jpg" ? "jpeg" : "png";

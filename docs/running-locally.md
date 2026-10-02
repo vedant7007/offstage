@@ -16,9 +16,9 @@ cp .env.example .env
 pnpm keys
 ```
 
-`pnpm keys` prints fresh values for `AUTH_SECRET`, the Ed25519 ticket signing key pair and `PII_ENCRYPTION_KEY`. Paste them into `.env`. Every other variable is documented inline in `.env.example`. The ones that matter first:
+`pnpm keys` prints fresh values for `AUTH_SECRET`, the Ed25519 ticket signing key pair and `PII_ENCRYPTION_KEY`. Paste them into `.env`, and set `DATABASE_URL` to the local value shown in its comment. Every other variable is documented inline in `.env.example`. The ones that matter first:
 
-| Variable | Default | Purpose |
+| Variable | Local value | Purpose |
 |---|---|---|
 | `DATABASE_URL` | `postgres://sutradhar:sutradhar@localhost:5432/sutradhar` | Matches the `db` service in `docker-compose.yml` |
 | `DEMO_MODE` | `true` | Persona switcher and demo triggers. Never on for a real event. |

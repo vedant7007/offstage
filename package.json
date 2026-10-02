@@ -1,7 +1,25 @@
 {
-  "name": "sutradhar",
-  "version": "0.1.0",
+  "name": "offstage",
+  "version": "1.0.0",
   "private": true,
+  "description": "AI event operations team in a box. 14 agents, one human lead each.",
+  "keywords": [
+    "ai-agents",
+    "multi-agent",
+    "event-management",
+    "nextjs",
+    "typescript",
+    "postgresql",
+    "pgvector",
+    "llm",
+    "rag"
+  ],
+  "homepage": "https://offstage-live.vercel.app",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vedant7007/offstage.git"
+  },
+  "license": "MIT",
   "type": "module",
   "engines": {
     "node": ">=24"

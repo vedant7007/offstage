@@ -7,6 +7,6 @@ export const LOGIN_PATH = "/login";
 export const eventPath = (slug: string) => `/e/${slug}`;
 
 /** Source code. One place, so it can move to the public repo in one edit. */
-export const REPO_URL = "https://github.com/vedant7007/sutradhar";
+export const REPO_URL = "https://github.com/vedant7007/offstage";
 export const CONTACT_EMAIL = "vedantidlgave16@gmail.com";
 export const CONTACT_MAILTO = `mailto:${CONTACT_EMAIL}?subject=OFFSTAGE%20enquiry`;
