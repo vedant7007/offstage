@@ -4,6 +4,8 @@ import * as React from "react";
 import Link from "next/link";
 import type { ProposalResponse, Ripple, ScheduleOption } from "@/contracts";
 import { api } from "@/lib/api-client";
+import { onMessage } from "@/showcase/bus";
+import { isShowcase } from "@/showcase/flag";
 import { ArrowLeft } from "lucide-react";
 import { Alert, Button, PageHeader, ProposalCard, Section } from "@/components/ui";
 import { Morph, SkeletonCard, SkeletonText } from "@/components/ui/motion";
@@ -46,6 +48,16 @@ export function ProposalDetail({ eventId, proposalId }: { eventId: string; propo
     [eventId, proposalId],
   );
   React.useEffect(() => void load(), [load]);
+  // Showcase: the recorded run carries the proposal on after approval (approved, then done); follow it.
+  React.useEffect(
+    () =>
+      isShowcase()
+        ? onMessage((m) => {
+            if (m.type === "proposal" && m.proposal.id === proposalId) void load();
+          })
+        : undefined,
+    [load, proposalId],
+  );
 
   if (error)
     return (
