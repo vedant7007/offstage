@@ -18,3 +18,4 @@ Thumbs.db
 next-env.d.ts
 .pnpm-debug.log*
 *.pem
+docs/landing-shots/

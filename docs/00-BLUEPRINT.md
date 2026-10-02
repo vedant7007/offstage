@@ -261,11 +261,11 @@ Organizer/Leads --->   route handlers + server actions -> authz -> services
 
 ## 9. Repository layout and ownership
 
-Repo: `github.com/vedant7007/sutradhar`. Change the name here if you rename.
+Repo: `github.com/vedant7007/offstage` (codename `sutradhar` in the source).
 
 ```
 sutradhar/
-  README.md
+  README.md  COORDINATION.md
   docs/00-BLUEPRINT.md  docs/decisions/  docs/demo-script.md
   docker-compose.yml  Caddyfile  .env.example  package.json  tsconfig.json  drizzle.config.ts
   src/
@@ -381,7 +381,7 @@ A gate passes only when its flows work in the running app, clicked through by so
 ### Git rules
 - `main` protected, PRs only, CI green. Branches `vedant/<topic>`, `abhinav/<topic>`, `thanishka/<topic>`. Small PRs, rebase before PR.
 - Contract changes need a COORDINATION.md note and a reviewer from the consuming side. Migrations only by Abhinav.
-- **No AI attribution anywhere in git.** No co-author trailers, no "generated with" lines, no AI mentions in commits, PRs, comments, README or credits. Verify before every push: `git log --format=%B | grep -i -E "generated with"` returns nothing.
+- **No tool attribution anywhere in git.** No co-author trailers and no "generated with" lines in commits, PRs, comments, README or credits. Commits are authored by the human teammate. Verify before every push: `git log --format=%B | grep -i -E "generated with"` returns nothing.
 - Conventional commits, human tone. No em dashes anywhere.
 
 ### COORDINATION.md protocol

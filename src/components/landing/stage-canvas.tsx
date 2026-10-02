@@ -20,7 +20,7 @@ import { EventSets } from "./stage/props-events";
 /**
  * Whether this GPU can afford full-screen post passes at 1440x900. Integrated and mobile parts
  * drop from about 47 to 19 frames a second with the composer on, so they get halos and a CSS
- * grain instead (measured on an Intel UHD laptop, see docs/landing-shots/fps.json).
+ * grain instead (measured on an Intel UHD laptop with `node scripts/landing/film.mjs fps`).
  */
 function strongGpu() {
   // The cheap tier also skips the spotlight shadow map, fog and image-based lighting; the box

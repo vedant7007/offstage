@@ -308,7 +308,7 @@ Needs Node 24, pnpm 11 and Docker. Model keys are optional: with none, agents fa
 
 ```sh
 cp .env.example .env
-pnpm keys                          # paste the printed secrets into .env
+pnpm keys                          # paste the printed secrets and the local DATABASE_URL into .env
 docker compose up -d db mailpit    # Postgres 17 + pgvector, Mailpit inbox on :8025
 pnpm install
 pnpm db:migrate && pnpm db:seed
@@ -384,4 +384,4 @@ Team **MASTICODE**. 1st Prize, AIML Hacks 2026, KG Reddy College of Engineering.
 
 Questions, pilots or feedback: [email us](mailto:vedantidlgave16@gmail.com?subject=OFFSTAGE%20enquiry).
 
-Released under the [MIT License](LICENSE). The codename in the source is `sutradhar`, "the one who holds the strings".
+Released under the [MIT License](LICENSE), copyright (c) 2026 Vedant Idlgave, Abhinav Nakka and V Thanishka. Contributions are welcome: see [CONTRIBUTING.md](CONTRIBUTING.md), the [Code of Conduct](CODE_OF_CONDUCT.md) and the [security policy](SECURITY.md). The codename in the source is `sutradhar`, "the one who holds the strings".
