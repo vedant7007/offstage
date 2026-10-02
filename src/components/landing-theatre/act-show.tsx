@@ -50,14 +50,18 @@ const cx = (...c: (string | false | undefined)[]) => c.filter(Boolean).join(" ")
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const smooth = (v: number) => v * v * (3 - 2 * v);
 
-/* ----- timing: steps play over dp 0.03 to 0.82, then the board settles ----- */
+/*
+ * ----- timing: steps play over dp 0.03 to 0.64, then the finished board holds for the rest of
+ * the act, so a visitor scrolling at reading pace sees the counters land, not only the run -----
+ */
 
 const S0 = 0.03;
-const S1 = 0.82;
+const S1 = 0.64;
+const CLOCK_END = 0.7; // the clock reaches 2:11 PM as the board settles
 const START_MIN = 3; // 2:03 PM
 const RUN_MIN = 8; // to 2:11 PM
 
-const minuteAt = (dp: number) => START_MIN + Math.floor(RUN_MIN * clamp(dp) + 1e-6);
+const minuteAt = (dp: number) => START_MIN + Math.floor(RUN_MIN * clamp(dp / CLOCK_END) + 1e-6);
 const hhmm = (m: number) => `2:${String(m).padStart(2, "0")}`;
 
 /* ----- the graph: node positions in a 560 x 360 box, lines from the first node to the second ----- */
@@ -308,11 +312,11 @@ export function updateShow(els: ShowEls, dp: number, _t?: number) {
     els.last.minute = m;
     if (els.clock) els.clock.textContent = hhmm(m);
   }
-  if (els.track) els.track.style.transform = `scaleX(${clamp(dp)})`;
-  const settle = clamp((dp - 0.84) / 0.06);
+  if (els.track) els.track.style.transform = `scaleX(${clamp(dp / CLOCK_END)})`;
+  const settle = clamp((dp - 0.66) / 0.06);
   if (els.boom) els.boom.style.opacity = String(1 - settle);
   if (els.end) {
-    const e = smooth(clamp((dp - 0.86) / 0.06));
+    const e = smooth(clamp((dp - 0.68) / 0.06));
     els.end.style.opacity = String(e);
     els.end.style.transform = `translateY(${(1 - e) * 8}px)`;
   }

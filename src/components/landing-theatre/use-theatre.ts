@@ -5,6 +5,7 @@ import { collectCommander, updateCommander } from "./act-commander";
 import { collectFeatures, updateFeatures } from "./act-features";
 import { collectShow, updateShow } from "./act-show";
 import { CHAOS, actLabel } from "./content";
+import s from "./theatre.module.css";
 
 const clamp = (v: number, a = 0, b = 1) => Math.min(b, Math.max(a, v));
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -88,13 +89,19 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
     const cmd = collectCommander(root);
     const show = collectShow(root);
     const feat = collectFeatures(root);
+    // Pinned stages keep their content clear of the nav; anything else that scrolls under it does not.
+    const stages = Array.from(root.querySelectorAll<HTMLElement>(`.${CSS.escape(s.stage ?? "")}`));
 
     // Depth scale for narrow screens, read on resize, not every frame.
     let D = 1;
     let RY = 210; // how far the front of the crew ring drops below the Commander
+    let navH = 76;
     const measure = () => {
       // Stuck cue heads and stage padding clear the fixed nav by this much.
-      if ($.nav) root.style.setProperty("--nav-h", `${$.nav.offsetHeight}px`);
+      if ($.nav) {
+        navH = $.nav.offsetHeight;
+        root.style.setProperty("--nav-h", `${navH}px`);
+      }
       const w = window.innerWidth;
       D = w <= 560 ? 0.45 : w <= 860 ? 0.6 : 1;
       RY = Math.min(210, window.innerHeight * 0.24);
@@ -187,6 +194,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
     let current = -1;
     let lastY = window.scrollY;
     let navHidden = false;
+    let navTone = "";
 
     const frame = (now: number) => {
       raf = 0;
@@ -221,6 +229,20 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
         if (AMBIENT.has(a.id)) busy = true;
       });
 
+      // The nav floats bare only over a stage whose empty top padding sits under it (a pinned
+      // stage, or one arriving). Over anything else it gets a solid bar, so content never runs
+      // under the brand: free-flowing blocks, a stage scrolling away, every still in poster mode.
+      let tone = "";
+      if (
+        !stages.some((el) => {
+          const r = el.getBoundingClientRect();
+          return r.top >= -1 && r.top <= navH && r.bottom > navH;
+        })
+      ) {
+        const act = acts.find((a) => a.id === under);
+        tone = act?.el.classList.contains(s.dark ?? "") ? "dark" : "light";
+      }
+
       // Then writes.
       if (film) for (const a of acts) if (a.on) update[a.id]?.(a.dp, t);
 
@@ -246,6 +268,11 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
       if (y < vh || cur === acts.length - 1) hide = false;
       else if (dy > 1) hide = true;
       else if (dy < -1) hide = false;
+      if (tone !== navTone) {
+        navTone = tone;
+        if (tone) root.setAttribute("data-navbar", tone);
+        else root.removeAttribute("data-navbar");
+      }
       if (hide !== navHidden) {
         navHidden = hide;
         root.toggleAttribute("data-navhide", hide);
@@ -305,6 +332,7 @@ export function useTheatre(rootRef: RefObject<HTMLElement | null>, film: boolean
       for (const el of $.ring) el.removeAttribute("data-front");
       root.removeAttribute("data-curtain");
       root.removeAttribute("data-navhide");
+      root.removeAttribute("data-navbar");
       $.cta?.style.removeProperty("pointer-events");
     };
   }, [rootRef, film]);

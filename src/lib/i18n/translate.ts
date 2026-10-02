@@ -1,4 +1,4 @@
-import en from "./en.json";
+import type en from "./en.json";
 
 export const LOCALES = ["en", "hi", "hinglish"] as const;
 export type Locale = (typeof LOCALES)[number];
@@ -25,21 +25,6 @@ export type Translate = (key: MessageKey, vars?: TranslateVars) => string;
 
 export function isLocale(value: unknown): value is Locale {
   return typeof value === "string" && (LOCALES as readonly string[]).includes(value);
-}
-
-type Tree = { [key: string]: string | Tree };
-
-/** Fills keys missing from a translation with English, so a gap never shows a raw key. */
-export function withFallback(messages: object): Messages {
-  const merge = (base: Tree, over: Tree): Tree => {
-    const out: Tree = { ...base };
-    for (const [k, v] of Object.entries(over)) {
-      const b = base[k];
-      out[k] = typeof v === "object" && typeof b === "object" ? merge(b, v) : v;
-    }
-    return out;
-  };
-  return merge(en as Tree, messages as Tree) as unknown as Messages;
 }
 
 function lookup(messages: Messages, key: string): string | undefined {
